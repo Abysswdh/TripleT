@@ -1,0 +1,61 @@
+// Prisma Schema — Doable! Database
+// This mirrors the SQLAlchemy models for schema visualization.
+// Run: npx prisma db pull   (to sync from Supabase)
+// Run: npx prisma generate  (to generate types)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String    @id @db.Uuid
+  email           String    @unique @db.VarChar(255)
+  fullName        String?   @map("full_name") @db.VarChar(255)
+  avatarUrl       String?   @map("avatar_url") @db.Text
+  bio             String?   @db.Text
+  role            String    @default("customer") @db.VarChar(50)
+  skills          String[]  @default([])
+  hourlyRate      Int?      @map("hourly_rate")
+  experienceLevel String?   @map("experience_level") @db.VarChar(50)
+  xp              Int       @default(0)
+  streakDays      Int       @default(0) @map("streak_days")
+  level           Int       @default(1)
+  isActive        Boolean   @default(true) @map("is_active")
+  isVerified      Boolean   @default(false) @map("is_verified")
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  ownedProjects    Project[] @relation("ProjectOwner")
+  assignedProjects Project[] @relation("ProjectFreelancer")
+
+  @@map("users")
+}
+
+model Project {
+  id              String   @id @default(uuid()) @db.Uuid
+  title           String   @db.VarChar(255)
+  description     String   @db.Text
+  category        String?  @db.VarChar(100)
+  requiredSkills  String[] @default([]) @map("required_skills")
+  experienceLevel String?  @map("experience_level") @db.VarChar(50)
+  budgetType      String   @default("fixed") @map("budget_type") @db.VarChar(20)
+  budgetMin       Int?     @map("budget_min")
+  budgetMax       Int?     @map("budget_max")
+  status          String   @default("draft") @db.VarChar(20)
+  ownerId         String   @map("owner_id") @db.Uuid
+  freelancerId    String?  @map("freelancer_id") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  owner      User  @relation("ProjectOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  freelancer User? @relation("ProjectFreelancer", fields: [freelancerId], references: [id], onDelete: SetNull)
+
+  @@map("projects")
+}
