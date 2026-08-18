@@ -94,6 +94,4 @@ alembic upgrade head
 
 ---
 
-## 📝 License
 
-Private — All rights reserved.
