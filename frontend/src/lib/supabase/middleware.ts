@@ -48,7 +48,7 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   // Protected routes: redirect to login if not authenticated
-  const protectedPaths = ["/dashboard"];
+  const protectedPaths = ["/dashboard", "/onboarding"];
   const isProtected = protectedPaths.some((path) =>
     request.nextUrl.pathname.startsWith(path)
   );
@@ -59,14 +59,25 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Auth routes: redirect to dashboard if already authenticated
+  // Auth routes: redirect if already authenticated
   const authPaths = ["/login", "/register"];
   const isAuthRoute = authPaths.some((path) =>
     request.nextUrl.pathname.startsWith(path)
   );
 
   if (isAuthRoute && user) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    const isOnboarded = user.user_metadata?.onboarding_completed;
+    return NextResponse.redirect(
+      new URL(isOnboarded ? "/dashboard" : "/onboarding", request.url)
+    );
+  }
+
+  // If already onboarded, redirect away from /onboarding to /dashboard
+  if (request.nextUrl.pathname.startsWith("/onboarding") && user) {
+    const isOnboarded = user.user_metadata?.onboarding_completed;
+    if (isOnboarded) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
   }
 
   return response;

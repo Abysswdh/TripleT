@@ -11,7 +11,7 @@ export default function AuthLayout({
         <div className="absolute -bottom-40 -right-40 h-[500px] w-[500px] rounded-full bg-tertiary/5 blur-3xl" />
       </div>
 
-      <div className="relative z-10 w-full max-w-md px-6">{children}</div>
+      <div className="relative z-10 w-full px-4 sm:px-6">{children}</div>
     </div>
   );
 }

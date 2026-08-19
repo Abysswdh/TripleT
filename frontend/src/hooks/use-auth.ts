@@ -77,6 +77,21 @@ export function useAuth() {
     [supabase, router]
   );
 
+  const signInWithGoogle = useCallback(
+    async (redirectTo = "/onboarding") => {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
+        },
+      });
+
+      if (error) throw error;
+      return data;
+    },
+    [supabase]
+  );
+
   const signUp = useCallback(
     async (email: string, password: string, fullName?: string) => {
       const { data, error } = await supabase.auth.signUp({
@@ -86,6 +101,7 @@ export function useAuth() {
           data: {
             full_name: fullName,
           },
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=/onboarding`,
         },
       });
 
@@ -109,6 +125,7 @@ export function useAuth() {
     session: authState.session,
     loading: authState.loading,
     signIn,
+    signInWithGoogle,
     signUp,
     signOut,
   };
