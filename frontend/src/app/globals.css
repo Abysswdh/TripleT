@@ -57,11 +57,17 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-jakarta), sans-serif;
   }
 
-  h1, h2, h3, .font-heading {
+  h1, h2, h3, h4, h5, h6, .font-heading, .font-krona {
     font-family: var(--font-krona), sans-serif;
+    letter-spacing: -0.02em;
+  }
+
+  p, span, a, button, input, textarea, label, .font-sans, .font-jakarta {
+    font-family: var(--font-jakarta), sans-serif;
   }
 }
 

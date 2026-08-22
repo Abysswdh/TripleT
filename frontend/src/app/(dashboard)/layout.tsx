@@ -73,7 +73,7 @@ function DashboardLayoutContent({
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
               <Sparkles className="h-4 w-4 text-white" />
             </div>
-            <span className="text-lg font-bold tracking-tight">
+            <span className="font-heading text-base font-normal tracking-tight">
               Doable<span className="text-primary">!</span>
             </span>
           </Link>

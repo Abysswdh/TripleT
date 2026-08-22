@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
 
 export type DashboardRole = "customer" | "freelancer";
@@ -14,28 +14,49 @@ interface RoleContextType {
 }
 
 const RoleContext = createContext<RoleContextType | undefined>(undefined);
+const STORAGE_KEY = "triplet_active_dashboard_role";
 
 export function RoleProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const [role, setRoleState] = useState<DashboardRole>("customer");
+  const [role, setRoleState] = useState<DashboardRole>("freelancer");
+  const hasInitialized = useRef(false);
 
+  // Initialize role once from localStorage or user metadata
   useEffect(() => {
-    if (user?.user_metadata?.role) {
-      const userRole = user.user_metadata.role;
-      if (userRole === "freelancer") {
-        setRoleState("freelancer");
-      } else {
-        setRoleState("customer");
+    if (typeof window !== "undefined") {
+      const savedRole = localStorage.getItem(STORAGE_KEY) as DashboardRole | null;
+      if (savedRole === "customer" || savedRole === "freelancer") {
+        setRoleState(savedRole);
+        hasInitialized.current = true;
+        return;
       }
+    }
+
+    if (!hasInitialized.current && user?.user_metadata?.role) {
+      const userRole = user.user_metadata.role === "customer" ? "customer" : "freelancer";
+      setRoleState(userRole);
+      if (typeof window !== "undefined") {
+        localStorage.setItem(STORAGE_KEY, userRole);
+      }
+      hasInitialized.current = true;
     }
   }, [user]);
 
   const setRole = useCallback((newRole: DashboardRole) => {
     setRoleState(newRole);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(STORAGE_KEY, newRole);
+    }
   }, []);
 
   const toggleRole = useCallback(() => {
-    setRoleState((prev) => (prev === "customer" ? "freelancer" : "customer"));
+    setRoleState((prev) => {
+      const nextRole = prev === "customer" ? "freelancer" : "customer";
+      if (typeof window !== "undefined") {
+        localStorage.setItem(STORAGE_KEY, nextRole);
+      }
+      return nextRole;
+    });
   }, []);
 
   return (

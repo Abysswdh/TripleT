@@ -15,6 +15,7 @@ import {
   FileText,
 } from "lucide-react";
 import Link from "next/link";
+import Grainient from "@/components/ui/Grainient";
 
 interface ProjectItem {
   id: string;
@@ -180,18 +181,44 @@ export function ClientDashboard() {
   return (
     <div className="animate-fade-in space-y-8">
       {/* Header Banner */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-primary-950 to-slate-900 p-6 md:p-8 text-white shadow-xl">
-        <div className="absolute right-0 top-0 -mt-8 -mr-8 h-64 w-64 rounded-full bg-primary/20 blur-3xl pointer-events-none" />
+      <div className="relative overflow-hidden rounded-2xl p-6 md:p-8 text-white shadow-xl border border-white/10">
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <Grainient
+            color1="#38BDF8"
+            color2="#1E40AF"
+            color3="#070B24"
+            timeSpeed={0.2}
+            colorBalance={0.0}
+            warpStrength={1.0}
+            warpFrequency={5.0}
+            warpSpeed={2.0}
+            warpAmplitude={50.0}
+            blendAngle={0.0}
+            blendSoftness={0.05}
+            rotationAmount={500.0}
+            noiseScale={2.0}
+            grainAmount={0.1}
+            grainScale={2.0}
+            grainAnimated={false}
+            contrast={1.4}
+            gamma={1.0}
+            saturation={1.05}
+            centerX={0.0}
+            centerY={0.0}
+            zoom={0.9}
+          />
+        </div>
+        <div className="absolute inset-0 z-[1] bg-black/30 backdrop-blur-[1px] pointer-events-none" />
         <div className="relative z-10 flex flex-col justify-between gap-6 md:flex-row md:items-center">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold backdrop-blur-md">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 font-sans text-xs font-semibold backdrop-blur-md">
               <Briefcase className="h-3.5 w-3.5 text-primary-300" />
               <span>Client Dashboard Workspace</span>
             </div>
-            <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
-              Welcome back, {clientName}! 👋
+            <h1 className="font-heading text-xl font-normal tracking-tight md:text-2xl lg:text-3xl leading-snug">
+              Welcome back, {clientName}!
             </h1>
-            <p className="max-w-xl text-sm text-slate-300">
+            <p className="max-w-xl font-sans text-sm text-slate-300 leading-relaxed">
               Manage your posted projects, review proposals from verified talent, and track development milestones seamlessly.
             </p>
           </div>
@@ -199,14 +226,14 @@ export function ClientDashboard() {
           <div className="flex flex-wrap items-center gap-3">
             <Link
               href="/dashboard/projects"
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary/30 transition-all hover:bg-primary-600 hover:scale-[1.02]"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 font-sans text-sm font-semibold text-white shadow-lg shadow-primary/30 transition-all hover:bg-primary-600 hover:scale-[1.02]"
             >
               <Plus className="h-4 w-4" />
               <span>Post New Project</span>
             </Link>
             <Link
               href="/dashboard/talent"
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-5 py-2.5 text-sm font-medium text-white backdrop-blur-md transition-colors hover:bg-white/20"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-5 py-2.5 font-sans text-sm font-medium text-white backdrop-blur-md transition-colors hover:bg-white/20"
             >
               <Users className="h-4 w-4" />
               <span>Browse Talent</span>
@@ -228,12 +255,12 @@ export function ClientDashboard() {
               >
                 <stat.icon className={`h-5 w-5 ${stat.color}`} />
               </div>
-              <span className="rounded-full bg-muted/60 px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+              <span className="rounded-full bg-muted/60 px-2.5 py-0.5 font-sans text-xs font-medium text-muted-foreground">
                 {stat.change}
               </span>
             </div>
-            <p className="text-2xl font-extrabold tracking-tight text-foreground">{stat.value}</p>
-            <p className="mt-0.5 text-sm text-muted-foreground">{stat.label}</p>
+            <p className="font-heading text-xl font-normal tracking-tight text-foreground">{stat.value}</p>
+            <p className="mt-1 font-sans text-xs font-medium text-muted-foreground">{stat.label}</p>
           </div>
         ))}
       </div>
@@ -244,16 +271,16 @@ export function ClientDashboard() {
         <div className="space-y-4 lg:col-span-2">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-bold tracking-tight text-foreground">
+              <h2 className="font-heading text-base font-normal tracking-tight text-foreground md:text-lg">
                 Your Project Postings
               </h2>
-              <p className="text-xs text-muted-foreground">
+              <p className="font-sans text-xs text-muted-foreground mt-0.5">
                 Current status and proposals on your open quests
               </p>
             </div>
             <Link
               href="/dashboard/projects"
-              className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary-600 transition-colors"
+              className="inline-flex items-center gap-1 font-sans text-xs font-semibold text-primary hover:text-primary-600 transition-colors"
             >
               <span>View All</span>
               <ChevronRight className="h-3.5 w-3.5" />
@@ -268,25 +295,24 @@ export function ClientDashboard() {
               >
                 <div className="space-y-1.5 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-md bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                    <span className="rounded-md bg-primary/10 px-2.5 py-0.5 font-sans text-xs font-semibold text-primary">
                       {project.category}
                     </span>
                     <span
-                      className={`rounded-md px-2.5 py-0.5 text-xs font-medium ${
-                        project.status === "Hiring"
+                      className={`rounded-md px-2.5 py-0.5 font-sans text-xs font-medium ${project.status === "Hiring"
                           ? "bg-amber-500/10 text-amber-600"
                           : project.status === "In Progress"
-                          ? "bg-emerald-500/10 text-emerald-600"
-                          : "bg-blue-500/10 text-blue-600"
-                      }`}
+                            ? "bg-emerald-500/10 text-emerald-600"
+                            : "bg-blue-500/10 text-blue-600"
+                        }`}
                     >
                       {project.status}
                     </span>
                   </div>
-                  <h3 className="text-base font-semibold text-foreground group-hover:text-primary transition-colors">
+                  <h3 className="font-heading text-sm font-normal text-foreground group-hover:text-primary transition-colors leading-snug">
                     {project.title}
                   </h3>
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-4 font-sans text-xs text-muted-foreground">
                     <span className="font-medium text-foreground">{project.budget}</span>
                     <span>•</span>
                     <span className="flex items-center gap-1">
@@ -304,7 +330,7 @@ export function ClientDashboard() {
                 <div className="flex items-center gap-2 sm:self-center">
                   <Link
                     href={`/dashboard/projects`}
-                    className="inline-flex items-center justify-center rounded-xl border border-border/80 bg-background px-4 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-muted hover:border-primary/30"
+                    className="inline-flex items-center justify-center rounded-xl border border-border/80 bg-background px-4 py-2 font-sans text-xs font-semibold text-foreground transition-colors hover:bg-muted hover:border-primary/30"
                   >
                     Manage
                   </Link>
@@ -318,14 +344,14 @@ export function ClientDashboard() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-bold tracking-tight text-foreground">
+              <h2 className="font-heading text-base font-normal tracking-tight text-foreground md:text-lg">
                 Recent Proposals
               </h2>
-              <p className="text-xs text-muted-foreground">
+              <p className="font-sans text-xs text-muted-foreground mt-0.5">
                 Top matched candidate submissions
               </p>
             </div>
-            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-bold text-primary">
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 font-sans text-[11px] font-bold text-primary">
               {mockProposals.length} New
             </span>
           </div>
@@ -344,21 +370,21 @@ export function ClientDashboard() {
                       className="h-10 w-10 rounded-full object-cover border border-border"
                     />
                     <div>
-                      <h4 className="text-sm font-semibold text-foreground">
+                      <h4 className="font-heading text-xs font-normal text-foreground leading-snug">
                         {prop.freelancerName}
                       </h4>
-                      <p className="text-xs text-muted-foreground truncate max-w-[140px]">
+                      <p className="font-sans text-xs text-muted-foreground truncate max-w-[140px]">
                         {prop.projectTitle}
                       </p>
                     </div>
                   </div>
-                  <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-2 py-0.5 text-[11px] font-bold text-emerald-600">
+                  <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-2 py-0.5 font-sans text-[11px] font-bold text-emerald-600">
                     <Sparkles className="h-3 w-3" />
                     {prop.matchScore}% Match
                   </span>
                 </div>
 
-                <div className="mt-3 flex items-center justify-between border-t border-border/40 pt-2.5 text-xs">
+                <div className="mt-3 flex items-center justify-between border-t border-border/40 pt-2.5 font-sans text-xs">
                   <div>
                     <span className="font-semibold text-foreground">{prop.bidAmount}</span>
                     <span className="text-muted-foreground"> ({prop.timeline})</span>
@@ -366,7 +392,7 @@ export function ClientDashboard() {
                   <span className="text-muted-foreground text-[11px]">{prop.submittedAt}</span>
                 </div>
 
-                <div className="mt-3 flex items-center gap-2">
+                <div className="mt-3 flex items-center gap-2 font-sans">
                   <button className="flex-1 rounded-lg bg-primary/10 py-1.5 text-xs font-semibold text-primary hover:bg-primary hover:text-white transition-all">
                     Review Bid
                   </button>
@@ -384,16 +410,16 @@ export function ClientDashboard() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-bold tracking-tight text-foreground">
+            <h2 className="font-heading text-base font-normal tracking-tight text-foreground md:text-lg">
               Top Verified Freelancers Ready to Hire
             </h2>
-            <p className="text-xs text-muted-foreground">
+            <p className="font-sans text-xs text-muted-foreground mt-0.5">
               Pre-vetted professionals with proven skill certifications
             </p>
           </div>
           <Link
             href="/dashboard/talent"
-            className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary-600 transition-colors"
+            className="inline-flex items-center gap-1 font-sans text-xs font-semibold text-primary hover:text-primary-600 transition-colors"
           >
             <span>Explore All Talent</span>
             <ChevronRight className="h-3.5 w-3.5" />
@@ -416,19 +442,19 @@ export function ClientDashboard() {
                     />
                     <div>
                       <div className="flex items-center gap-1.5">
-                        <h4 className="text-sm font-bold text-foreground">
+                        <h4 className="font-heading text-xs font-normal text-foreground leading-snug">
                           {talent.name}
                         </h4>
                         {talent.isVerified && (
                           <ShieldCheck className="h-4 w-4 text-primary" />
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground">{talent.role}</p>
+                      <p className="font-sans text-xs text-muted-foreground">{talent.role}</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-3 flex items-center justify-between text-xs">
+                <div className="mt-3 flex items-center justify-between font-sans text-xs">
                   <div className="flex items-center gap-1 text-amber-500 font-semibold">
                     <Star className="h-3.5 w-3.5 fill-amber-500" />
                     <span>{talent.rating}</span>
@@ -437,7 +463,7 @@ export function ClientDashboard() {
                   <span className="font-semibold text-primary">{talent.hourlyRate}</span>
                 </div>
 
-                <div className="mt-3 flex flex-wrap gap-1.5">
+                <div className="mt-3 flex flex-wrap gap-1.5 font-sans">
                   {talent.skills.map((skill) => (
                     <span
                       key={skill}
@@ -449,7 +475,7 @@ export function ClientDashboard() {
                 </div>
               </div>
 
-              <div className="mt-5 pt-3 border-t border-border/40 flex items-center gap-2">
+              <div className="mt-5 pt-3 border-t border-border/40 flex items-center gap-2 font-sans">
                 <Link
                   href="/dashboard/talent"
                   className="flex-1 rounded-xl bg-primary py-2 text-center text-xs font-semibold text-white shadow-sm shadow-primary/20 hover:bg-primary-600 transition-colors"
