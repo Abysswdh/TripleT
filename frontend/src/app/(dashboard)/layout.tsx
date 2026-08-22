@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { RoleProvider, useDashboardRole } from "@/context/role-context";
 import {
@@ -10,7 +10,6 @@ import {
   LayoutDashboard,
   FolderOpen,
   Users,
-  BarChart3,
   Settings,
   LogOut,
   Menu,
@@ -20,6 +19,9 @@ import {
   Award,
   CreditCard,
   Repeat,
+  Search,
+  Plus,
+  ChevronDown,
 } from "lucide-react";
 
 function DashboardLayoutContent({
@@ -28,29 +30,236 @@ function DashboardLayoutContent({
   children: React.ReactNode;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
   const { user, signOut } = useAuth();
-  const { toggleRole, setRole, isClient, isFreelancer } = useDashboardRole();
+  const { role, setRole } = useDashboardRole();
 
-  const clientLinks = [
-    { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
-    { href: "/dashboard/projects", label: "My Projects", icon: FolderOpen },
-    { href: "/dashboard/talent", label: "Find Talent", icon: Users },
-    { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
-    { href: "/dashboard/settings", label: "Settings", icon: Settings },
-  ];
+  // Determine active view based on URL path or fallback to role state
+  const isClientView = pathname.startsWith("/client") || (pathname === "/dashboard" && role === "customer");
+
+  // Keep role state in sync with URL
+  useEffect(() => {
+    if (pathname.startsWith("/client") && role !== "customer") {
+      setRole("customer");
+    } else if (pathname.startsWith("/freelancer") && role !== "freelancer") {
+      setRole("freelancer");
+    }
+  }, [pathname, role, setRole]);
 
   const freelancerLinks = [
-    { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
-    { href: "/dashboard/explore", label: "Explore Quests", icon: Compass },
-    { href: "/dashboard/my-work", label: "My Active Work", icon: Briefcase },
-    { href: "/dashboard/skills", label: "Skill Quizzes & Badges", icon: Award },
-    { href: "/dashboard/earnings", label: "Earnings & Wallet", icon: CreditCard },
-    { href: "/dashboard/settings", label: "Settings", icon: Settings },
+    { href: "/freelancer/dashboard", label: "Overview", icon: LayoutDashboard },
+    { href: "/freelancer/explore", label: "Explore Quests", icon: Compass },
+    { href: "/freelancer/my-work", label: "My Active Work", icon: Briefcase },
+    { href: "/freelancer/skills", label: "Skill Quizzes & Badges", icon: Award },
+    { href: "/freelancer/earnings", label: "Earnings & Wallet", icon: CreditCard },
+    { href: "/freelancer/settings", label: "Settings", icon: Settings },
   ];
 
-  const sidebarLinks = isClient ? clientLinks : freelancerLinks;
+  const handleSwitchToClient = () => {
+    setRole("customer");
+    router.push("/client/dashboard");
+  };
 
+  const handleSwitchToFreelancer = () => {
+    setRole("freelancer");
+    router.push("/freelancer/dashboard");
+  };
+
+  // ==========================================
+  // 1. CLIENT LAYOUT (TOP NAVIGATION BAR / FIVERR-STYLE)
+  // ==========================================
+  if (isClientView) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        {/* Sticky Top Navbar */}
+        <header className="sticky top-0 z-50 border-b border-border/60 bg-card/80 backdrop-blur-md">
+          {/* Main Top Header Bar */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+            {/* Left: Brand Logo & Search */}
+            <div className="flex items-center gap-6 flex-1">
+              <Link href="/client/dashboard" className="flex items-center gap-2.5 shrink-0">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary shadow-sm shadow-primary/25">
+                  <Sparkles className="h-4.5 w-4.5 text-white" />
+                </div>
+                <span className="font-heading text-lg font-bold tracking-tight text-foreground">
+                  Doable<span className="text-primary">!</span>
+                </span>
+                <span className="hidden sm:inline-block rounded-md bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 text-[10px] font-bold text-blue-600">
+                  Client Hub
+                </span>
+              </Link>
+
+              {/* Quick Search in Navbar */}
+              <div className="relative hidden md:block max-w-md w-full">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Cari keahlian, jasa, atau talent terverifikasi..."
+                  className="h-9 w-full rounded-xl border border-border/80 bg-muted/40 pl-9 pr-4 text-xs placeholder:text-muted-foreground focus:border-primary focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                />
+              </div>
+            </div>
+
+            {/* Right: Navigation Links & Actions */}
+            <div className="flex items-center gap-3 shrink-0">
+              <nav className="hidden lg:flex items-center gap-1 text-xs font-semibold">
+                <Link
+                  href="/client/dashboard"
+                  className={`px-3 py-2 rounded-lg transition-colors ${
+                    pathname === "/client/dashboard"
+                      ? "text-primary bg-primary/10"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                  }`}
+                >
+                  Explore Services
+                </Link>
+                <Link
+                  href="/client/talent"
+                  className={`px-3 py-2 rounded-lg transition-colors ${
+                    pathname === "/client/talent"
+                      ? "text-primary bg-primary/10"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                  }`}
+                >
+                  Find Talent
+                </Link>
+                <Link
+                  href="/client/projects"
+                  className={`px-3 py-2 rounded-lg transition-colors ${
+                    pathname === "/client/projects"
+                      ? "text-primary bg-primary/10"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                  }`}
+                >
+                  My Projects
+                </Link>
+              </nav>
+
+              {/* Post Project Button */}
+              <Link
+                href="/client/projects"
+                className="hidden sm:inline-flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-2 text-xs font-semibold text-white shadow-sm shadow-primary/25 hover:bg-primary-600 transition-all hover:scale-[1.02]"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span>Post a Quest</span>
+              </Link>
+
+              {/* Switch Mode Button */}
+              <button
+                onClick={handleSwitchToFreelancer}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-border/80 bg-muted/40 hover:bg-muted px-3 py-1.5 text-xs font-semibold text-foreground transition-all hover:border-primary/40 shadow-xs"
+                title="Ganti ke Freelancer Dashboard"
+              >
+                <Repeat className="h-3.5 w-3.5 text-primary" />
+                <span className="hidden sm:inline">Switch to Freelancer</span>
+                <span className="sm:hidden">Freelancer</span>
+              </button>
+
+              {/* User Dropdown Profile */}
+              <div className="relative">
+                <button
+                  onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                  className="flex items-center gap-2 rounded-xl p-1 hover:bg-muted/60 transition-colors"
+                >
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-xs font-bold text-white shadow-xs">
+                    {user?.email?.charAt(0).toUpperCase() || "P"}
+                  </div>
+                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground hidden sm:block" />
+                </button>
+
+                {userDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-56 rounded-2xl border border-border/80 bg-card p-2 shadow-xl z-50 animate-in fade-in-50 zoom-in-95">
+                    <div className="px-3 py-2 border-b border-border/40 mb-1">
+                      <p className="text-xs font-bold text-foreground truncate">
+                        {user?.user_metadata?.full_name || "Putra Abyasa Wedha"}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground truncate">{user?.email || "user@doable.id"}</p>
+                      <span className="inline-block mt-1 text-[10px] font-bold text-blue-600 bg-blue-500/10 px-2 py-0.5 rounded">
+                        Client Mode
+                      </span>
+                    </div>
+
+                    <Link
+                      href="/client/dashboard"
+                      onClick={() => setUserDropdownOpen(false)}
+                      className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+                    >
+                      <LayoutDashboard className="h-3.5 w-3.5" />
+                      Client Dashboard
+                    </Link>
+                    <Link
+                      href="/client/projects"
+                      onClick={() => setUserDropdownOpen(false)}
+                      className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+                    >
+                      <FolderOpen className="h-3.5 w-3.5" />
+                      My Projects & Orders
+                    </Link>
+                    <Link
+                      href="/client/talent"
+                      onClick={() => setUserDropdownOpen(false)}
+                      className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+                    >
+                      <Users className="h-3.5 w-3.5" />
+                      Find Verified Talent
+                    </Link>
+
+                    <div className="my-1 border-t border-border/40" />
+
+                    <button
+                      onClick={() => {
+                        setUserDropdownOpen(false);
+                        signOut();
+                      }}
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors"
+                    >
+                      <LogOut className="h-3.5 w-3.5" />
+                      Sign Out
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Sub-Header Categories Bar (Fiverr Style) */}
+          <div className="border-t border-border/40 bg-card/50 overflow-x-auto scrollbar-none">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-6 h-10 text-xs font-medium text-muted-foreground whitespace-nowrap">
+              <Link href="/client/talent?cat=Frontend" className="hover:text-primary transition-colors">
+                Frontend & React
+              </Link>
+              <Link href="/client/talent?cat=Backend" className="hover:text-primary transition-colors">
+                Backend & API (Python/Go)
+              </Link>
+              <Link href="/client/talent?cat=Design" className="hover:text-primary transition-colors">
+                UI/UX & Product Design
+              </Link>
+              <Link href="/client/talent?cat=AI" className="hover:text-primary transition-colors">
+                AI Agents & Machine Learning
+              </Link>
+              <Link href="/client/talent?cat=Mobile" className="hover:text-primary transition-colors">
+                Mobile Apps (Flutter/React Native)
+              </Link>
+              <Link href="/client/talent?cat=DevOps" className="hover:text-primary transition-colors">
+                Cloud & DevOps
+              </Link>
+            </div>
+          </div>
+        </header>
+
+        {/* Main Content Area */}
+        <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+          {children}
+        </main>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // 2. FREELANCER LAYOUT (LEFT SIDEBAR DASHBOARD)
+  // ==========================================
   return (
     <div className="flex h-screen bg-background">
       {/* Mobile overlay */}
@@ -61,7 +270,7 @@ function DashboardLayoutContent({
         />
       )}
 
-      {/* Sidebar */}
+      {/* Left Sidebar */}
       <aside
         className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-border/50 bg-card transition-transform duration-300 lg:static lg:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
@@ -69,7 +278,7 @@ function DashboardLayoutContent({
       >
         {/* Logo */}
         <div className="flex h-16 items-center justify-between border-b border-border/50 px-6">
-          <Link href="/" className="flex items-center gap-2">
+          <Link href="/freelancer/dashboard" className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
               <Sparkles className="h-4 w-4 text-white" />
             </div>
@@ -89,23 +298,15 @@ function DashboardLayoutContent({
         <div className="p-3 border-b border-border/40">
           <div className="flex rounded-xl bg-muted/60 p-1 text-xs font-semibold">
             <button
-              onClick={() => setRole("customer")}
-              className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-1.5 transition-all ${
-                isClient
-                  ? "bg-card text-foreground shadow-sm shadow-black/5"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
+              onClick={handleSwitchToClient}
+              className="flex-1 flex items-center justify-center gap-1.5 rounded-lg py-1.5 transition-all text-muted-foreground hover:text-foreground"
             >
               <Briefcase className="h-3.5 w-3.5" />
               <span>Client</span>
             </button>
             <button
-              onClick={() => setRole("freelancer")}
-              className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-1.5 transition-all ${
-                isFreelancer
-                  ? "bg-primary text-white shadow-sm shadow-primary/25"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
+              onClick={handleSwitchToFreelancer}
+              className="flex-1 flex items-center justify-center gap-1.5 rounded-lg py-1.5 transition-all bg-primary text-white shadow-sm shadow-primary/25"
             >
               <Compass className="h-3.5 w-3.5" />
               <span>Freelancer</span>
@@ -116,9 +317,9 @@ function DashboardLayoutContent({
         {/* Nav links */}
         <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto">
           <div className="px-3 pb-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-            {isClient ? "Client Menu" : "Freelancer Menu"}
+            Freelancer Dashboard
           </div>
-          {sidebarLinks.map((link) => {
+          {freelancerLinks.map((link) => {
             const isActive = pathname === link.href;
             return (
               <Link
@@ -140,20 +341,16 @@ function DashboardLayoutContent({
         {/* User section */}
         <div className="border-t border-border/50 p-3">
           <div className="flex items-center gap-3 rounded-lg px-3 py-2 bg-muted/30">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary to-tertiary text-xs font-bold text-white">
-              {user?.email?.charAt(0).toUpperCase() || "U"}
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-xs font-bold text-white">
+              {user?.email?.charAt(0).toUpperCase() || "P"}
             </div>
             <div className="flex-1 min-w-0">
               <p className="truncate text-sm font-medium">
-                {user?.user_metadata?.full_name || "User"}
+                {user?.user_metadata?.full_name || "Putra Abyasa Wedha"}
               </p>
               <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                <span
-                  className={`inline-block h-1.5 w-1.5 rounded-full ${
-                    isClient ? "bg-blue-500" : "bg-emerald-500"
-                  }`}
-                />
-                <span className="capitalize">{isClient ? "Client" : "Freelancer"}</span>
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                <span className="capitalize">Freelancer Pro</span>
               </div>
             </div>
           </div>
@@ -181,24 +378,9 @@ function DashboardLayoutContent({
 
             {/* Current View Badge */}
             <div className="hidden sm:flex items-center gap-2">
-              <span
-                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${
-                  isClient
-                    ? "bg-blue-500/10 text-blue-600 border border-blue-500/20"
-                    : "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
-                }`}
-              >
-                {isClient ? (
-                  <>
-                    <Briefcase className="h-3 w-3" />
-                    <span>Client View</span>
-                  </>
-                ) : (
-                  <>
-                    <Compass className="h-3 w-3" />
-                    <span>Freelancer View</span>
-                  </>
-                )}
+              <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                <Compass className="h-3 w-3" />
+                <span>Freelancer Dashboard OS</span>
               </span>
             </div>
           </div>
@@ -206,13 +388,13 @@ function DashboardLayoutContent({
           {/* Role Switcher Action in Header */}
           <div className="flex items-center gap-3">
             <button
-              onClick={toggleRole}
+              onClick={handleSwitchToClient}
               className="inline-flex items-center gap-2 rounded-xl border border-border/80 bg-background px-3 py-1.5 text-xs font-semibold text-foreground transition-all hover:bg-muted hover:border-primary/40 shadow-sm"
-              title="Ganti mode dashboard antara Client dan Freelancer"
+              title="Ganti ke Client Marketplace Hub"
             >
               <Repeat className="h-3.5 w-3.5 text-primary" />
-              <span className="hidden sm:inline">Switch to {isClient ? "Freelancer Mode" : "Client Mode"}</span>
-              <span className="sm:hidden">Switch Mode</span>
+              <span className="hidden sm:inline">Switch to Client Mode</span>
+              <span className="sm:hidden">Client</span>
             </button>
           </div>
         </header>

@@ -22,6 +22,7 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import Link from "next/link";
+import Grainient from "@/components/ui/Grainient";
 
 interface QuestOpportunity {
   id: string;
@@ -208,6 +209,7 @@ export function FreelancerDashboard() {
   const [activeDeliverable, setActiveDeliverable] = useState<string | null>(null);
 
   // Gamification state
+  const freelancerName = user?.user_metadata?.full_name || "Putra Abyasa Wedha";
   const currentLevel = user?.user_metadata?.level || 3;
   const currentXP = user?.user_metadata?.xp || 2450;
   const nextLevelXP = 3000;
@@ -308,7 +310,68 @@ export function FreelancerDashboard() {
   ];
 
   return (
-    <div className="animate-fade-in space-y-3.5">
+    <div className="animate-fade-in space-y-4">
+      {/* 0. Hero Grainient Welcome Banner */}
+      <div className="relative overflow-hidden rounded-2xl p-6 md:p-7 text-white shadow-xl border border-white/10">
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <Grainient
+            color1="#10B981"
+            color2="#2563EB"
+            color3="#0F172A"
+            timeSpeed={0.2}
+            colorBalance={0.0}
+            warpStrength={1.0}
+            warpFrequency={5.0}
+            warpSpeed={2.0}
+            warpAmplitude={50.0}
+            blendAngle={0.0}
+            blendSoftness={0.05}
+            rotationAmount={500.0}
+            noiseScale={2.0}
+            grainAmount={0.1}
+            grainScale={2.0}
+            grainAnimated={false}
+            contrast={1.4}
+            gamma={1.0}
+            saturation={1.05}
+            centerX={0.0}
+            centerY={0.0}
+            zoom={0.9}
+          />
+        </div>
+        <div className="absolute inset-0 z-[1] bg-black/35 backdrop-blur-[1px] pointer-events-none" />
+        <div className="relative z-10 flex flex-col justify-between gap-4 md:flex-row md:items-center">
+          <div className="space-y-1.5">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 font-sans text-xs font-semibold backdrop-blur-md">
+              <Sparkles className="h-3.5 w-3.5 text-amber-300" />
+              <span>Freelancer Quest OS • Tier Pro Level {currentLevel}</span>
+            </div>
+            <h1 className="font-heading text-xl font-normal tracking-tight md:text-2xl lg:text-3xl leading-snug">
+              Welcome back, {freelancerName}!
+            </h1>
+            <p className="max-w-xl font-sans text-xs md:text-sm text-slate-200 leading-relaxed">
+              Jelajahi quest terbaru dengan proteksi pembayaran escrow 100%, tingkatkan level keahlianmu, dan selesaikan milestone aktif.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5">
+            <Link
+              href="/freelancer/explore"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 font-sans text-xs font-semibold text-white shadow-lg shadow-primary/30 transition-all hover:bg-primary-600 hover:scale-[1.02]"
+            >
+              <Compass className="h-4 w-4" />
+              <span>Explore All Quests</span>
+            </Link>
+            <Link
+              href="/freelancer/my-work"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2 font-sans text-xs font-medium text-white backdrop-blur-md transition-colors hover:bg-white/20"
+            >
+              <Briefcase className="h-4 w-4" />
+              <span>Active Work ({mockActiveContracts.length})</span>
+            </Link>
+          </div>
+        </div>
+      </div>
       {/* 1. Top Metrics Grid: Level & XP Progression + Statistik Kerja Cards */}
       <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
         {/* Level & XP Progression Card */}

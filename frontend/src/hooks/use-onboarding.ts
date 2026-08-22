@@ -167,9 +167,13 @@ export function useOnboarding() {
   }, [data, supabase]);
 
   const finishAndGoToDashboard = useCallback(() => {
-    router.push("/dashboard");
+    if (data.role === "customer") {
+      router.push("/client/dashboard");
+    } else {
+      router.push("/freelancer/dashboard");
+    }
     router.refresh();
-  }, [router]);
+  }, [data.role, router]);
 
   return {
     step,
