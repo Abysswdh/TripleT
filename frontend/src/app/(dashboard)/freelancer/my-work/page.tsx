@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { Briefcase, Clock, CheckCircle2, FileCode } from "lucide-react";
 import Link from "next/link";

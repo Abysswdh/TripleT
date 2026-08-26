@@ -2,7 +2,6 @@
 
 import { useState, useMemo, useEffect } from "react";
 import {
-  Search,
   Sparkles,
   ShieldCheck,
   Star,
@@ -18,21 +17,12 @@ import {
   Clock,
   Users,
   FolderOpen,
-  Zap,
   Check,
   X,
-  ChevronRight,
   ChevronDown,
-  DollarSign,
-  TrendingUp,
   Send,
-  FileText,
-  Filter,
-  Eye,
   Flame,
   Layers,
-  HelpCircle,
-  Briefcase,
   Heart,
 } from "lucide-react";
 import Link from "next/link";
@@ -446,7 +436,7 @@ export function ClientDashboard() {
     let rafId: number;
     const handleScroll = () => {
       rafId = requestAnimationFrame(() => {
-        const range = 260; // scroll distance for linear scale-down
+        const range = 550; // scroll distance for linear scale-down (slower, smooth progression)
         const current = window.scrollY;
         const prog = Math.min(Math.max(current / range, 0), 1);
         setScrollProgress(prog);
@@ -591,7 +581,7 @@ export function ClientDashboard() {
   };
 
   return (
-    <div className="animate-fade-in w-full space-y-10">
+    <div className="w-full space-y-10">
       {/* ============================================================ */}
       {/* 1. HERO PROJECT CREATION HUB & QUICK AI/TEMPLATE LAUNCHER */}
       {/* ============================================================ */}
@@ -1318,7 +1308,7 @@ export function ClientDashboard() {
                   </div>
 
                   <p className="text-xs text-foreground/90 line-clamp-1 italic font-light">
-                    "{app.pitch}"
+                    &ldquo;{app.pitch}&rdquo;
                   </p>
 
                   <div className="text-[10px] text-muted-foreground pt-1 flex items-center justify-between">
@@ -1373,8 +1363,13 @@ export function ClientDashboard() {
       {/* 8. INTERACTIVE MULTI-STEP "PASANG PROYEK BARU" MODAL */}
       {/* ============================================================ */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4 animate-in fade-in duration-200">
-          <div className="relative w-full max-w-2xl rounded-3xl border border-border/80 bg-card p-6 md:p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200 overflow-y-auto">
+          {/* Backdrop with blur and no darkening */}
+          <div
+            className="fixed inset-0 bg-background/25 backdrop-blur-md transition-opacity"
+            onClick={() => setIsCreateModalOpen(false)}
+          />
+          <div className="relative z-10 w-full max-w-2xl rounded-3xl border border-border/80 bg-card p-6 md:p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setIsCreateModalOpen(false)}
               className="absolute right-5 top-5 rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -1703,8 +1698,13 @@ export function ClientDashboard() {
       {/* 9. PROPOSAL REVIEW MODAL */}
       {/* ============================================================ */}
       {selectedProjectForProposals && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4 animate-in fade-in duration-200">
-          <div className="relative w-full max-w-3xl rounded-3xl border border-border/80 bg-card p-6 md:p-8 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200 overflow-y-auto">
+          {/* Backdrop with blur and no darkening */}
+          <div
+            className="fixed inset-0 bg-background/25 backdrop-blur-md transition-opacity"
+            onClick={() => setSelectedProjectForProposals(null)}
+          />
+          <div className="relative z-10 w-full max-w-3xl rounded-3xl border border-border/80 bg-card p-6 md:p-8 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setSelectedProjectForProposals(null)}
               className="absolute right-5 top-5 rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -1820,8 +1820,13 @@ export function ClientDashboard() {
       {/* 10. INVITE TALENT TO PROJECT MODAL */}
       {/* ============================================================ */}
       {selectedTalentForInvite && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4 animate-in fade-in duration-200">
-          <div className="relative w-full max-w-lg rounded-3xl border border-border/80 bg-card p-6 md:p-8 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200 overflow-y-auto">
+          {/* Backdrop with blur and no darkening */}
+          <div
+            className="fixed inset-0 bg-background/25 backdrop-blur-md transition-opacity"
+            onClick={() => setSelectedTalentForInvite(null)}
+          />
+          <div className="relative z-10 w-full max-w-lg rounded-3xl border border-border/80 bg-card p-6 md:p-8 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setSelectedTalentForInvite(null)}
               className="absolute right-5 top-5 rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
