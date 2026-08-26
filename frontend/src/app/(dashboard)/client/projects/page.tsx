@@ -115,13 +115,12 @@ export default function ClientProjectsPage() {
                   {p.category}
                 </span>
                 <span
-                  className={`rounded-md px-2.5 py-0.5 text-xs font-semibold ${
-                    p.status === "Hiring"
+                  className={`rounded-md px-2.5 py-0.5 text-xs font-semibold ${p.status === "Hiring"
                       ? "bg-amber-500/10 text-amber-600"
                       : p.status === "In Progress"
-                      ? "bg-blue-500/10 text-blue-600"
-                      : "bg-emerald-500/10 text-emerald-600"
-                  }`}
+                        ? "bg-blue-500/10 text-blue-600"
+                        : "bg-emerald-500/10 text-emerald-600"
+                    }`}
                 >
                   {p.status}
                 </span>

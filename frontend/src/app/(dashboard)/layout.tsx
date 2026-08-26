@@ -96,7 +96,7 @@ function DashboardLayoutContent({
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <input
                   type="text"
-                  placeholder="Cari keahlian, jasa, atau talent terverifikasi..."
+                  placeholder="Cari proyek, blueprint template, atau talent terverifikasi..."
                   className="h-9 w-full rounded-xl border border-border/80 bg-muted/40 pl-9 pr-4 text-xs placeholder:text-muted-foreground focus:border-primary focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
                 />
               </div>
@@ -107,33 +107,30 @@ function DashboardLayoutContent({
               <nav className="hidden lg:flex items-center gap-1 text-xs font-semibold">
                 <Link
                   href="/client/dashboard"
-                  className={`px-3 py-2 rounded-lg transition-colors ${
-                    pathname === "/client/dashboard"
+                  className={`px-3 py-2 rounded-lg transition-colors ${pathname === "/client/dashboard"
                       ? "text-primary bg-primary/10"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-                  }`}
+                    }`}
                 >
-                  Explore Services
-                </Link>
-                <Link
-                  href="/client/talent"
-                  className={`px-3 py-2 rounded-lg transition-colors ${
-                    pathname === "/client/talent"
-                      ? "text-primary bg-primary/10"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-                  }`}
-                >
-                  Find Talent
+                  Project Hub
                 </Link>
                 <Link
                   href="/client/projects"
-                  className={`px-3 py-2 rounded-lg transition-colors ${
-                    pathname === "/client/projects"
+                  className={`px-3 py-2 rounded-lg transition-colors ${pathname === "/client/projects"
                       ? "text-primary bg-primary/10"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-                  }`}
+                    }`}
                 >
                   My Projects
+                </Link>
+                <Link
+                  href="/client/talent"
+                  className={`px-3 py-2 rounded-lg transition-colors ${pathname === "/client/talent"
+                      ? "text-primary bg-primary/10"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                    }`}
+                >
+                  Find Talent
                 </Link>
               </nav>
 
@@ -143,7 +140,7 @@ function DashboardLayoutContent({
                 className="hidden sm:inline-flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-2 text-xs font-semibold text-white shadow-sm shadow-primary/25 hover:bg-primary-600 transition-all hover:scale-[1.02]"
               >
                 <Plus className="h-3.5 w-3.5" />
-                <span>Post a Quest</span>
+                <span>Post Project</span>
               </Link>
 
               {/* Switch Mode Button */}
@@ -250,7 +247,7 @@ function DashboardLayoutContent({
         </header>
 
         {/* Main Content Area */}
-        <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 w-full pb-16">
           {children}
         </main>
       </div>
@@ -272,9 +269,8 @@ function DashboardLayoutContent({
 
       {/* Left Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-border/50 bg-card transition-transform duration-300 lg:static lg:translate-x-0 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-border/50 bg-card transition-transform duration-300 lg:static lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
       >
         {/* Logo */}
         <div className="flex h-16 items-center justify-between border-b border-border/50 px-6">
@@ -325,11 +321,10 @@ function DashboardLayoutContent({
               <Link
                 key={link.href}
                 href={link.href}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
-                  isActive
+                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${isActive
                     ? "bg-primary/10 text-primary font-semibold"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                }`}
+                  }`}
               >
                 <link.icon className="h-4 w-4" />
                 {link.label}
