@@ -154,7 +154,7 @@ const PROJECT_TEMPLATES: ProjectTemplate[] = [
     estimatedDuration: "5 - 10 hari",
     difficulty: "Standard",
     skills: ["Python", "FastAPI", "OpenAI", "LangChain", "Vector DB"],
-    thumbnail: "https://images.unsplash.com/photo-1677442136019-21780efad99a?w=600&auto=format&fit=crop&q=80",
+    thumbnail: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=600&auto=format&fit=crop&q=80",
     milestonesCount: 3,
     popularityScore: 96,
   },
@@ -247,7 +247,7 @@ const FEATURED_TALENTS: FeaturedTalent[] = [
     level: "Verified Pro",
     category: "AI & Machine",
     serviceTitle: "Integrasi AI Voice Agent & LLM Chatbot dengan FastAPI, WebSockets & OpenAI",
-    thumbnail: "https://images.unsplash.com/photo-1677442136019-21780efad99a?w=600&auto=format&fit=crop&q=80",
+    thumbnail: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=600&auto=format&fit=crop&q=80",
     rating: 4.9,
     reviewsCount: 29,
     startingPrice: "Rp 5.500.000",
@@ -654,11 +654,6 @@ export function ClientDashboard() {
           <div className="absolute -left-20 -bottom-20 h-80 w-80 rounded-full bg-indigo-500/20 blur-3xl pointer-events-none" />
 
           <div className="relative z-10 max-w-3xl mx-auto w-full space-y-5 flex flex-col items-center text-center">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1 text-xs font-semibold backdrop-blur-md border border-white/10 mx-auto">
-              <Sparkles className="h-3.5 w-3.5 text-amber-300" />
-              <span>Doable! Client Project Creation Hub</span>
-            </div>
-
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight text-center">
               Wujudkan Ide Digitalmu Menjadi Proyek Nyata.
             </h1>
@@ -994,6 +989,10 @@ export function ClientDashboard() {
                   <img
                     src={tpl.thumbnail}
                     alt={tpl.title}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src =
+                        "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&auto=format&fit=crop&q=80";
+                    }}
                     className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
@@ -1125,6 +1124,10 @@ export function ClientDashboard() {
                   <img
                     src={tal.thumbnail}
                     alt={tal.serviceTitle}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src =
+                        "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&auto=format&fit=crop&q=80";
+                    }}
                     className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                   <button
@@ -1151,6 +1154,10 @@ export function ClientDashboard() {
                     <img
                       src={tal.avatar}
                       alt={tal.name}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src =
+                          "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80";
+                      }}
                       className="h-7 w-7 rounded-full object-cover border border-border shrink-0"
                     />
                     <div className="min-w-0 flex-1">
