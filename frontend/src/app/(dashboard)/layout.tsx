@@ -2,9 +2,20 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { RoleProvider, useDashboardRole } from "@/context/role-context";
+import logoWithText from "@/assets/logo_with_text.svg";
+import logoWithoutText from "@/assets/logo_wo_text.svg";
+
+// =========================================================================
+// 🎨 LOGO SIZE CONFIGURATION (Edit height in pixels to customize size)
+// =========================================================================
+const CLIENT_NAVBAR_LOGO_HEIGHT = 65;       // Client Dashboard Navbar (e.g. 26, 28, 32, 36)
+const FREELANCER_SIDEBAR_LOGO_HEIGHT = 65;  // Freelancer Dashboard Sidebar (e.g. 26, 28, 30)
+// =========================================================================
+
 import {
   Sparkles,
   LayoutDashboard,
@@ -78,14 +89,21 @@ function DashboardLayoutContent({
           {/* Main Top Header Bar */}
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
             {/* Left: Brand Logo & Search */}
-            <div className="flex items-center gap-6 flex-1">
-              <Link href="/client/dashboard" className="flex items-center gap-2.5 shrink-0">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary shadow-sm shadow-primary/25">
-                  <Sparkles className="h-4.5 w-4.5 text-white" />
-                </div>
-                <span className="font-heading text-lg font-bold tracking-tight text-foreground">
-                  Doable<span className="text-primary">!</span>
-                </span>
+            <div className="flex items-center gap-5 flex-1">
+              <Link href="/client/dashboard" className="flex items-center gap-3 shrink-0 group">
+                <Image
+                  src={logoWithText}
+                  alt="Doable! Logo"
+                  height={CLIENT_NAVBAR_LOGO_HEIGHT}
+                  width={Math.round(CLIENT_NAVBAR_LOGO_HEIGHT * (1994 / 710))}
+                  style={{
+                    height: `${CLIENT_NAVBAR_LOGO_HEIGHT}px`,
+                    width: "auto",
+                    maxHeight: `${CLIENT_NAVBAR_LOGO_HEIGHT}px`,
+                  }}
+                  className="object-contain block select-none"
+                  priority
+                />
                 <span className="hidden sm:inline-block rounded-md bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 text-[10px] font-bold text-blue-600">
                   Client Hub
                 </span>
@@ -108,8 +126,8 @@ function DashboardLayoutContent({
                 <Link
                   href="/client/dashboard"
                   className={`px-3 py-2 rounded-lg transition-colors ${pathname === "/client/dashboard"
-                      ? "text-primary bg-primary/10"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                    ? "text-primary bg-primary/10"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                     }`}
                 >
                   Project Hub
@@ -117,8 +135,8 @@ function DashboardLayoutContent({
                 <Link
                   href="/client/projects"
                   className={`px-3 py-2 rounded-lg transition-colors ${pathname === "/client/projects"
-                      ? "text-primary bg-primary/10"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                    ? "text-primary bg-primary/10"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                     }`}
                 >
                   My Projects
@@ -126,8 +144,8 @@ function DashboardLayoutContent({
                 <Link
                   href="/client/talent"
                   className={`px-3 py-2 rounded-lg transition-colors ${pathname === "/client/talent"
-                      ? "text-primary bg-primary/10"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                    ? "text-primary bg-primary/10"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                     }`}
                 >
                   Find Talent
@@ -275,12 +293,19 @@ function DashboardLayoutContent({
         {/* Logo */}
         <div className="flex h-16 items-center justify-between border-b border-border/50 px-6">
           <Link href="/freelancer/dashboard" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-              <Sparkles className="h-4 w-4 text-white" />
-            </div>
-            <span className="font-heading text-base font-normal tracking-tight">
-              Doable<span className="text-primary">!</span>
-            </span>
+            <Image
+              src={logoWithText}
+              alt="Doable! Logo"
+              height={FREELANCER_SIDEBAR_LOGO_HEIGHT}
+              width={Math.round(FREELANCER_SIDEBAR_LOGO_HEIGHT * (1994 / 710))}
+              style={{
+                height: `${FREELANCER_SIDEBAR_LOGO_HEIGHT}px`,
+                width: "auto",
+                maxHeight: `${FREELANCER_SIDEBAR_LOGO_HEIGHT}px`,
+              }}
+              className="object-contain block select-none"
+              priority
+            />
           </Link>
           <button
             onClick={() => setSidebarOpen(false)}
@@ -322,8 +347,8 @@ function DashboardLayoutContent({
                 key={link.href}
                 href={link.href}
                 className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${isActive
-                    ? "bg-primary/10 text-primary font-semibold"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  ? "bg-primary/10 text-primary font-semibold"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   }`}
               >
                 <link.icon className="h-4 w-4" />

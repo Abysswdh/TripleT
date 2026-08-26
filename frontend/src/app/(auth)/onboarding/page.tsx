@@ -144,13 +144,12 @@ export default function OnboardingPage() {
               {[1, 2, 3, 4].map((i) => (
                 <div
                   key={i}
-                  className={`h-2 rounded-full transition-all duration-500 ease-out ${
-                    i === step
+                  className={`h-2 rounded-full transition-all duration-500 ease-out ${i === step
                       ? "w-7 bg-white shadow-sm shadow-white/50"
                       : i < step
-                      ? "w-2.5 bg-blue-300"
-                      : "w-2 bg-white/25"
-                  }`}
+                        ? "w-2.5 bg-blue-300"
+                        : "w-2 bg-white/25"
+                    }`}
                 />
               ))}
             </div>

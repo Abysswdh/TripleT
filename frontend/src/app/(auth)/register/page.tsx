@@ -203,15 +203,14 @@ export default function RegisterPage() {
                 {[1, 2, 3, 4].map((i) => (
                   <div
                     key={i}
-                    className={`h-1 flex-1 rounded-full transition-colors ${
-                      password.length >= i * 3
+                    className={`h-1 flex-1 rounded-full transition-colors ${password.length >= i * 3
                         ? password.length >= 12
                           ? "bg-emerald-500"
                           : password.length >= 8
-                          ? "bg-amber-500"
-                          : "bg-red-500"
+                            ? "bg-amber-500"
+                            : "bg-red-500"
                         : "bg-muted"
-                    }`}
+                      }`}
                   />
                 ))}
               </div>
