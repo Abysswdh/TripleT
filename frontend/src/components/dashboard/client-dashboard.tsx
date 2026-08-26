@@ -744,620 +744,620 @@ export function ClientDashboard() {
       {/* 2. INNER CONTAINER FOR OTHER DASHBOARD SECTIONS */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 w-full pt-4">
 
-      {/* ============================================================ */}
-      {/* 2. ACTIVE PROJECTS PIPELINE & PROPOSAL MANAGEMENT */}
-      {/* ============================================================ */}
-      <div className="rounded-2xl border border-border/70 bg-card p-6 shadow-sm space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <FolderOpen className="h-5 w-5 text-primary" />
-              <h2 className="text-lg font-bold text-foreground">
-                Proyek Saya ({projects.length})
-              </h2>
+        {/* ============================================================ */}
+        {/* 2. ACTIVE PROJECTS PIPELINE & PROPOSAL MANAGEMENT */}
+        {/* ============================================================ */}
+        <div className="rounded-2xl border border-border/70 bg-card p-6 shadow-sm space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <FolderOpen className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-bold text-foreground">
+                  Proyek Saya ({projects.length})
+                </h2>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Pantau status hiring, seleksi proposal masuk, dan progres penyelesaian milestone pengerjaan.
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Pantau status hiring, seleksi proposal masuk, dan progres penyelesaian milestone pengerjaan.
-            </p>
-          </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                setCreateStep(1);
-                setIsCreateModalOpen(true);
-              }}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-primary hover:bg-primary-600 text-white px-4 py-2 text-xs font-semibold shadow-sm shadow-primary/20 transition-all hover:scale-[1.02]"
-            >
-              <Plus className="h-4 w-4" />
-              <span>Pasang Proyek Baru</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Filter Status Tabs */}
-        <div className="flex flex-wrap items-center gap-2 border-b border-border/60 pb-3">
-          {(["All", "Hiring", "In Progress", "Completed"] as const).map((status) => {
-            const count = status === "All" ? projects.length : projects.filter((p) => p.status === status).length;
-            const label = status === "All" ? "Semua Proyek" : status === "Hiring" ? "Dalam Seleksi" : status === "In Progress" ? "Sedang Berjalan" : "Selesai";
-            const isActive = projectStatusFilter === status;
-
-            return (
+            <div className="flex items-center gap-2">
               <button
-                key={status}
-                onClick={() => setProjectStatusFilter(status)}
-                className={`flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all ${isActive
+                onClick={() => {
+                  setCreateStep(1);
+                  setIsCreateModalOpen(true);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-primary hover:bg-primary-600 text-white px-4 py-2 text-xs font-semibold shadow-sm shadow-primary/20 transition-all hover:scale-[1.02]"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Pasang Proyek Baru</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Filter Status Tabs */}
+          <div className="flex flex-wrap items-center gap-2 border-b border-border/60 pb-3">
+            {(["All", "Hiring", "In Progress", "Completed"] as const).map((status) => {
+              const count = status === "All" ? projects.length : projects.filter((p) => p.status === status).length;
+              const label = status === "All" ? "Semua Proyek" : status === "Hiring" ? "Dalam Seleksi" : status === "In Progress" ? "Sedang Berjalan" : "Selesai";
+              const isActive = projectStatusFilter === status;
+
+              return (
+                <button
+                  key={status}
+                  onClick={() => setProjectStatusFilter(status)}
+                  className={`flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all ${isActive
                     ? "bg-primary text-white shadow-xs"
                     : "border border-border/80 bg-muted/40 text-muted-foreground hover:text-foreground hover:bg-muted"
-                  }`}
-              >
-                <span>{label}</span>
-                <span
-                  className={`rounded-full px-1.5 py-0.2 text-[10px] ${isActive ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"
                     }`}
                 >
-                  {count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+                  <span>{label}</span>
+                  <span
+                    className={`rounded-full px-1.5 py-0.2 text-[10px] ${isActive ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"
+                      }`}
+                  >
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
 
-        {/* Project Pipeline List */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredProjects.map((proj) => {
-            const completedMilestones = proj.milestones.filter((m) => m.status === "completed").length;
-            const totalMilestones = proj.milestones.length;
-            const progressPercent = totalMilestones > 0 ? Math.round((completedMilestones / totalMilestones) * 100) : 0;
+          {/* Project Pipeline List */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredProjects.map((proj) => {
+              const completedMilestones = proj.milestones.filter((m) => m.status === "completed").length;
+              const totalMilestones = proj.milestones.length;
+              const progressPercent = totalMilestones > 0 ? Math.round((completedMilestones / totalMilestones) * 100) : 0;
 
-            return (
-              <div
-                key={proj.id}
-                className="group flex flex-col justify-between rounded-2xl border border-border/70 bg-card p-5 shadow-xs transition-all hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5 space-y-4"
-              >
-                <div className="space-y-3">
-                  {/* Category & Live Status */}
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="rounded-md bg-primary/10 border border-primary/20 px-2 py-0.5 text-[11px] font-semibold text-primary">
-                      {proj.category}
-                    </span>
-                    <span
-                      className={`inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-semibold ${proj.status === "Hiring"
+              return (
+                <div
+                  key={proj.id}
+                  className="group flex flex-col justify-between rounded-2xl border border-border/70 bg-card p-5 shadow-xs transition-all hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5 space-y-4"
+                >
+                  <div className="space-y-3">
+                    {/* Category & Live Status */}
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="rounded-md bg-primary/10 border border-primary/20 px-2 py-0.5 text-[11px] font-semibold text-primary">
+                        {proj.category}
+                      </span>
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-semibold ${proj.status === "Hiring"
                           ? "bg-amber-500/10 text-amber-600 border border-amber-500/20"
                           : proj.status === "In Progress"
                             ? "bg-blue-500/10 text-blue-600 border border-blue-500/20"
                             : "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
-                        }`}
-                    >
-                      <span
-                        className={`h-1.5 w-1.5 rounded-full ${proj.status === "Hiring"
+                          }`}
+                      >
+                        <span
+                          className={`h-1.5 w-1.5 rounded-full ${proj.status === "Hiring"
                             ? "bg-amber-500 animate-pulse"
                             : proj.status === "In Progress"
                               ? "bg-blue-500 animate-pulse"
                               : "bg-emerald-500"
-                          }`}
-                      />
-                      {proj.status}
-                    </span>
-                  </div>
+                            }`}
+                        />
+                        {proj.status}
+                      </span>
+                    </div>
 
-                  {/* Title & Description */}
-                  <div>
-                    <h3 className="font-sans font-medium text-sm text-foreground line-clamp-1 group-hover:text-primary transition-colors">
-                      {proj.title}
-                    </h3>
-                    <p className="mt-1 text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-                      {proj.description}
-                    </p>
-                  </div>
-
-                  {/* Budget & Timeline Pill Strip */}
-                  <div className="flex items-center justify-between text-xs py-1.5 border-y border-border/40">
+                    {/* Title & Description */}
                     <div>
-                      <span className="text-[10px] text-muted-foreground block font-medium">Anggaran Escrow</span>
-                      <span className="font-bold text-foreground text-sm">{proj.budget}</span>
+                      <h3 className="font-sans font-medium text-sm text-foreground line-clamp-1 group-hover:text-primary transition-colors">
+                        {proj.title}
+                      </h3>
+                      <p className="mt-1 text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                        {proj.description}
+                      </p>
                     </div>
-                    <div className="text-right">
-                      <span className="text-[10px] text-muted-foreground block font-medium">Target Deadline</span>
-                      <span className="font-semibold text-foreground flex items-center gap-1 justify-end">
-                        <Clock className="h-3 w-3 text-muted-foreground" />
-                        {proj.dueDate}
-                      </span>
+
+                    {/* Budget & Timeline Pill Strip */}
+                    <div className="flex items-center justify-between text-xs py-1.5 border-y border-border/40">
+                      <div>
+                        <span className="text-[10px] text-muted-foreground block font-medium">Anggaran Escrow</span>
+                        <span className="font-bold text-foreground text-sm">{proj.budget}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[10px] text-muted-foreground block font-medium">Target Deadline</span>
+                        <span className="font-semibold text-foreground flex items-center gap-1 justify-end">
+                          <Clock className="h-3 w-3 text-muted-foreground" />
+                          {proj.dueDate}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Milestone Progress Bar */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-muted-foreground font-medium">
+                          Milestone Selesai ({completedMilestones}/{totalMilestones})
+                        </span>
+                        <span className="font-bold text-foreground">{progressPercent}%</span>
+                      </div>
+                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                        <div
+                          className="h-full bg-gradient-to-r from-primary to-indigo-500 rounded-full transition-all duration-500"
+                          style={{ width: `${progressPercent}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Required Skills Chips */}
+                    <div className="flex flex-wrap gap-1">
+                      {proj.skills.slice(0, 3).map((skill) => (
+                        <span
+                          key={skill}
+                          className="rounded-md bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                      {proj.skills.length > 3 && (
+                        <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                          +{proj.skills.length - 3}
+                        </span>
+                      )}
                     </div>
                   </div>
 
-                  {/* Milestone Progress Bar */}
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between text-[11px]">
-                      <span className="text-muted-foreground font-medium">
-                        Milestone Selesai ({completedMilestones}/{totalMilestones})
-                      </span>
-                      <span className="font-bold text-foreground">{progressPercent}%</span>
-                    </div>
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                      <div
-                        className="h-full bg-gradient-to-r from-primary to-indigo-500 rounded-full transition-all duration-500"
-                        style={{ width: `${progressPercent}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Required Skills Chips */}
-                  <div className="flex flex-wrap gap-1">
-                    {proj.skills.slice(0, 3).map((skill) => (
-                      <span
-                        key={skill}
-                        className="rounded-md bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
+                  {/* Card Footer Actions */}
+                  <div className="pt-3 border-t border-border/40 flex items-center justify-between gap-2">
+                    {proj.applicants.length > 0 ? (
+                      <button
+                        onClick={() => setSelectedProjectForProposals(proj)}
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary px-3 py-2 text-xs font-semibold transition-colors"
                       >
-                        {skill}
-                      </span>
-                    ))}
-                    {proj.skills.length > 3 && (
-                      <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                        +{proj.skills.length - 3}
+                        <Users className="h-3.5 w-3.5" />
+                        <span>Tinjau Proposal ({proj.applicants.length})</span>
+                      </button>
+                    ) : (
+                      <span className="text-xs text-muted-foreground italic flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        <span>Menunggu pelamar...</span>
                       </span>
                     )}
-                  </div>
-                </div>
 
-                {/* Card Footer Actions */}
-                <div className="pt-3 border-t border-border/40 flex items-center justify-between gap-2">
-                  {proj.applicants.length > 0 ? (
-                    <button
-                      onClick={() => setSelectedProjectForProposals(proj)}
-                      className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary px-3 py-2 text-xs font-semibold transition-colors"
+                    <Link
+                      href="/client/projects"
+                      className="rounded-xl border border-border/80 bg-card hover:bg-muted p-2 text-muted-foreground hover:text-foreground transition-colors"
+                      title="Detail Proyek"
                     >
-                      <Users className="h-3.5 w-3.5" />
-                      <span>Tinjau Proposal ({proj.applicants.length})</span>
-                    </button>
-                  ) : (
-                    <span className="text-xs text-muted-foreground italic flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      <span>Menunggu pelamar...</span>
-                    </span>
-                  )}
-
-                  <Link
-                    href="/client/projects"
-                    className="rounded-xl border border-border/80 bg-card hover:bg-muted p-2 text-muted-foreground hover:text-foreground transition-colors"
-                    title="Detail Proyek"
-                  >
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ============================================================ */}
-      {/* 3. READY-TO-USE PROJECT BLUEPRINTS & TEMPLATES (TOP ROW - 3) */}
-      {/* ============================================================ */}
-      <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary mb-1">
-              <Sparkles className="h-3.5 w-3.5" />
-              <span>Blueprint Proyek Teruji & Siap Rilis</span>
-            </div>
-            <h2 className="text-xl font-bold tracking-tight text-foreground">
-              Template Proyek Siap Pakai
-            </h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Gunakan blueprint terstruktur dengan estimasi biaya dan milestone terstandarisasi untuk mempercepat peluncuran produkmu.
-            </p>
-          </div>
-
-          {/* Category Filter Chips */}
-          <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
-            {["Semua", "Frontend", "Mobile", "AI & Machine", "UI/UX", "Backend"].map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setTemplateCategory(cat)}
-                className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${templateCategory === cat
-                    ? "bg-primary text-white shadow-xs"
-                    : "border border-border/80 bg-card text-muted-foreground hover:text-foreground hover:bg-muted/60"
-                  }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Blueprint Templates Grid (Top 3 items for compact layout) */}
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredTemplates.slice(0, 3).map((tpl) => (
-            <div
-              key={tpl.id}
-              className="group flex flex-col justify-between rounded-2xl border border-border/70 bg-card overflow-hidden shadow-xs transition-all hover:border-primary/40 hover:shadow-lg hover:-translate-y-1"
-            >
-              <div>
-                {/* Thumbnail Image with Glass Badge */}
-                <div className="relative aspect-[16/9] w-full overflow-hidden bg-muted">
-                  <img
-                    src={tpl.thumbnail}
-                    alt={tpl.title}
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src =
-                        "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&auto=format&fit=crop&q=80";
-                    }}
-                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                  <span className={`absolute top-2.5 left-2.5 rounded-md px-2 py-0.5 text-[10px] font-bold backdrop-blur-md border ${tpl.badgeColor} bg-black/40`}>
-                    {tpl.badge}
-                  </span>
-                  <span className="absolute bottom-2 left-2.5 rounded-md bg-white/15 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-md">
-                    {tpl.category}
-                  </span>
-                </div>
-
-                {/* Content */}
-                <div className="p-4 space-y-3">
-                  <h3 className="font-sans font-medium text-sm text-foreground leading-snug group-hover:text-primary transition-colors">
-                    {tpl.title}
-                  </h3>
-
-                  <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-                    {tpl.description}
-                  </p>
-
-                  {/* Meta stats: Duration & Milestones */}
-                  <div className="grid grid-cols-2 gap-2 text-xs py-2 border-y border-border/40">
-                    <div>
-                      <span className="text-[10px] text-muted-foreground block">Estimasi Durasi</span>
-                      <span className="font-semibold text-foreground flex items-center gap-1">
-                        <Clock className="h-3 w-3 text-muted-foreground" />
-                        {tpl.estimatedDuration}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-muted-foreground block">Rencana Milestone</span>
-                      <span className="font-semibold text-foreground flex items-center gap-1">
-                        <Layers className="h-3 w-3 text-muted-foreground" />
-                        {tpl.milestonesCount} Tahapan
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Skills tags */}
-                  <div className="flex flex-wrap gap-1">
-                    {tpl.skills.map((skill) => (
-                      <span
-                        key={skill}
-                        className="rounded-md bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
-                      >
-                        {skill}
-                      </span>
-                    ))}
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
                   </div>
                 </div>
-              </div>
-
-              {/* Card Footer: Budget range & 1-Click Launch Button */}
-              <div className="border-t border-border/40 p-4 pt-3 flex items-center justify-between gap-3 bg-muted/10">
-                <div>
-                  <span className="text-[10px] text-muted-foreground block uppercase font-semibold">Estimasi Budget</span>
-                  <span className="text-xs font-bold text-primary">{tpl.estimatedBudget}</span>
-                </div>
-
-                <button
-                  onClick={() => handleApplyTemplate(tpl)}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-2 text-xs font-semibold text-white shadow-xs hover:bg-primary-600 transition-all hover:scale-[1.02]"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  <span>Pakai Blueprint</span>
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ============================================================ */}
-      {/* 4. CARI TALENTA & JASA TERVERIFIKASI (TALENT MARKETPLACE ROW) */}
-      {/* ============================================================ */}
-      <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 mb-1">
-              <CheckCircle2 className="h-3.5 w-3.5" />
-              <span>100% Talent Telah Diverifikasi & Lulus Skill Test</span>
-            </div>
-            <h2 className="text-xl font-bold tracking-tight text-foreground">
-              Cari Talenta & Jasa Pilihan Teratas
-            </h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Temukan dan rekrut langsung freelancer teruji yang siap mengeksekusi kebutuhan proyekmu.
-            </p>
+              );
+            })}
           </div>
+        </div>
 
-          <div className="flex flex-wrap items-center gap-3 self-start sm:self-auto">
+        {/* ============================================================ */}
+        {/* 3. READY-TO-USE PROJECT BLUEPRINTS & TEMPLATES (TOP ROW - 3) */}
+        {/* ============================================================ */}
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary mb-1">
+                <Sparkles className="h-3.5 w-3.5" />
+                <span>Blueprint Proyek Teruji & Siap Rilis</span>
+              </div>
+              <h2 className="text-xl font-bold tracking-tight text-foreground">
+                Template Proyek Siap Pakai
+              </h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Gunakan blueprint terstruktur dengan estimasi biaya dan milestone terstandarisasi untuk mempercepat peluncuran produkmu.
+              </p>
+            </div>
+
             {/* Category Filter Chips */}
-            <div className="flex flex-wrap items-center gap-1.5">
-              {["Semua", "Frontend", "UI/UX", "AI & Machine", "Mobile"].map((cat) => (
+            <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+              {["Semua", "Frontend", "Mobile", "AI & Machine", "UI/UX", "Backend"].map((cat) => (
                 <button
                   key={cat}
-                  onClick={() => setTalentCategory(cat)}
-                  className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${talentCategory === cat
-                      ? "bg-primary text-white shadow-xs"
-                      : "border border-border/80 bg-card text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                  onClick={() => setTemplateCategory(cat)}
+                  className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${templateCategory === cat
+                    ? "bg-primary text-white shadow-xs"
+                    : "border border-border/80 bg-card text-muted-foreground hover:text-foreground hover:bg-muted/60"
                     }`}
                 >
                   {cat}
                 </button>
               ))}
             </div>
-
-            <Link
-              href="/client/talent"
-              className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline ml-1"
-            >
-              <span>Semua Talent</span>
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
           </div>
-        </div>
 
-        {/* Talents Grid */}
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {filteredTalents.map((tal) => (
-            <div
-              key={tal.id}
-              className="group flex flex-col justify-between rounded-2xl border border-border/70 bg-card overflow-hidden shadow-xs transition-all hover:border-primary/40 hover:shadow-lg hover:-translate-y-1"
-            >
-              <div>
-                {/* Thumbnail Image */}
-                <div className="relative aspect-[16/10] w-full overflow-hidden bg-muted">
-                  <img
-                    src={tal.thumbnail}
-                    alt={tal.serviceTitle}
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src =
-                        "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&auto=format&fit=crop&q=80";
-                    }}
-                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                  <button
-                    onClick={(e) => toggleSaveTalent(tal.id, e)}
-                    className="absolute right-2.5 top-2.5 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md transition-colors hover:bg-black/70"
-                    title="Simpan Talent"
-                  >
-                    <Heart
-                      className={`h-4 w-4 ${savedTalents.includes(tal.id)
-                          ? "fill-rose-500 text-rose-500"
-                          : "text-white"
-                        }`}
-                    />
-                  </button>
-                  <span className="absolute bottom-2 left-2.5 rounded-md bg-black/60 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-md">
-                    {tal.category}
-                  </span>
-                </div>
-
-                {/* Content */}
-                <div className="p-4 space-y-3">
-                  {/* Seller Header */}
-                  <div className="flex items-center gap-2.5">
+          {/* Blueprint Templates Grid (Top 3 items for compact layout) */}
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredTemplates.slice(0, 3).map((tpl) => (
+              <div
+                key={tpl.id}
+                className="group flex flex-col justify-between rounded-2xl border border-border/70 bg-card overflow-hidden shadow-xs transition-all hover:border-primary/40 hover:shadow-lg hover:-translate-y-1"
+              >
+                <div>
+                  {/* Thumbnail Image with Glass Badge */}
+                  <div className="relative aspect-[16/9] w-full overflow-hidden bg-muted">
                     <img
-                      src={tal.avatar}
-                      alt={tal.name}
+                      src={tpl.thumbnail}
+                      alt={tpl.title}
                       onError={(e) => {
                         (e.target as HTMLImageElement).src =
-                          "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80";
+                          "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&auto=format&fit=crop&q=80";
                       }}
-                      className="h-7 w-7 rounded-full object-cover border border-border shrink-0"
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                     />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1">
-                        <span className="font-sans font-medium text-xs text-foreground truncate">{tal.name}</span>
-                        <ShieldCheck className="h-3.5 w-3.5 text-primary shrink-0" />
-                      </div>
-                      <span className="text-[10px] text-muted-foreground font-medium">{tal.level}</span>
-                    </div>
-                  </div>
-
-                  {/* Service Title */}
-                  <h3 className="font-sans font-medium text-xs text-foreground leading-snug line-clamp-2 group-hover:text-primary transition-colors">
-                    {tal.serviceTitle}
-                  </h3>
-
-                  {/* Rating & Reviews */}
-                  <div className="flex items-center gap-1 text-xs">
-                    <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
-                    <span className="font-bold text-foreground">{tal.rating}</span>
-                    <span className="text-muted-foreground text-[11px]">({tal.reviewsCount})</span>
-                  </div>
-
-                  {/* Skills tags */}
-                  <div className="flex flex-wrap gap-1">
-                    {tal.skills.slice(0, 3).map((skill) => (
-                      <span
-                        key={skill}
-                        className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
-                      >
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Card Footer: Starting Price & Hire CTA */}
-              <div className="border-t border-border/40 p-4 pt-3 flex items-center justify-between bg-muted/10">
-                <div>
-                  <span className="text-[10px] text-muted-foreground block uppercase font-semibold">Mulai dari</span>
-                  <span className="text-sm font-bold text-primary">{tal.startingPrice}</span>
-                </div>
-
-                <button
-                  onClick={() => setSelectedTalentForInvite(tal)}
-                  className="rounded-xl bg-primary px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-primary-600 transition-colors"
-                >
-                  Hire Talent
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ============================================================ */}
-      {/* 5. EXPLORE PROJECT SCOPES & BUDGET BENCHMARKS */}
-      {/* ============================================================ */}
-      <div className="space-y-4">
-        <div>
-          <h2 className="text-xl font-bold tracking-tight text-foreground">
-            Jelajahi Kategori Proyek & Benchmark Biaya
-          </h2>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Pilih spesialisasi teknologi untuk melihat rata-rata alokasi budget dan langsung pasang proyek spesifik.
-          </p>
-        </div>
-
-        <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
-          {CATEGORIES.map((cat) => {
-            const Icon = cat.icon;
-            return (
-              <div
-                key={cat.name}
-                onClick={() => {
-                  setNewCategory(cat.name);
-                  setNewTitle(`Kebutuhan Proyek ${cat.name}`);
-                  setCreateStep(1);
-                  setIsCreateModalOpen(true);
-                }}
-                className="group flex items-center gap-4 rounded-2xl border border-border/70 bg-card p-4 shadow-xs transition-all hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5 cursor-pointer"
-              >
-                <div className={`flex h-12 w-12 items-center justify-center rounded-xl border bg-gradient-to-br ${cat.color} transition-transform group-hover:scale-105 shrink-0`}>
-                  <Icon className="h-6 w-6" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-sans font-medium text-sm text-foreground group-hover:text-primary transition-colors truncate">
-                    {cat.name}
-                  </h3>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-                    <span>{cat.projectCount}</span>
-                    <span>•</span>
-                    <span className="font-semibold text-primary">{cat.avgBudget}</span>
-                  </div>
-                </div>
-                <Plus className="h-4 w-4 text-muted-foreground/50 group-hover:text-primary group-hover:rotate-90 transition-all shrink-0" />
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ============================================================ */}
-      {/* 6. LIVE PROPOSALS ACTIVITY FEED (RECENT BIDS FROM TALENT) */}
-      {/* ============================================================ */}
-      <div className="rounded-2xl border border-border/70 bg-card p-6 shadow-sm space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div>
-            <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <span>Aktivitas Proposal & Milestone Masuk Terbaru</span>
-            </h3>
-            <p className="text-xs text-muted-foreground">
-              Pelamar terverifikasi yang baru saja mengajukan proposal pengerjaan untuk proyek aktifmu.
-            </p>
-          </div>
-
-          <Link
-            href="/client/projects"
-            className="text-xs font-semibold text-primary hover:underline self-start sm:self-auto flex items-center gap-1"
-          >
-            <span>Buka Semua Proyek</span>
-            <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
-        </div>
-
-        <div className="grid gap-3 md:grid-cols-2">
-          {projects
-            .flatMap((p) => p.applicants.map((a) => ({ ...a, projectTitle: p.title, projId: p.id })))
-            .slice(0, 4)
-            .map((app) => (
-              <div
-                key={app.id}
-                className="flex items-start gap-3.5 rounded-xl border border-border/60 bg-muted/20 p-3.5 hover:border-primary/40 transition-colors"
-              >
-                <img
-                  src={app.avatar}
-                  alt={app.name}
-                  className="h-10 w-10 rounded-full object-cover border border-border shrink-0"
-                />
-                <div className="flex-1 min-w-0 space-y-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="text-xs font-bold text-foreground truncate">{app.name}</span>
-                      <ShieldCheck className="h-3.5 w-3.5 text-primary shrink-0" />
-                    </div>
-                    <span className="text-xs font-bold text-primary shrink-0">{app.bidAmount}</span>
-                  </div>
-
-                  <div className="text-[11px] text-muted-foreground flex items-center gap-2">
-                    <span>{app.role}</span>
-                    <span>•</span>
-                    <span className="flex items-center gap-0.5 text-amber-500 font-semibold">
-                      <Star className="h-3 w-3 fill-amber-500" />
-                      {app.rating}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                    <span className={`absolute top-2.5 left-2.5 rounded-md px-2 py-0.5 text-[10px] font-bold backdrop-blur-md border ${tpl.badgeColor} bg-black/40`}>
+                      {tpl.badge}
+                    </span>
+                    <span className="absolute bottom-2 left-2.5 rounded-md bg-white/15 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-md">
+                      {tpl.category}
                     </span>
                   </div>
 
-                  <p className="text-xs text-foreground/90 line-clamp-1 italic font-light">
-                    &ldquo;{app.pitch}&rdquo;
-                  </p>
+                  {/* Content */}
+                  <div className="p-4 space-y-3">
+                    <h3 className="font-sans font-medium text-sm text-foreground leading-snug group-hover:text-primary transition-colors">
+                      {tpl.title}
+                    </h3>
 
-                  <div className="text-[10px] text-muted-foreground pt-1 flex items-center justify-between">
-                    <span className="truncate">Proyek: <strong className="text-foreground">{app.projectTitle}</strong></span>
-                    <span className="font-semibold text-emerald-600 shrink-0">{app.deliveryDays} hari</span>
+                    <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                      {tpl.description}
+                    </p>
+
+                    {/* Meta stats: Duration & Milestones */}
+                    <div className="grid grid-cols-2 gap-2 text-xs py-2 border-y border-border/40">
+                      <div>
+                        <span className="text-[10px] text-muted-foreground block">Estimasi Durasi</span>
+                        <span className="font-semibold text-foreground flex items-center gap-1">
+                          <Clock className="h-3 w-3 text-muted-foreground" />
+                          {tpl.estimatedDuration}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-muted-foreground block">Rencana Milestone</span>
+                        <span className="font-semibold text-foreground flex items-center gap-1">
+                          <Layers className="h-3 w-3 text-muted-foreground" />
+                          {tpl.milestonesCount} Tahapan
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Skills tags */}
+                    <div className="flex flex-wrap gap-1">
+                      {tpl.skills.map((skill) => (
+                        <span
+                          key={skill}
+                          className="rounded-md bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
                   </div>
+                </div>
+
+                {/* Card Footer: Budget range & 1-Click Launch Button */}
+                <div className="border-t border-border/40 p-4 pt-3 flex items-center justify-between gap-3 bg-muted/10">
+                  <div>
+                    <span className="text-[10px] text-muted-foreground block uppercase font-semibold">Estimasi Budget</span>
+                    <span className="text-xs font-bold text-primary">{tpl.estimatedBudget}</span>
+                  </div>
+
+                  <button
+                    onClick={() => handleApplyTemplate(tpl)}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-2 text-xs font-semibold text-white shadow-xs hover:bg-primary-600 transition-all hover:scale-[1.02]"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    <span>Pakai Blueprint</span>
+                  </button>
                 </div>
               </div>
             ))}
-        </div>
-      </div>
-
-      {/* ============================================================ */}
-      {/* 7. ESCROW & SAFE MILESTONE TRUST GUARANTEE BANNER */}
-      {/* ============================================================ */}
-      <div className="rounded-3xl border border-primary/20 bg-gradient-to-r from-primary/5 via-blue-500/5 to-indigo-500/5 p-8 md:p-10">
-        <div className="grid gap-6 md:grid-cols-3">
-          <div className="space-y-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <ShieldCheck className="h-5 w-5" />
-            </div>
-            <h3 className="text-base font-bold text-foreground">Proteksi Escrow 100% Aman</h3>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Dana proyekmu tersimpan aman di rekening escrow terproteksi dan hanya akan dicairkan ke freelancer setelah kamu menyetujui milestone.
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600">
-              <CheckCircle2 className="h-5 w-5" />
-            </div>
-            <h3 className="text-base font-bold text-foreground">Talenta Teruji & Bebas Resiko</h3>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Setiap freelancer yang mengajukan proposal telah lulus verifikasi portofolio dan asesmen skill coding komprehensif.
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600">
-              <Clock className="h-5 w-5" />
-            </div>
-            <h3 className="text-base font-bold text-foreground">Turnaround Cepat & Milestone Jelas</h3>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Dapatkan proposal pertama dalam 15 menit, sepakati deliverable per milestone, dan nikmati serah terima source code 100% legal milikmu.
-            </p>
           </div>
         </div>
+
+        {/* ============================================================ */}
+        {/* 4. CARI TALENTA & JASA TERVERIFIKASI (TALENT MARKETPLACE ROW) */}
+        {/* ============================================================ */}
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 mb-1">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                <span>100% Talent Telah Diverifikasi & Lulus Skill Test</span>
+              </div>
+              <h2 className="text-xl font-bold tracking-tight text-foreground">
+                Cari Talenta & Jasa Pilihan Teratas
+              </h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Temukan dan rekrut langsung freelancer teruji yang siap mengeksekusi kebutuhan proyekmu.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 self-start sm:self-auto">
+              {/* Category Filter Chips */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                {["Semua", "Frontend", "UI/UX", "AI & Machine", "Mobile"].map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setTalentCategory(cat)}
+                    className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${talentCategory === cat
+                      ? "bg-primary text-white shadow-xs"
+                      : "border border-border/80 bg-card text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                      }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+
+              <Link
+                href="/client/talent"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline ml-1"
+              >
+                <span>Semua Talent</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Talents Grid */}
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {filteredTalents.map((tal) => (
+              <div
+                key={tal.id}
+                className="group flex flex-col justify-between rounded-2xl border border-border/70 bg-card overflow-hidden shadow-xs transition-all hover:border-primary/40 hover:shadow-lg hover:-translate-y-1"
+              >
+                <div>
+                  {/* Thumbnail Image */}
+                  <div className="relative aspect-[16/10] w-full overflow-hidden bg-muted">
+                    <img
+                      src={tal.thumbnail}
+                      alt={tal.serviceTitle}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src =
+                          "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&auto=format&fit=crop&q=80";
+                      }}
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                    <button
+                      onClick={(e) => toggleSaveTalent(tal.id, e)}
+                      className="absolute right-2.5 top-2.5 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md transition-colors hover:bg-black/70"
+                      title="Simpan Talent"
+                    >
+                      <Heart
+                        className={`h-4 w-4 ${savedTalents.includes(tal.id)
+                          ? "fill-rose-500 text-rose-500"
+                          : "text-white"
+                          }`}
+                      />
+                    </button>
+                    <span className="absolute bottom-2 left-2.5 rounded-md bg-black/60 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-md">
+                      {tal.category}
+                    </span>
+                  </div>
+
+                  {/* Content */}
+                  <div className="p-4 space-y-3">
+                    {/* Seller Header */}
+                    <div className="flex items-center gap-2.5">
+                      <img
+                        src={tal.avatar}
+                        alt={tal.name}
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src =
+                            "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80";
+                        }}
+                        className="h-7 w-7 rounded-full object-cover border border-border shrink-0"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1">
+                          <span className="font-sans font-medium text-xs text-foreground truncate">{tal.name}</span>
+                          <ShieldCheck className="h-3.5 w-3.5 text-primary shrink-0" />
+                        </div>
+                        <span className="text-[10px] text-muted-foreground font-medium">{tal.level}</span>
+                      </div>
+                    </div>
+
+                    {/* Service Title */}
+                    <h3 className="font-sans font-medium text-xs text-foreground leading-snug line-clamp-2 group-hover:text-primary transition-colors">
+                      {tal.serviceTitle}
+                    </h3>
+
+                    {/* Rating & Reviews */}
+                    <div className="flex items-center gap-1 text-xs">
+                      <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
+                      <span className="font-bold text-foreground">{tal.rating}</span>
+                      <span className="text-muted-foreground text-[11px]">({tal.reviewsCount})</span>
+                    </div>
+
+                    {/* Skills tags */}
+                    <div className="flex flex-wrap gap-1">
+                      {tal.skills.slice(0, 3).map((skill) => (
+                        <span
+                          key={skill}
+                          className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card Footer: Starting Price & Hire CTA */}
+                <div className="border-t border-border/40 p-4 pt-3 flex items-center justify-between bg-muted/10">
+                  <div>
+                    <span className="text-[10px] text-muted-foreground block uppercase font-semibold">Mulai dari</span>
+                    <span className="text-sm font-bold text-primary">{tal.startingPrice}</span>
+                  </div>
+
+                  <button
+                    onClick={() => setSelectedTalentForInvite(tal)}
+                    className="rounded-xl bg-primary px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-primary-600 transition-colors"
+                  >
+                    Hire Talent
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ============================================================ */}
+        {/* 5. EXPLORE PROJECT SCOPES & BUDGET BENCHMARKS */}
+        {/* ============================================================ */}
+        <div className="space-y-4">
+          <div>
+            <h2 className="text-xl font-bold tracking-tight text-foreground">
+              Jelajahi Kategori Proyek & Benchmark Biaya
+            </h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Pilih spesialisasi teknologi untuk melihat rata-rata alokasi budget dan langsung pasang proyek spesifik.
+            </p>
+          </div>
+
+          <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
+            {CATEGORIES.map((cat) => {
+              const Icon = cat.icon;
+              return (
+                <div
+                  key={cat.name}
+                  onClick={() => {
+                    setNewCategory(cat.name);
+                    setNewTitle(`Kebutuhan Proyek ${cat.name}`);
+                    setCreateStep(1);
+                    setIsCreateModalOpen(true);
+                  }}
+                  className="group flex items-center gap-4 rounded-2xl border border-border/70 bg-card p-4 shadow-xs transition-all hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5 cursor-pointer"
+                >
+                  <div className={`flex h-12 w-12 items-center justify-center rounded-xl border bg-gradient-to-br ${cat.color} transition-transform group-hover:scale-105 shrink-0`}>
+                    <Icon className="h-6 w-6" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-sans font-medium text-sm text-foreground group-hover:text-primary transition-colors truncate">
+                      {cat.name}
+                    </h3>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                      <span>{cat.projectCount}</span>
+                      <span>•</span>
+                      <span className="font-semibold text-primary">{cat.avgBudget}</span>
+                    </div>
+                  </div>
+                  <Plus className="h-4 w-4 text-muted-foreground/50 group-hover:text-primary group-hover:rotate-90 transition-all shrink-0" />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ============================================================ */}
+        {/* 6. LIVE PROPOSALS ACTIVITY FEED (RECENT BIDS FROM TALENT) */}
+        {/* ============================================================ */}
+        <div className="rounded-2xl border border-border/70 bg-card p-6 shadow-sm space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <span>Aktivitas Proposal & Milestone Masuk Terbaru</span>
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                Pelamar terverifikasi yang baru saja mengajukan proposal pengerjaan untuk proyek aktifmu.
+              </p>
+            </div>
+
+            <Link
+              href="/client/projects"
+              className="text-xs font-semibold text-primary hover:underline self-start sm:self-auto flex items-center gap-1"
+            >
+              <span>Buka Semua Proyek</span>
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2">
+            {projects
+              .flatMap((p) => p.applicants.map((a) => ({ ...a, projectTitle: p.title, projId: p.id })))
+              .slice(0, 4)
+              .map((app) => (
+                <div
+                  key={app.id}
+                  className="flex items-start gap-3.5 rounded-xl border border-border/60 bg-muted/20 p-3.5 hover:border-primary/40 transition-colors"
+                >
+                  <img
+                    src={app.avatar}
+                    alt={app.name}
+                    className="h-10 w-10 rounded-full object-cover border border-border shrink-0"
+                  />
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="text-xs font-bold text-foreground truncate">{app.name}</span>
+                        <ShieldCheck className="h-3.5 w-3.5 text-primary shrink-0" />
+                      </div>
+                      <span className="text-xs font-bold text-primary shrink-0">{app.bidAmount}</span>
+                    </div>
+
+                    <div className="text-[11px] text-muted-foreground flex items-center gap-2">
+                      <span>{app.role}</span>
+                      <span>•</span>
+                      <span className="flex items-center gap-0.5 text-amber-500 font-semibold">
+                        <Star className="h-3 w-3 fill-amber-500" />
+                        {app.rating}
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-foreground/90 line-clamp-1 italic font-light">
+                      &ldquo;{app.pitch}&rdquo;
+                    </p>
+
+                    <div className="text-[10px] text-muted-foreground pt-1 flex items-center justify-between">
+                      <span className="truncate">Proyek: <strong className="text-foreground">{app.projectTitle}</strong></span>
+                      <span className="font-semibold text-emerald-600 shrink-0">{app.deliveryDays} hari</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+          </div>
+        </div>
+
+        {/* ============================================================ */}
+        {/* 7. ESCROW & SAFE MILESTONE TRUST GUARANTEE BANNER */}
+        {/* ============================================================ */}
+        <div className="rounded-3xl border border-primary/20 bg-gradient-to-r from-primary/5 via-blue-500/5 to-indigo-500/5 p-8 md:p-10">
+          <div className="grid gap-6 md:grid-cols-3">
+            <div className="space-y-2">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <ShieldCheck className="h-5 w-5" />
+              </div>
+              <h3 className="text-base font-bold text-foreground">Proteksi Escrow 100% Aman</h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Dana proyekmu tersimpan aman di rekening escrow terproteksi dan hanya akan dicairkan ke freelancer setelah kamu menyetujui milestone.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600">
+                <CheckCircle2 className="h-5 w-5" />
+              </div>
+              <h3 className="text-base font-bold text-foreground">Talenta Teruji & Bebas Resiko</h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Setiap freelancer yang mengajukan proposal telah lulus verifikasi portofolio dan asesmen skill coding komprehensif.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600">
+                <Clock className="h-5 w-5" />
+              </div>
+              <h3 className="text-base font-bold text-foreground">Turnaround Cepat & Milestone Jelas</h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Dapatkan proposal pertama dalam 15 menit, sepakati deliverable per milestone, dan nikmati serah terima source code 100% legal milikmu.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
 
       {/* ============================================================ */}
       {/* 8. INTERACTIVE MULTI-STEP "PASANG PROYEK BARU" MODAL */}
@@ -1414,10 +1414,10 @@ export function ClientDashboard() {
                       type="button"
                       onClick={() => setCreateStep(s.step as 1 | 2 | 3)}
                       className={`rounded-xl py-2 px-3 text-xs font-semibold transition-all text-center ${createStep === s.step
-                          ? "bg-primary text-white shadow-xs"
-                          : createStep > s.step
-                            ? "bg-primary/15 text-primary border border-primary/20"
-                            : "bg-muted text-muted-foreground"
+                        ? "bg-primary text-white shadow-xs"
+                        : createStep > s.step
+                          ? "bg-primary/15 text-primary border border-primary/20"
+                          : "bg-muted text-muted-foreground"
                         }`}
                     >
                       {s.title}
@@ -1506,8 +1506,8 @@ export function ClientDashboard() {
                               key={item.level}
                               onClick={() => setNewDifficulty(item.level)}
                               className={`rounded-xl border p-3 text-left transition-all ${newDifficulty === item.level
-                                  ? "border-primary bg-primary/10 text-foreground shadow-xs"
-                                  : "border-border/80 bg-background text-muted-foreground hover:border-border"
+                                ? "border-primary bg-primary/10 text-foreground shadow-xs"
+                                : "border-border/80 bg-background text-muted-foreground hover:border-border"
                                 }`}
                             >
                               <div className="text-xs font-bold text-foreground">{item.level}</div>
@@ -1730,8 +1730,8 @@ export function ClientDashboard() {
                   <div
                     key={app.id}
                     className={`rounded-2xl border p-5 transition-all space-y-3 ${isAccepted
-                        ? "border-emerald-500 bg-emerald-500/5 shadow-md"
-                        : "border-border/70 bg-card hover:border-primary/40"
+                      ? "border-emerald-500 bg-emerald-500/5 shadow-md"
+                      : "border-border/70 bg-card hover:border-primary/40"
                       }`}
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
