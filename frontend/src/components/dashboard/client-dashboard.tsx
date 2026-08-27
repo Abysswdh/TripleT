@@ -622,7 +622,7 @@ export function ClientDashboard() {
               blendSoftness={0.06}
               rotationAmount={450.0}
               noiseScale={2.0}
-              grainAmount={0.01}
+              grainAmount={0.2}
               grainScale={2.0}
               grainAnimated={false}
               contrast={1.4}
@@ -738,7 +738,7 @@ export function ClientDashboard() {
       </div>
 
       {/* 2. INNER CONTAINER FOR OTHER DASHBOARD SECTIONS */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 w-full pt-4">
+      <div className="relative z-10 max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 space-y-10 w-full pt-4">
 
         {/* ============================================================ */}
         {/* 2. ACTIVE PROJECTS PIPELINE & PROPOSAL MANAGEMENT */}
