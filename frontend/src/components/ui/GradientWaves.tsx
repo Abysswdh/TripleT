@@ -188,6 +188,7 @@ const GradientWaves = ({
     const container = containerRef.current;
     if (!container) return;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let renderer: any;
     try {
       renderer = new Renderer({

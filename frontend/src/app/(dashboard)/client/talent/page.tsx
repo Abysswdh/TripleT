@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Search, Star, ShieldCheck, X, CheckCircle2, Send } from "lucide-react";
+import { Search, Star, ShieldCheck, X, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 
 interface TalentMatch {

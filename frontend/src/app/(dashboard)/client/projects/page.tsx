@@ -12,7 +12,6 @@ import {
   ShieldCheck,
   ArrowRight,
   Send,
-  FolderOpen,
 } from "lucide-react";
 import Link from "next/link";
 

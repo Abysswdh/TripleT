@@ -18,12 +18,10 @@ import {
   Clock,
   Users,
   FolderOpen,
-  Check,
   X,
   ChevronDown,
   Send,
   Flame,
-  Layers,
   Heart,
 } from "lucide-react";
 import Link from "next/link";
