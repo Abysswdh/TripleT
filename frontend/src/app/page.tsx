@@ -123,13 +123,13 @@ export default function LandingPage() {
           <div className="flex items-center gap-4">
             <Link
               href="/login"
-              className="text-sm font-semibold text-blue-600 hover:text-blue-700 px-3 py-2 transition-colors"
+              className="text-sm font-semibold text-blue-600 hover:text-blue-800 px-3 py-2 transition-all hover:scale-105 inline-block"
             >
               Sign In
             </Link>
             <Link
               href="/register"
-              className="rounded-xl bg-[#254BE3] px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-blue-600/20 hover:bg-blue-700 active:scale-95 transition-all"
+              className="rounded-xl bg-[#254BE3] px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-blue-600/20 hover:bg-blue-800 hover:scale-105 hover:shadow-lg hover:shadow-blue-600/30 active:scale-95 transition-all"
             >
               Get Started
             </Link>
@@ -182,7 +182,7 @@ export default function LandingPage() {
           </div>
 
           {/* H1 Heading - Wider Container */}
-          <h1 className="text-3xl sm:text-5xl lg:text-[54px] font-extrabold leading-[1.18] tracking-tight text-[#111827] max-w-4xl lg:max-w-5xl mx-auto">
+          <h1 className="text-3xl sm:text-5xl lg:text-[54px] font-extrabold leading-tight sm:leading-[1.35] lg:leading-[1.45] tracking-tight text-[#111827] max-w-4xl lg:max-w-5xl mx-auto">
             Misi Kami: Menjembatani Kesenjangan Antara Keterampilan &amp; Kesempatan.
           </h1>
 
@@ -195,7 +195,7 @@ export default function LandingPage() {
           <div className="mt-10 flex justify-center">
             <Link
               href="/register"
-              className="inline-flex items-center justify-center gap-2.5 rounded-xl bg-[#254BE3] px-8 py-3.5 text-sm sm:text-base font-bold text-white shadow-lg shadow-blue-600/25 hover:bg-blue-700 active:scale-95 transition-all group"
+              className="inline-flex items-center justify-center gap-2.5 rounded-xl bg-[#254BE3] px-8 py-3.5 text-sm sm:text-base font-bold text-white shadow-lg shadow-blue-600/25 hover:bg-blue-800 hover:scale-105 hover:shadow-xl hover:shadow-blue-600/35 active:scale-95 transition-all group"
             >
               <span>GET STARTED</span>
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -256,21 +256,19 @@ export default function LandingPage() {
                   <div className="mt-3 flex rounded-lg bg-slate-100 p-0.5 text-[10px] font-semibold">
                     <button
                       onClick={() => setChartMetric("pemuda")}
-                      className={`flex-1 py-1 rounded-md transition-all ${
-                        chartMetric === "pemuda"
+                      className={`flex-1 py-1 rounded-md transition-all hover:scale-[1.04] ${chartMetric === "pemuda"
                           ? "bg-white text-blue-600 shadow-sm"
-                          : "text-slate-500 hover:text-slate-900"
-                      }`}
+                          : "text-slate-500 hover:text-slate-900 hover:bg-white/60"
+                        }`}
                     >
                       Pemuda (15-24)
                     </button>
                     <button
                       onClick={() => setChartMetric("nasional")}
-                      className={`flex-1 py-1 rounded-md transition-all ${
-                        chartMetric === "nasional"
+                      className={`flex-1 py-1 rounded-md transition-all hover:scale-[1.04] ${chartMetric === "nasional"
                           ? "bg-white text-blue-600 shadow-sm"
-                          : "text-slate-500 hover:text-slate-900"
-                      }`}
+                          : "text-slate-500 hover:text-slate-900 hover:bg-white/60"
+                        }`}
                     >
                       Nasional
                     </button>
@@ -302,15 +300,14 @@ export default function LandingPage() {
                         <div
                           key={year}
                           onClick={() => setSelectedYear(year)}
-                          className="flex-1 flex flex-col items-center cursor-pointer group"
+                          className="flex-1 flex flex-col items-center cursor-pointer group hover:scale-[1.05] transition-transform"
                         >
                           {/* Floating Rate Tooltip on Active/Hover */}
                           <div
-                            className={`mb-1 text-[10px] font-bold px-1.5 py-0.5 rounded transition-all ${
-                              isSelected
+                            className={`mb-1 text-[10px] font-bold px-1.5 py-0.5 rounded transition-all ${isSelected
                                 ? "bg-blue-600 text-white shadow-sm"
                                 : "text-slate-400 group-hover:text-slate-700"
-                            }`}
+                              }`}
                           >
                             {item.rate}
                           </div>
@@ -319,19 +316,17 @@ export default function LandingPage() {
                           <div className="w-full h-24 bg-slate-100 rounded-t-lg relative flex items-end overflow-hidden">
                             <div
                               style={{ height: item.barHeight }}
-                              className={`w-full rounded-t-lg transition-all duration-500 ${
-                                isSelected
+                              className={`w-full rounded-t-lg transition-all duration-500 ${isSelected
                                   ? "bg-gradient-to-t from-blue-600 to-blue-400 shadow-lg shadow-blue-500/20"
                                   : "bg-slate-300 group-hover:bg-blue-300"
-                              }`}
+                                }`}
                             />
                           </div>
 
                           {/* Year Label */}
                           <span
-                            className={`mt-2 text-xs font-semibold transition-colors ${
-                              isSelected ? "text-blue-600 font-bold" : "text-slate-500"
-                            }`}
+                            className={`mt-2 text-xs font-semibold transition-colors ${isSelected ? "text-blue-600 font-bold" : "text-slate-500"
+                              }`}
                           >
                             {year}
                           </span>
@@ -430,33 +425,30 @@ export default function LandingPage() {
                 <div className="flex justify-between items-center gap-1 text-[10px] font-semibold pt-2 border-t border-slate-100">
                   <button
                     onClick={() => setSelectedDemographic("15-24")}
-                    className={`flex items-center gap-1 px-2 py-1 rounded transition-colors ${
-                      selectedDemographic === "15-24"
+                    className={`flex items-center gap-1 px-2 py-1 rounded transition-all hover:scale-[1.08] ${selectedDemographic === "15-24"
                         ? "text-blue-600 bg-blue-50 font-bold"
-                        : "text-slate-500 hover:text-slate-800"
-                    }`}
+                        : "text-slate-500 hover:text-slate-800 hover:bg-slate-100"
+                      }`}
                   >
                     <span className="h-2 w-2 rounded-full bg-[#254BE3]" />
                     15-24 Thn
                   </button>
                   <button
                     onClick={() => setSelectedDemographic("25-34")}
-                    className={`flex items-center gap-1 px-2 py-1 rounded transition-colors ${
-                      selectedDemographic === "25-34"
+                    className={`flex items-center gap-1 px-2 py-1 rounded transition-all hover:scale-[1.08] ${selectedDemographic === "25-34"
                         ? "text-blue-600 bg-blue-50 font-bold"
-                        : "text-slate-500 hover:text-slate-800"
-                    }`}
+                        : "text-slate-500 hover:text-slate-800 hover:bg-slate-100"
+                      }`}
                   >
                     <span className="h-2 w-2 rounded-full bg-[#60A5FA]" />
                     25-34 Thn
                   </button>
                   <button
                     onClick={() => setSelectedDemographic("35+")}
-                    className={`flex items-center gap-1 px-2 py-1 rounded transition-colors ${
-                      selectedDemographic === "35+"
+                    className={`flex items-center gap-1 px-2 py-1 rounded transition-all hover:scale-[1.08] ${selectedDemographic === "35+"
                         ? "text-blue-600 bg-blue-50 font-bold"
-                        : "text-slate-500 hover:text-slate-800"
-                    }`}
+                        : "text-slate-500 hover:text-slate-800 hover:bg-slate-100"
+                      }`}
                   >
                     <span className="h-2 w-2 rounded-full bg-[#CBD5E1]" />
                     35+ Thn
@@ -607,7 +599,7 @@ export default function LandingPage() {
               <div className="pt-2">
                 <Link
                   href="/register"
-                  className="inline-flex items-center justify-center gap-2.5 rounded-xl bg-[#254BE3] px-7 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-600/25 hover:bg-blue-700 active:scale-95 transition-all group"
+                  className="inline-flex items-center justify-center gap-2.5 rounded-xl bg-[#254BE3] px-7 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-600/25 hover:bg-blue-800 hover:scale-105 hover:shadow-xl hover:shadow-blue-600/35 active:scale-95 transition-all group"
                 >
                   <span>Get Started</span>
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -628,8 +620,8 @@ export default function LandingPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
           {/* Card 1: Learn while Working */}
-          <div className="rounded-3xl border border-slate-100 bg-[#FBFDFF] p-8 sm:p-10 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col items-center">
-            <div className="h-16 w-16 rounded-full bg-[#EBF1FF] flex items-center justify-center mb-6 shadow-inner text-[#254BE3]">
+          <div className="animate-breathe rounded-3xl border border-slate-100 bg-[#FBFDFF] p-8 sm:p-10 hover:shadow-xl flex flex-col items-center">
+            <div className="animate-breathe-icon h-16 w-16 rounded-full bg-[#EBF1FF] flex items-center justify-center mb-6 shadow-inner text-[#254BE3]">
               <GraduationCap className="h-8 w-8" />
             </div>
 
@@ -643,8 +635,8 @@ export default function LandingPage() {
           </div>
 
           {/* Card 2: Koneksi Ekosistem */}
-          <div className="rounded-3xl border border-slate-100 bg-[#FBFDFF] p-8 sm:p-10 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col items-center">
-            <div className="h-16 w-16 rounded-full bg-[#EBF1FF] flex items-center justify-center mb-6 shadow-inner text-[#254BE3]">
+          <div className="animate-breathe-2 rounded-3xl border border-slate-100 bg-[#FBFDFF] p-8 sm:p-10 hover:shadow-xl flex flex-col items-center">
+            <div className="animate-breathe-icon-2 h-16 w-16 rounded-full bg-[#EBF1FF] flex items-center justify-center mb-6 shadow-inner text-[#254BE3]">
               <Network className="h-8 w-8" />
             </div>
 
@@ -658,8 +650,8 @@ export default function LandingPage() {
           </div>
 
           {/* Card 3: Akselerasi Karir */}
-          <div className="rounded-3xl border border-slate-100 bg-[#FBFDFF] p-8 sm:p-10 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col items-center">
-            <div className="h-16 w-16 rounded-full bg-[#EBF1FF] flex items-center justify-center mb-6 shadow-inner text-[#254BE3]">
+          <div className="animate-breathe-3 rounded-3xl border border-slate-100 bg-[#FBFDFF] p-8 sm:p-10 hover:shadow-xl flex flex-col items-center">
+            <div className="animate-breathe-icon-3 h-16 w-16 rounded-full bg-[#EBF1FF] flex items-center justify-center mb-6 shadow-inner text-[#254BE3]">
               <Rocket className="h-8 w-8" />
             </div>
 

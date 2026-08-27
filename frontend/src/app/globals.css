@@ -11,19 +11,23 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 227 92% 63%;        /* #4A6CF7 */
+    --primary: 227 92% 63%;
+    /* #4A6CF7 */
     --primary-foreground: 210 40% 98%;
-    --secondary: 217 63% 33%;      /* #1E3A8A */
+    --secondary: 217 63% 33%;
+    /* #1E3A8A */
     --secondary-foreground: 210 40% 98%;
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 239 84% 67%;         /* #6366F1 */
+    --accent: 239 84% 67%;
+    /* #6366F1 */
     --accent-foreground: 222.2 47.4% 11.2%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 227 92% 63%;           /* matches primary */
+    --ring: 227 92% 63%;
+    /* matches primary */
     --radius: 0.75rem;
   }
 
@@ -61,12 +65,27 @@
     font-family: var(--font-jakarta), sans-serif;
   }
 
-  h1, h2, h3, h4, h5, h6, .font-heading, .font-krona {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  .font-heading,
+  .font-krona {
     font-family: var(--font-krona), sans-serif;
     letter-spacing: -0.02em;
   }
 
-  p, span, a, button, input, textarea, label, .font-sans, .font-jakarta {
+  p,
+  span,
+  a,
+  button,
+  input,
+  textarea,
+  label,
+  .font-sans,
+  .font-jakarta {
     font-family: var(--font-jakarta), sans-serif;
   }
 }
@@ -84,6 +103,39 @@ html {
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
+/* ── Dynamic floating animations for Careers / Filosofi section ── */
+@keyframes float {
+  0%, 100% { transform: translateY(0px);  box-shadow: 0 4px 16px 0 rgb(37 75 227 / 0.07); }
+  50%       { transform: translateY(-8px); box-shadow: 0 14px 28px -4px rgb(37 75 227 / 0.13); }
+}
+
+@keyframes float-icon {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-6px); }
+}
+
+.animate-breathe {
+  animation: float 2.5s ease-in-out infinite;
+}
+.animate-breathe-2 {
+  animation: float 2.5s ease-in-out infinite;
+}
+.animate-breathe-3 {
+  animation: float 2.5s ease-in-out infinite;
+}
+.animate-breathe-icon {
+  animation: float-icon 2.5s ease-in-out infinite;
+}
+.animate-breathe-icon-2 {
+  animation: float-icon 2.5s ease-in-out infinite;
+}
+.animate-breathe-icon-3 {
+  animation: float-icon 2.5s ease-in-out infinite;
+}
+.animate-breathe-glow {}
+.animate-breathe-glow-2 {}
+.animate-breathe-glow-3 {}
 
 ::-webkit-scrollbar-thumb {
   background: hsl(var(--muted-foreground) / 0.3);
