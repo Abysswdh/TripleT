@@ -23,6 +23,7 @@ import {
   Send,
   Flame,
   Heart,
+  Zap,
 } from "lucide-react";
 import Link from "next/link";
 import Grainient from "@/components/ui/Grainient";
@@ -675,11 +676,11 @@ export function ClientDashboard() {
                   <span>Blueprint Siap Pakai:</span>
                 </span>
                 {[
-                  { name: "🚀 Web App SaaS", tplId: "tpl-1" },
-                  { name: "📱 Mobile Flutter App", tplId: "tpl-2" },
-                  { name: "🤖 AI Agent / Chatbot", tplId: "tpl-3" },
-                  { name: "🎨 UI/UX Design System", tplId: "tpl-4" },
-                  { name: "⚡ Backend API Scalable", tplId: "tpl-5" },
+                  { name: "Web App SaaS", icon: Code2, tplId: "tpl-1" },
+                  { name: "Mobile Flutter App", icon: Smartphone, tplId: "tpl-2" },
+                  { name: "AI Agent / Chatbot", icon: Bot, tplId: "tpl-3" },
+                  { name: "UI/UX Design System", icon: Palette, tplId: "tpl-4" },
+                  { name: "Backend API Scalable", icon: Zap, tplId: "tpl-5" },
                 ].map((item) => (
                   <button
                     type="button"
@@ -688,8 +689,9 @@ export function ClientDashboard() {
                       const found = PROJECT_TEMPLATES.find((t) => t.id === item.tplId);
                       if (found) handleApplyTemplate(found);
                     }}
-                    className="rounded-lg border border-white/15 bg-white/10 px-2.5 py-1 text-xs font-medium text-white/95 hover:bg-white/20 transition-all backdrop-blur-sm hover:scale-[1.02]"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/10 px-2.5 py-1 text-xs font-medium text-white/95 hover:bg-white/20 transition-all backdrop-blur-sm hover:scale-[1.02]"
                   >
+                    <item.icon className="h-3 w-3" />
                     {item.name}
                   </button>
                 ))}

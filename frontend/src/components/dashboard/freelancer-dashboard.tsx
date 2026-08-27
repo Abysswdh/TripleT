@@ -310,7 +310,7 @@ export function FreelancerDashboard() {
   ];
 
   return (
-    <div className="animate-fade-in space-y-4">
+    <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-4 animate-fade-in">
       {/* 0. Hero Grainient Welcome Banner */}
       <div className="relative overflow-hidden rounded-2xl p-6 md:p-7 text-white shadow-xl border border-white/10">
         <div className="absolute inset-0 z-0 pointer-events-none">
@@ -344,7 +344,7 @@ export function FreelancerDashboard() {
           <div className="space-y-1.5">
             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 font-sans text-xs font-semibold backdrop-blur-md">
               <Sparkles className="h-3.5 w-3.5 text-amber-300" />
-              <span>Freelancer Quest OS • Tier Pro Level {currentLevel}</span>
+              <span>Freelancer Quest OS &mdash; Tier Pro Level {currentLevel}</span>
             </div>
             <h1 className="font-heading text-xl font-normal tracking-tight md:text-2xl lg:text-3xl leading-snug">
               Welcome back, {freelancerName}!

@@ -74,23 +74,42 @@ export default function LandingPage() {
 
         {/* Hero Content (z-20) */}
         <Container className="relative z-20 flex flex-col items-center">
-          {/* Badge: TENTANG KAMI (Clean Pastel Pill) */}
-          <div className="inline-flex items-center justify-center rounded-full bg-primary/10 px-4 py-1.5 text-[11px] font-bold uppercase tracking-widest text-primary shadow-sm mb-8 animate-in slide-in-from-bottom-4 duration-700">
+          {/* Badge */}
+          <div
+            data-aos="fade-down"
+            data-aos-duration="600"
+            className="inline-flex items-center justify-center rounded-full bg-primary/10 px-4 py-1.5 text-[11px] font-bold uppercase tracking-widest text-primary shadow-sm mb-8"
+          >
             TENTANG KAMI
           </div>
 
           {/* H1 Heading */}
-          <h1 className="text-4xl sm:text-5xl lg:text-[64px] font-extrabold leading-[1.1] sm:leading-[1.15] tracking-tight text-foreground max-w-4xl lg:max-w-5xl mx-auto animate-in slide-in-from-bottom-8 duration-700 delay-150 fill-mode-both">
+          <h1
+            data-aos="fade-up"
+            data-aos-duration="700"
+            data-aos-delay="100"
+            className="text-4xl sm:text-5xl lg:text-[64px] font-extrabold leading-[1.1] sm:leading-[1.15] tracking-tight text-foreground max-w-4xl lg:max-w-5xl mx-auto"
+          >
             Misi Kami: Menjembatani Kesenjangan Antara Keterampilan &amp; Kesempatan.
           </h1>
 
           {/* Subtitle Description */}
-          <p className="mt-6 text-base sm:text-lg lg:text-xl text-muted-foreground leading-relaxed max-w-3xl lg:max-w-4xl mx-auto font-normal animate-in fade-in duration-1000 delay-300 fill-mode-both">
+          <p
+            data-aos="fade-up"
+            data-aos-duration="700"
+            data-aos-delay="200"
+            className="mt-6 text-base sm:text-lg lg:text-xl text-muted-foreground leading-relaxed max-w-3xl lg:max-w-4xl mx-auto font-normal"
+          >
             Di tengah tantangan ekonomi dan angka pengangguran yang tinggi, kami percaya bahwa potensi kreatif Indonesia tidak boleh terbuang sia-sia. Doable! didirikan untuk mengubah lanskap profesional melalui pemberdayaan dan teknologi.
           </p>
 
           {/* Hero CTA Button */}
-          <div className="mt-10 flex justify-center animate-in fade-in zoom-in-95 duration-700 delay-500 fill-mode-both">
+          <div
+            data-aos="zoom-in"
+            data-aos-duration="600"
+            data-aos-delay="350"
+            className="mt-10 flex justify-center"
+          >
             <Link
               href="/register"
               className="inline-flex items-center justify-center gap-2.5 rounded-xl bg-primary px-8 py-4 text-sm sm:text-base font-bold text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary/90 hover:scale-[1.02] active:scale-95 transition-all group"
@@ -109,7 +128,11 @@ export default function LandingPage() {
         <Container>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
             {/* Left Column: Narrative & 2025 Projection Card */}
-            <div className="lg:col-span-5 flex flex-col justify-center space-y-6">
+            <div
+              data-aos="fade-right"
+              data-aos-duration="700"
+              className="lg:col-span-5 flex flex-col justify-center space-y-6"
+            >
               <div>
                 <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
                   Realitas Saat Ini
@@ -346,7 +369,11 @@ export default function LandingPage() {
         <Container>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             {/* Left Column: Interactive AI Studio Screen Mockup */}
-            <div className="lg:col-span-6 relative">
+            <div
+              data-aos="fade-right"
+              data-aos-duration="800"
+              className="lg:col-span-6 relative"
+            >
               <div className="rounded-3xl border border-border/80 bg-slate-900 p-2 sm:p-3 shadow-2xl shadow-primary/10 overflow-hidden">
                 <div className="flex items-center justify-between px-3 py-1.5 bg-slate-800 rounded-t-2xl">
                   <div className="flex items-center gap-1.5">
@@ -425,7 +452,11 @@ export default function LandingPage() {
             </div>
 
             {/* Right Column: Copywriting & CTA */}
-            <div className="lg:col-span-6 space-y-6">
+            <div
+              data-aos="fade-left"
+              data-aos-duration="800"
+              className="lg:col-span-6 space-y-6"
+            >
               <div className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-primary">
                 TRANSFORMASI DIGITAL
               </div>
@@ -457,13 +488,22 @@ export default function LandingPage() {
       {/* ========================================================================= */}
       <section id="filosofi" className="w-full flex flex-col items-center justify-center py-24 bg-background">
         <Container className="text-center">
-          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground mb-14">
+          <h2
+            data-aos="fade-up"
+            data-aos-duration="600"
+            className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground mb-14"
+          >
             Filosofi Kami
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
             {/* Card 1: Learn while Working */}
-            <div className="animate-breathe rounded-3xl border border-border/60 bg-card p-8 sm:p-10 hover:shadow-xl transition-shadow flex flex-col items-center">
+            <div
+              data-aos="fade-up"
+              data-aos-duration="600"
+              data-aos-delay="0"
+              className="animate-breathe rounded-3xl border border-border/60 bg-card p-8 sm:p-10 hover:shadow-xl transition-shadow flex flex-col items-center"
+            >
               <div className="animate-breathe-icon h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-6 shadow-inner text-primary">
                 <GraduationCap className="h-8 w-8" />
               </div>
@@ -476,7 +516,12 @@ export default function LandingPage() {
             </div>
 
             {/* Card 2: Koneksi Ekosistem */}
-            <div className="animate-breathe-2 rounded-3xl border border-border/60 bg-card p-8 sm:p-10 hover:shadow-xl transition-shadow flex flex-col items-center">
+            <div
+              data-aos="fade-up"
+              data-aos-duration="600"
+              data-aos-delay="150"
+              className="animate-breathe-2 rounded-3xl border border-border/60 bg-card p-8 sm:p-10 hover:shadow-xl transition-shadow flex flex-col items-center"
+            >
               <div className="animate-breathe-icon-2 h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-6 shadow-inner text-primary">
                 <Network className="h-8 w-8" />
               </div>
@@ -489,7 +534,12 @@ export default function LandingPage() {
             </div>
 
             {/* Card 3: Akselerasi Karir */}
-            <div className="animate-breathe-3 rounded-3xl border border-border/60 bg-card p-8 sm:p-10 hover:shadow-xl transition-shadow flex flex-col items-center">
+            <div
+              data-aos="fade-up"
+              data-aos-duration="600"
+              data-aos-delay="300"
+              className="animate-breathe-3 rounded-3xl border border-border/60 bg-card p-8 sm:p-10 hover:shadow-xl transition-shadow flex flex-col items-center"
+            >
               <div className="animate-breathe-icon-3 h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-6 shadow-inner text-primary">
                 <Rocket className="h-8 w-8" />
               </div>
