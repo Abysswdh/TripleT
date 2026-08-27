@@ -145,7 +145,7 @@ export default function ExploreQuestsPage() {
   };
 
   return (
-    <div className="animate-fade-in space-y-8 max-w-7xl mx-auto">
+    <div className="animate-fade-in space-y-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-10">
       {/* Header */}
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div>
