@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useAuth } from "@/hooks/use-auth";
-import { Sparkles, Eye, EyeOff, Loader2 } from "lucide-react";
+import logoWithText from "@/assets/logo_with_text.svg";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -43,13 +45,16 @@ export default function LoginPage() {
     <div className="animate-fade-in mx-auto w-full max-w-md py-6">
       {/* Logo */}
       <div className="mb-8 text-center">
-        <Link href="/" className="inline-flex items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/25">
-            <Sparkles className="h-5 w-5 text-white" />
-          </div>
-          <span className="text-2xl font-bold tracking-tight">
-            Doable<span className="text-primary">!</span>
-          </span>
+        <Link href="/" className="inline-flex items-center justify-center">
+          <Image
+            src={logoWithText}
+            alt="Doable! Logo"
+            height={58}
+            width={Math.round(58 * (1650 / 580))}
+            style={{ height: "58px", width: "auto" }}
+            className="object-contain block select-none"
+            priority
+          />
         </Link>
       </div>
 

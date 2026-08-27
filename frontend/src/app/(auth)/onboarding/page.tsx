@@ -1,8 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import dynamic from "next/dynamic";
 import { Loader2 } from "lucide-react";
+import logoWithText from "@/assets/logo_with_text.svg";
+import logoWithoutText from "@/assets/logo_wo_text.svg";
 import { useAuth } from "@/hooks/use-auth";
 import { useOnboarding } from "@/hooks/use-onboarding";
 import { StepRole } from "./components/step-role";
@@ -66,10 +69,16 @@ export default function OnboardingPage() {
     return (
       <div className="animate-fade-in text-center max-w-md mx-auto p-4">
         <div className="mb-6">
-          <Link href="/" className="inline-flex items-center gap-2">
-            <span className="text-3xl font-heading font-extrabold tracking-tight text-foreground">
-              Doable<span className="text-primary">!</span>
-            </span>
+          <Link href="/" className="inline-flex items-center justify-center">
+            <Image
+              src={logoWithText}
+              alt="Doable! Logo"
+              height={54}
+              width={Math.round(54 * (1650 / 580))}
+              style={{ height: "54px", width: "auto" }}
+              className="object-contain block select-none"
+              priority
+            />
           </Link>
         </div>
 
@@ -122,8 +131,17 @@ export default function OnboardingPage() {
 
           {/* Top Clean Branding */}
           <div className="relative z-20 flex items-center">
-            <Link href="/" className="text-xl font-heading font-extrabold tracking-tight text-white hover:opacity-90 transition-opacity">
-              Doable<span className="text-blue-300">!</span>
+            <Link href="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
+              <Image
+                src={logoWithoutText}
+                alt="Doable! Logo"
+                height={28}
+                width={28}
+                className="h-7 w-7 object-contain brightness-0 invert"
+              />
+              <span className="text-xl font-heading font-extrabold tracking-tight text-white">
+                Doable<span className="text-blue-300">!</span>
+              </span>
             </Link>
           </div>
 

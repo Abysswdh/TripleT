@@ -12,8 +12,8 @@ import logoWithoutText from "@/assets/logo_wo_text.svg";
 // =========================================================================
 // 🎨 LOGO SIZE CONFIGURATION (Edit height in pixels to customize size)
 // =========================================================================
-const CLIENT_NAVBAR_LOGO_HEIGHT = 65;       // Client Dashboard Navbar (e.g. 26, 28, 32, 36)
-const FREELANCER_SIDEBAR_LOGO_HEIGHT = 65;  // Freelancer Dashboard Sidebar (e.g. 26, 28, 30)
+const CLIENT_NAVBAR_LOGO_HEIGHT = 48;       // Client Dashboard Navbar
+const FREELANCER_SIDEBAR_LOGO_HEIGHT = 48;  // Freelancer Dashboard Sidebar
 // =========================================================================
 
 import {
@@ -95,7 +95,7 @@ function DashboardLayoutContent({
                   src={logoWithText}
                   alt="Doable! Logo"
                   height={CLIENT_NAVBAR_LOGO_HEIGHT}
-                  width={Math.round(CLIENT_NAVBAR_LOGO_HEIGHT * (1994 / 710))}
+                  width={Math.round(CLIENT_NAVBAR_LOGO_HEIGHT * (1650 / 580))}
                   style={{
                     height: `${CLIENT_NAVBAR_LOGO_HEIGHT}px`,
                     width: "auto",
@@ -297,7 +297,7 @@ function DashboardLayoutContent({
               src={logoWithText}
               alt="Doable! Logo"
               height={FREELANCER_SIDEBAR_LOGO_HEIGHT}
-              width={Math.round(FREELANCER_SIDEBAR_LOGO_HEIGHT * (1994 / 710))}
+              width={Math.round(FREELANCER_SIDEBAR_LOGO_HEIGHT * (1650 / 580))}
               style={{
                 height: `${FREELANCER_SIDEBAR_LOGO_HEIGHT}px`,
                 width: "auto",
