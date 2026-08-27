@@ -629,7 +629,7 @@ export function ClientDashboard() {
               blendSoftness={0.06}
               rotationAmount={450.0}
               noiseScale={2.0}
-              grainAmount={0.15}
+              grainAmount={0.01}
               grainScale={2.0}
               grainAnimated={false}
               contrast={1.4}
