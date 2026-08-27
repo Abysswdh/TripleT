@@ -401,7 +401,6 @@ export function ClientDashboard() {
   // State
   const [projects, setProjects] = useState<ClientProject[]>(INITIAL_CLIENT_PROJECTS);
   const [projectStatusFilter, setProjectStatusFilter] = useState<"All" | "Hiring" | "In Progress" | "Completed">("All");
-  const [templateCategory, setTemplateCategory] = useState("Semua");
   const [talentCategory, setTalentCategory] = useState("Semua");
   const [savedTalents, setSavedTalents] = useState<string[]>([]);
   const [quickPrompt, setQuickPrompt] = useState("");
@@ -460,12 +459,6 @@ export function ClientDashboard() {
     if (projectStatusFilter === "All") return projects;
     return projects.filter((p) => p.status === projectStatusFilter);
   }, [projects, projectStatusFilter]);
-
-  // Filtered Templates (Top Row - 3 Blueprints)
-  const filteredTemplates = useMemo(() => {
-    if (templateCategory === "Semua") return PROJECT_TEMPLATES;
-    return PROJECT_TEMPLATES.filter((t) => t.category.includes(templateCategory));
-  }, [templateCategory]);
 
   // Filtered Talents
   const filteredTalents = useMemo(() => {
@@ -651,7 +644,7 @@ export function ClientDashboard() {
               Wujudkan Ide Digitalmu Menjadi Proyek Nyata.
             </h1>
 
-            <p className="text-sm md:text-base text-slate-200 leading-relaxed font-light max-w-2xl mx-auto text-center">
+            <p className="text-base md:text-lg text-slate-200 leading-relaxed font-normal max-w-2xl mx-auto text-center">
               Pasang proyek dalam hitungan menit, tentukan milestone pengerjaan, dan dapatkan proposal terbaik dari developer & desainer terverifikasi dengan proteksi escrow 100%.
             </p>
 
@@ -697,7 +690,7 @@ export function ClientDashboard() {
                       const found = PROJECT_TEMPLATES.find((t) => t.id === item.tplId);
                       if (found) handleApplyTemplate(found);
                     }}
-                    className="rounded-lg border border-white/15 bg-white/10 px-2.5 py-1 text-[11px] font-medium text-white/95 hover:bg-white/20 transition-all backdrop-blur-sm hover:scale-[1.02]"
+                    className="rounded-lg border border-white/15 bg-white/10 px-2.5 py-1 text-xs font-medium text-white/95 hover:bg-white/20 transition-all backdrop-blur-sm hover:scale-[1.02]"
                   >
                     {item.name}
                   </button>
@@ -709,21 +702,21 @@ export function ClientDashboard() {
             <div className="pt-4 grid grid-cols-2 sm:grid-cols-4 gap-3 border-t border-white/15 w-full">
               <div className="space-y-0.5 text-center">
                 <div className="text-xl font-bold text-white">{projects.length} Proyek</div>
-                <div className="text-[11px] text-slate-300">Portofolio Klienmu</div>
+                <div className="text-xs text-slate-300">Portofolio Klienmu</div>
               </div>
               <div className="space-y-0.5 text-center">
                 <div className="text-xl font-bold text-white">
                   {projects.reduce((acc, p) => acc + p.proposalsCount, 0)} Proposal
                 </div>
-                <div className="text-[11px] text-slate-300">Total Bids Masuk</div>
+                <div className="text-xs text-slate-300">Total Bids Masuk</div>
               </div>
               <div className="space-y-0.5 text-center">
                 <div className="text-xl font-bold text-emerald-400">100% Escrow</div>
-                <div className="text-[11px] text-slate-300">Dana Terproteksi</div>
+                <div className="text-xs text-slate-300">Dana Terproteksi</div>
               </div>
               <div className="space-y-0.5 text-center">
                 <div className="text-xl font-bold text-amber-300">&lt; 15 Menit</div>
-                <div className="text-[11px] text-slate-300">Respon Talent Pertama</div>
+                <div className="text-xs text-slate-300">Respon Talent Pertama</div>
               </div>
             </div>
           </div>
@@ -755,16 +748,13 @@ export function ClientDashboard() {
             <div>
               <div className="flex items-center gap-2">
                 <FolderOpen className="h-5 w-5 text-primary" />
-                <h2 className="text-lg font-bold text-foreground">
+                <h2 className="text-xl font-bold text-foreground">
                   Proyek Saya
                 </h2>
                 <span className="flex h-5 min-w-5 px-1 items-center justify-center rounded-full bg-rose-500 text-[11px] font-bold text-white shadow-xs">
                   {projects.length}
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Pantau status hiring, seleksi proposal masuk, dan progres penyelesaian milestone pengerjaan.
-              </p>
             </div>
 
             <div className="flex items-center gap-2">
@@ -799,7 +789,7 @@ export function ClientDashboard() {
                 >
                   <span>{label}</span>
                   <span
-                    className={`rounded-full px-1.5 py-0.2 text-[10px] ${isActive ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"
+                    className={`rounded-full px-1.5 py-0.2 text-xs ${isActive ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"
                       }`}
                   >
                     {count}
@@ -824,11 +814,11 @@ export function ClientDashboard() {
                   <div className="space-y-3">
                     {/* Category & Live Status */}
                     <div className="flex items-center justify-between gap-2">
-                      <span className="rounded-md bg-primary/10 border border-primary/20 px-2 py-0.5 text-[11px] font-semibold text-primary">
+                      <span className="rounded-md bg-primary/10 border border-primary/20 px-2 py-0.5 text-xs font-semibold text-primary">
                         {proj.category}
                       </span>
                       <span
-                        className={`inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-semibold ${proj.status === "Hiring"
+                        className={`inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-xs font-semibold ${proj.status === "Hiring"
                           ? "bg-amber-500/10 text-amber-600 border border-amber-500/20"
                           : proj.status === "In Progress"
                             ? "bg-blue-500/10 text-blue-600 border border-blue-500/20"
@@ -849,10 +839,10 @@ export function ClientDashboard() {
 
                     {/* Title & Description */}
                     <div>
-                      <h3 className="font-sans font-bold text-sm text-foreground line-clamp-1 group-hover:text-primary transition-colors">
+                      <h3 className="font-sans font-bold text-base text-foreground line-clamp-1 group-hover:text-primary transition-colors">
                         {proj.title}
                       </h3>
-                      <p className="mt-1 text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                      <p className="mt-1.5 text-sm text-muted-foreground line-clamp-2 leading-relaxed">
                         {proj.description}
                       </p>
                     </div>
@@ -860,13 +850,13 @@ export function ClientDashboard() {
                     {/* Budget & Timeline Pill Strip */}
                     <div className="flex items-center justify-between text-xs py-1.5 border-y border-border/40">
                       <div>
-                        <span className="text-[10px] text-muted-foreground block font-medium">Anggaran Escrow</span>
+                        <span className="text-xs text-muted-foreground block font-medium">Anggaran Escrow</span>
                         <span className="font-bold text-foreground text-sm">{proj.budget}</span>
                       </div>
                       <div className="text-right">
-                        <span className="text-[10px] text-muted-foreground block font-medium">Target Deadline</span>
+                        <span className="text-xs text-muted-foreground block font-medium">Target Deadline</span>
                         <span className="font-semibold text-foreground flex items-center gap-1 justify-end">
-                          <Clock className="h-3 w-3 text-muted-foreground" />
+                          <Clock className="h-3.5 w-3.5 text-muted-foreground" />
                           {proj.dueDate}
                         </span>
                       </div>
@@ -874,7 +864,7 @@ export function ClientDashboard() {
 
                     {/* Milestone Progress Bar */}
                     <div className="space-y-1.5">
-                      <div className="flex items-center justify-between text-[11px]">
+                      <div className="flex items-center justify-between text-xs">
                         <span className="text-muted-foreground font-medium">
                           Milestone Selesai ({completedMilestones}/{totalMilestones})
                         </span>
@@ -893,13 +883,13 @@ export function ClientDashboard() {
                       {proj.skills.slice(0, 3).map((skill) => (
                         <span
                           key={skill}
-                          className="rounded-md bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
+                          className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
                         >
                           {skill}
                         </span>
                       ))}
                       {proj.skills.length > 3 && (
-                        <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                        <span className="rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
                           +{proj.skills.length - 3}
                         </span>
                       )}
@@ -918,7 +908,7 @@ export function ClientDashboard() {
                       </button>
                     ) : (
                       <span className="text-xs text-muted-foreground italic flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
+                        <Clock className="h-3.5 w-3.5" />
                         <span>Menunggu pelamar...</span>
                       </span>
                     )}
@@ -937,130 +927,7 @@ export function ClientDashboard() {
           </div>
         </div>
 
-        {/* ============================================================ */}
-        {/* 3. READY-TO-USE PROJECT BLUEPRINTS & TEMPLATES (TOP ROW - 3) */}
-        {/* ============================================================ */}
-        <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary mb-1">
-                <Sparkles className="h-3.5 w-3.5" />
-                <span>Blueprint Proyek Teruji & Siap Rilis</span>
-              </div>
-              <h2 className="text-xl font-bold tracking-tight text-foreground">
-                Template Proyek Siap Pakai
-              </h2>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Gunakan blueprint terstruktur dengan estimasi biaya dan milestone terstandarisasi untuk mempercepat peluncuran produkmu.
-              </p>
-            </div>
 
-            {/* Category Filter Chips */}
-            <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
-              {["Semua", "Frontend", "Mobile", "AI & Machine", "UI/UX", "Backend"].map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setTemplateCategory(cat)}
-                  className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${templateCategory === cat
-                    ? "bg-primary text-white shadow-xs"
-                    : "border border-border/80 bg-card text-muted-foreground hover:text-foreground hover:bg-muted/60"
-                    }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Blueprint Templates Grid (Top 3 items for compact layout) */}
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredTemplates.slice(0, 3).map((tpl) => (
-              <div
-                key={tpl.id}
-                className="group flex flex-col justify-between rounded-2xl border border-border/70 bg-card overflow-hidden shadow-xs transition-all hover:border-primary/40 hover:shadow-lg hover:-translate-y-1"
-              >
-                <div>
-                  {/* Thumbnail Image with Glass Badge */}
-                  <div className="relative aspect-[16/9] w-full overflow-hidden bg-muted">
-                    <img
-                      src={tpl.thumbnail}
-                      alt={tpl.title}
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src =
-                          "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&auto=format&fit=crop&q=80";
-                      }}
-                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                    <span className={`absolute top-2.5 left-2.5 rounded-md px-2 py-0.5 text-[10px] font-bold backdrop-blur-md border ${tpl.badgeColor} bg-black/40`}>
-                      {tpl.badge}
-                    </span>
-                    <span className="absolute bottom-2 left-2.5 rounded-md bg-white/15 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-md">
-                      {tpl.category}
-                    </span>
-                  </div>
-
-                  {/* Content */}
-                  <div className="p-4 space-y-3">
-                    <h3 className="font-sans font-medium text-sm text-foreground leading-snug group-hover:text-primary transition-colors">
-                      {tpl.title}
-                    </h3>
-
-                    <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-                      {tpl.description}
-                    </p>
-
-                    {/* Meta stats: Duration & Milestones */}
-                    <div className="grid grid-cols-2 gap-2 text-xs py-2 border-y border-border/40">
-                      <div>
-                        <span className="text-[10px] text-muted-foreground block">Estimasi Durasi</span>
-                        <span className="font-semibold text-foreground flex items-center gap-1">
-                          <Clock className="h-3 w-3 text-muted-foreground" />
-                          {tpl.estimatedDuration}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-muted-foreground block">Rencana Milestone</span>
-                        <span className="font-semibold text-foreground flex items-center gap-1">
-                          <Layers className="h-3 w-3 text-muted-foreground" />
-                          {tpl.milestonesCount} Tahapan
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Skills tags */}
-                    <div className="flex flex-wrap gap-1">
-                      {tpl.skills.map((skill) => (
-                        <span
-                          key={skill}
-                          className="rounded-md bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Card Footer: Budget range & 1-Click Launch Button */}
-                <div className="border-t border-border/40 p-4 pt-3 flex items-center justify-between gap-3 bg-muted/10">
-                  <div>
-                    <span className="text-[10px] text-muted-foreground block uppercase font-semibold">Estimasi Budget</span>
-                    <span className="text-xs font-bold text-primary">{tpl.estimatedBudget}</span>
-                  </div>
-
-                  <button
-                    onClick={() => handleApplyTemplate(tpl)}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-2 text-xs font-semibold text-white shadow-xs hover:bg-primary-600 transition-all hover:scale-[1.02]"
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    <span>Pakai Blueprint</span>
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
 
         {/* ============================================================ */}
         {/* 4. CARI TALENTA & JASA TERVERIFIKASI (TALENT MARKETPLACE ROW) */}
@@ -1075,9 +942,6 @@ export function ClientDashboard() {
               <h2 className="text-xl font-bold tracking-tight text-foreground">
                 Cari Talenta & Jasa Pilihan Teratas
               </h2>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Temukan dan rekrut langsung freelancer teruji yang siap mengeksekusi kebutuhan proyekmu.
-              </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-3 self-start sm:self-auto">
@@ -1138,7 +1002,7 @@ export function ClientDashboard() {
                           }`}
                       />
                     </button>
-                    <span className="absolute bottom-2 left-2.5 rounded-md bg-black/60 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-md">
+                    <span className="absolute bottom-2 left-2.5 rounded-md bg-black/60 px-2 py-0.5 text-xs font-semibold text-white backdrop-blur-md">
                       {tal.category}
                     </span>
                   </div>
@@ -1158,15 +1022,15 @@ export function ClientDashboard() {
                       />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1">
-                          <span className="font-sans font-medium text-xs text-foreground truncate">{tal.name}</span>
+                          <span className="font-sans font-semibold text-sm text-foreground truncate">{tal.name}</span>
                           <ShieldCheck className="h-3.5 w-3.5 text-primary shrink-0" />
                         </div>
-                        <span className="text-[10px] text-muted-foreground font-medium">{tal.level}</span>
+                        <span className="text-xs text-muted-foreground font-medium">{tal.level}</span>
                       </div>
                     </div>
 
                     {/* Service Title */}
-                    <h3 className="font-sans font-medium text-xs text-foreground leading-snug line-clamp-2 group-hover:text-primary transition-colors">
+                    <h3 className="font-sans font-medium text-sm text-foreground leading-snug line-clamp-2 group-hover:text-primary transition-colors">
                       {tal.serviceTitle}
                     </h3>
 
@@ -1174,7 +1038,7 @@ export function ClientDashboard() {
                     <div className="flex items-center gap-1 text-xs">
                       <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
                       <span className="font-bold text-foreground">{tal.rating}</span>
-                      <span className="text-muted-foreground text-[11px]">({tal.reviewsCount})</span>
+                      <span className="text-muted-foreground text-xs">({tal.reviewsCount})</span>
                     </div>
 
                     {/* Skills tags */}
@@ -1182,7 +1046,7 @@ export function ClientDashboard() {
                       {tal.skills.slice(0, 3).map((skill) => (
                         <span
                           key={skill}
-                          className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+                          className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
                         >
                           {skill}
                         </span>
@@ -1194,7 +1058,7 @@ export function ClientDashboard() {
                 {/* Card Footer: Starting Price & Hire CTA */}
                 <div className="border-t border-border/40 p-4 pt-3 flex items-center justify-between bg-muted/10">
                   <div>
-                    <span className="text-[10px] text-muted-foreground block uppercase font-semibold">Mulai dari</span>
+                    <span className="text-xs text-muted-foreground block uppercase font-semibold">Mulai dari</span>
                     <span className="text-sm font-bold text-primary">{tal.startingPrice}</span>
                   </div>
 
@@ -1218,9 +1082,6 @@ export function ClientDashboard() {
             <h2 className="text-xl font-bold tracking-tight text-foreground">
               Jelajahi Kategori Proyek & Benchmark Biaya
             </h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Pilih spesialisasi teknologi untuk melihat rata-rata alokasi budget dan langsung pasang proyek spesifik.
-            </p>
           </div>
 
           <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
@@ -1241,10 +1102,10 @@ export function ClientDashboard() {
                     <Icon className="h-6 w-6" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-sans font-medium text-sm text-foreground group-hover:text-primary transition-colors truncate">
+                    <h3 className="font-sans font-semibold text-base text-foreground group-hover:text-primary transition-colors truncate">
                       {cat.name}
                     </h3>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mt-0.5">
                       <span>{cat.projectCount}</span>
                       <span>•</span>
                       <span className="font-semibold text-primary">{cat.avgBudget}</span>
@@ -1267,9 +1128,6 @@ export function ClientDashboard() {
                 <Sparkles className="h-4 w-4 text-primary" />
                 <span>Aktivitas Proposal & Milestone Masuk Terbaru</span>
               </h3>
-              <p className="text-xs text-muted-foreground">
-                Pelamar terverifikasi yang baru saja mengajukan proposal pengerjaan untuk proyek aktifmu.
-              </p>
             </div>
 
             <Link
@@ -1298,13 +1156,13 @@ export function ClientDashboard() {
                   <div className="flex-1 min-w-0 space-y-1">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="text-xs font-bold text-foreground truncate">{app.name}</span>
+                        <span className="text-sm font-bold text-foreground truncate">{app.name}</span>
                         <ShieldCheck className="h-3.5 w-3.5 text-primary shrink-0" />
                       </div>
                       <span className="text-xs font-bold text-primary shrink-0">{app.bidAmount}</span>
                     </div>
 
-                    <div className="text-[11px] text-muted-foreground flex items-center gap-2">
+                    <div className="text-xs text-muted-foreground flex items-center gap-2">
                       <span>{app.role}</span>
                       <span>•</span>
                       <span className="flex items-center gap-0.5 text-amber-500 font-semibold">
@@ -1313,11 +1171,11 @@ export function ClientDashboard() {
                       </span>
                     </div>
 
-                    <p className="text-xs text-foreground/90 line-clamp-1 italic font-light">
+                    <p className="text-sm text-foreground/90 line-clamp-1 italic font-light">
                       &ldquo;{app.pitch}&rdquo;
                     </p>
 
-                    <div className="text-[10px] text-muted-foreground pt-1 flex items-center justify-between">
+                    <div className="text-xs text-muted-foreground pt-1 flex items-center justify-between">
                       <span className="truncate">Proyek: <strong className="text-foreground">{app.projectTitle}</strong></span>
                       <span className="font-semibold text-emerald-600 shrink-0">{app.deliveryDays} hari</span>
                     </div>
@@ -1336,8 +1194,8 @@ export function ClientDashboard() {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <ShieldCheck className="h-5 w-5" />
               </div>
-              <h3 className="text-base font-bold text-foreground">Proteksi Escrow 100% Aman</h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">
+              <h3 className="text-lg font-bold text-foreground">Proteksi Escrow 100% Aman</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
                 Dana proyekmu tersimpan aman di rekening escrow terproteksi dan hanya akan dicairkan ke freelancer setelah kamu menyetujui milestone.
               </p>
             </div>
@@ -1346,8 +1204,8 @@ export function ClientDashboard() {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600">
                 <CheckCircle2 className="h-5 w-5" />
               </div>
-              <h3 className="text-base font-bold text-foreground">Talenta Teruji & Bebas Resiko</h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">
+              <h3 className="text-lg font-bold text-foreground">Talenta Teruji & Bebas Resiko</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
                 Setiap freelancer yang mengajukan proposal telah lulus verifikasi portofolio dan asesmen skill coding komprehensif.
               </p>
             </div>
@@ -1356,8 +1214,8 @@ export function ClientDashboard() {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600">
                 <Clock className="h-5 w-5" />
               </div>
-              <h3 className="text-base font-bold text-foreground">Turnaround Cepat & Milestone Jelas</h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">
+              <h3 className="text-lg font-bold text-foreground">Turnaround Cepat & Milestone Jelas</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
                 Dapatkan proposal pertama dalam 15 menit, sepakati deliverable per milestone, dan nikmati serah terima source code 100% legal milikmu.
               </p>
             </div>

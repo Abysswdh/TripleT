@@ -104,9 +104,6 @@ function DashboardLayoutContent({
                   className="object-contain block select-none"
                   priority
                 />
-                <span className="hidden sm:inline-block rounded-md bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 text-[10px] font-bold text-blue-600">
-                  Client Hub
-                </span>
               </Link>
 
               {/* Quick Search in Navbar */}
