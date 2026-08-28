@@ -29,6 +29,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Grainient from "@/components/ui/Grainient";
 
 interface ProjectTemplate {
@@ -400,6 +401,7 @@ const CATEGORIES = [
 ];
 
 export function ClientDashboard() {
+  const router = useRouter();
   // State
   const [projects, setProjects] = useState<ClientProject[]>(INITIAL_CLIENT_PROJECTS);
   const [projectStatusFilter, setProjectStatusFilter] = useState<"All" | "Hiring" | "In Progress" | "Completed">("All");
@@ -476,28 +478,15 @@ export function ClientDashboard() {
     );
   };
 
-  // Handle Quick Prompt from Hero
+  // Handle Quick Prompt from Hero -> Route to dedicated Creation Page
   const handleLaunchQuickPrompt = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (quickPrompt.trim()) {
-      setNewTitle(quickPrompt.trim());
-      setNewDescription(`Kebutuhan pengerjaan untuk proyek: ${quickPrompt.trim()}. Membutuhkan pengerjaan yang rapi, arsitektur scalable, dan laporan berkala.`);
-    }
-    setCreateStep(1);
-    setIsCreateModalOpen(true);
+    router.push("/client/projects/create");
   };
 
-  // Open Modal with Pre-filled Template Blueprint
+  // Open Project Creation with Pre-filled Template Blueprint
   const handleApplyTemplate = (tpl: ProjectTemplate) => {
-    setNewTitle(tpl.title);
-    setNewCategory(tpl.category);
-    setNewDescription(tpl.description);
-    setNewSkills(tpl.skills);
-    setNewBudget(tpl.estimatedBudgetNumeric.toString());
-    setNewDifficulty(tpl.difficulty);
-    setNewDurationDays("14");
-    setCreateStep(1);
-    setIsCreateModalOpen(true);
+    router.push("/client/projects/create");
   };
 
   // Add Skill Tag
