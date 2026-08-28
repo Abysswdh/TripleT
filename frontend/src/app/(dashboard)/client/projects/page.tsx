@@ -189,13 +189,12 @@ export default function ClientProjectsPage() {
                   {p.category}
                 </span>
                 <span
-                  className={`rounded-md px-2.5 py-0.5 text-xs font-semibold ${
-                    p.status === "Hiring"
+                  className={`rounded-md px-2.5 py-0.5 text-xs font-semibold ${p.status === "Hiring"
                       ? "bg-amber-500/10 text-amber-600"
                       : p.status === "In Progress"
-                      ? "bg-blue-500/10 text-blue-600"
-                      : "bg-emerald-500/10 text-emerald-600"
-                  }`}
+                        ? "bg-blue-500/10 text-blue-600"
+                        : "bg-emerald-500/10 text-emerald-600"
+                    }`}
                 >
                   {p.status}
                 </span>
@@ -243,12 +242,13 @@ export default function ClientProjectsPage() {
             </div>
 
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => setSelectedProject(p)}
-                className="rounded-xl border border-border bg-background px-4 py-2 text-xs font-semibold hover:bg-muted transition-colors"
+              <Link
+                href={`/client/projects/${p.id}`}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 px-3.5 py-2 text-xs font-semibold transition-all hover:scale-102"
               >
-                Detail
-              </button>
+                <span>Detail & Gantt Chart</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
             </div>
           </div>
         ))}
@@ -312,13 +312,12 @@ export default function ClientProjectsPage() {
                         key={s.step}
                         type="button"
                         onClick={() => setCreateStep(s.step as 1 | 2 | 3)}
-                        className={`rounded-xl py-2 px-3 text-xs font-semibold transition-all text-center ${
-                          createStep === s.step
+                        className={`rounded-xl py-2 px-3 text-xs font-semibold transition-all text-center ${createStep === s.step
                             ? "bg-primary text-white shadow-xs"
                             : createStep > s.step
-                            ? "bg-primary/15 text-primary border border-primary/20"
-                            : "bg-muted text-muted-foreground"
-                        }`}
+                              ? "bg-primary/15 text-primary border border-primary/20"
+                              : "bg-muted text-muted-foreground"
+                          }`}
                       >
                         {s.title}
                       </button>
@@ -405,11 +404,10 @@ export default function ClientProjectsPage() {
                                 type="button"
                                 key={item.level}
                                 onClick={() => setNewDifficulty(item.level)}
-                                className={`rounded-xl border p-3 text-left transition-all ${
-                                  newDifficulty === item.level
+                                className={`rounded-xl border p-3 text-left transition-all ${newDifficulty === item.level
                                     ? "border-primary bg-primary/10 text-foreground shadow-xs"
                                     : "border-border/80 bg-background text-muted-foreground hover:border-border"
-                                }`}
+                                  }`}
                               >
                                 <div className="text-xs font-bold text-foreground">{item.level}</div>
                                 <div className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{item.desc}</div>
@@ -627,13 +625,12 @@ export default function ClientProjectsPage() {
                     {selectedProject.category}
                   </span>
                   <span
-                    className={`rounded-md px-2.5 py-0.5 text-xs font-semibold ${
-                      selectedProject.status === "Hiring"
+                    className={`rounded-md px-2.5 py-0.5 text-xs font-semibold ${selectedProject.status === "Hiring"
                         ? "bg-amber-500/10 text-amber-600"
                         : selectedProject.status === "In Progress"
-                        ? "bg-blue-500/10 text-blue-600"
-                        : "bg-emerald-500/10 text-emerald-600"
-                    }`}
+                          ? "bg-blue-500/10 text-blue-600"
+                          : "bg-emerald-500/10 text-emerald-600"
+                      }`}
                   >
                     {selectedProject.status}
                   </span>

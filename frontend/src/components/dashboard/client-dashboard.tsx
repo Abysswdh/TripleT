@@ -917,9 +917,9 @@ export function ClientDashboard() {
                     )}
 
                     <Link
-                      href="/client/projects"
+                      href={`/client/projects/${proj.id}`}
                       className="rounded-xl border border-border/80 bg-card hover:bg-muted p-2 text-muted-foreground hover:text-foreground transition-colors"
-                      title="Detail Proyek"
+                      title="Detail Proyek & Gantt Chart"
                     >
                       <ArrowRight className="h-4 w-4" />
                     </Link>
