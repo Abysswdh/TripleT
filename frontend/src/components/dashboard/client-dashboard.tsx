@@ -24,6 +24,9 @@ import {
   Flame,
   Heart,
   Zap,
+  Compass,
+  Building2,
+  TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
 import Grainient from "@/components/ui/Grainient";
@@ -1075,44 +1078,170 @@ export function ClientDashboard() {
         </div>
 
         {/* ============================================================ */}
-        {/* 5. EXPLORE PROJECT SCOPES & BUDGET BENCHMARKS */}
+        {/* 5. EXPLORE PROJECT MARKET & PEER BENCHMARKS (PROMOTION HUB) */}
         {/* ============================================================ */}
-        <div className="space-y-4">
-          <div>
-            <h2 className="text-xl font-bold tracking-tight text-foreground">
-              Jelajahi Kategori Proyek & Benchmark Biaya
+        <div className="space-y-4 rounded-2xl sm:rounded-3xl border border-primary/20 bg-gradient-to-b from-card via-card to-primary/5 p-5 sm:p-6 shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 right-0 -mt-12 -mr-12 w-72 h-72 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+
+          {/* Section Header */}
+          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+              Jelajahi Proyek yang Sudah Dibuat Sebelumnya
             </h2>
+
+            <Link
+              href="/client/market"
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-primary-foreground shadow-sm hover:bg-primary/90 transition-all hover:scale-102 shrink-0 self-start sm:self-auto"
+            >
+              <span>Buka Project Market</span>
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
 
-          <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
+          {/* Featured Live Peer Projects Snippet */}
+          <div className="relative z-10 pt-1 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                Trending di Project Market Minggu Ini
+              </span>
+              <Link
+                href="/client/market"
+                className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
+              >
+                <span>Lihat Semua Proyek (148+)</span>
+                <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
+
+            <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
+              {/* Project Card 1 */}
+              <div className="flex flex-col justify-between rounded-2xl border border-border/70 bg-card p-4 space-y-3 hover:border-primary/40 hover:shadow-md transition-all">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <div className="flex items-center gap-1.5 font-bold text-foreground">
+                      <Building2 className="h-3.5 w-3.5 text-primary" />
+                      <span>Nexa Corporation</span>
+                    </div>
+                    <span className="rounded-full bg-emerald-500/10 text-emerald-600 px-2 py-0.5 font-bold text-[10px]">
+                      Menerima Proposal
+                    </span>
+                  </div>
+                  <h4 className="text-sm font-bold text-foreground line-clamp-2">
+                    Enterprise SaaS Analytics Dashboard & Billing
+                  </h4>
+                  <div className="flex flex-wrap gap-1">
+                    <span className="rounded bg-muted/60 px-1.5 py-0.5 text-[10px] text-muted-foreground font-medium">Next.js 14</span>
+                    <span className="rounded bg-muted/60 px-1.5 py-0.5 text-[10px] text-muted-foreground font-medium">PostgreSQL</span>
+                    <span className="rounded bg-muted/60 px-1.5 py-0.5 text-[10px] text-muted-foreground font-medium">Prisma</span>
+                  </div>
+                </div>
+
+                <div className="border-t border-border/50 pt-2.5 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] text-muted-foreground block">Estimasi Budget</span>
+                    <span className="text-xs font-bold text-primary">Rp 18.500.000</span>
+                  </div>
+                  <Link
+                    href="/client/market"
+                    className="inline-flex items-center gap-1 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold px-2.5 py-1.5 transition-colors"
+                  >
+                    <span>Detail Scope</span>
+                    <ArrowRight className="h-3 w-3" />
+                  </Link>
+                </div>
+              </div>
+
+              {/* Project Card 2 */}
+              <div className="flex flex-col justify-between rounded-2xl border border-border/70 bg-card p-4 space-y-3 hover:border-primary/40 hover:shadow-md transition-all">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <div className="flex items-center gap-1.5 font-bold text-foreground">
+                      <Building2 className="h-3.5 w-3.5 text-primary" />
+                      <span>Alpha Labs Tech</span>
+                    </div>
+                    <span className="rounded-full bg-emerald-500/10 text-emerald-600 px-2 py-0.5 font-bold text-[10px]">
+                      Menerima Proposal
+                    </span>
+                  </div>
+                  <h4 className="text-sm font-bold text-foreground line-clamp-2">
+                    AI Voice Agent Support & Intelligent Ticket Dispatcher
+                  </h4>
+                  <div className="flex flex-wrap gap-1">
+                    <span className="rounded bg-muted/60 px-1.5 py-0.5 text-[10px] text-muted-foreground font-medium">Python</span>
+                    <span className="rounded bg-muted/60 px-1.5 py-0.5 text-[10px] text-muted-foreground font-medium">OpenAI Realtime</span>
+                    <span className="rounded bg-muted/60 px-1.5 py-0.5 text-[10px] text-muted-foreground font-medium">LangChain</span>
+                  </div>
+                </div>
+
+                <div className="border-t border-border/50 pt-2.5 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] text-muted-foreground block">Estimasi Budget</span>
+                    <span className="text-xs font-bold text-primary">Rp 14.000.000</span>
+                  </div>
+                  <Link
+                    href="/client/market"
+                    className="inline-flex items-center gap-1 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold px-2.5 py-1.5 transition-colors"
+                  >
+                    <span>Detail Scope</span>
+                    <ArrowRight className="h-3 w-3" />
+                  </Link>
+                </div>
+              </div>
+
+              {/* Project Card 3 */}
+              <div className="flex flex-col justify-between rounded-2xl border border-border/70 bg-card p-4 space-y-3 hover:border-primary/40 hover:shadow-md transition-all">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <div className="flex items-center gap-1.5 font-bold text-foreground">
+                      <Building2 className="h-3.5 w-3.5 text-primary" />
+                      <span>PT FinTech Solusindo</span>
+                    </div>
+                    <span className="rounded-full bg-blue-500/10 text-blue-600 px-2 py-0.5 font-bold text-[10px]">
+                      In Development
+                    </span>
+                  </div>
+                  <h4 className="text-sm font-bold text-foreground line-clamp-2">
+                    Cross-Platform Fintech Mobile App (Wallet & QRIS)
+                  </h4>
+                  <div className="flex flex-wrap gap-1">
+                    <span className="rounded bg-muted/60 px-1.5 py-0.5 text-[10px] text-muted-foreground font-medium">Flutter</span>
+                    <span className="rounded bg-muted/60 px-1.5 py-0.5 text-[10px] text-muted-foreground font-medium">Dart</span>
+                    <span className="rounded bg-muted/60 px-1.5 py-0.5 text-[10px] text-muted-foreground font-medium">Biometrics</span>
+                  </div>
+                </div>
+
+                <div className="border-t border-border/50 pt-2.5 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] text-muted-foreground block">Estimasi Budget</span>
+                    <span className="text-xs font-bold text-primary">Rp 25.000.000</span>
+                  </div>
+                  <Link
+                    href="/client/market"
+                    className="inline-flex items-center gap-1 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold px-2.5 py-1.5 transition-colors"
+                  >
+                    <span>Detail Scope</span>
+                    <ArrowRight className="h-3 w-3" />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Category Discovery Chips */}
+          <div className="relative z-10 pt-2 flex flex-wrap items-center gap-2 border-t border-border/40">
+            <span className="text-xs font-semibold text-muted-foreground mr-1">Telusuri Kategori di Market:</span>
             {CATEGORIES.map((cat) => {
               const Icon = cat.icon;
               return (
-                <div
+                <Link
                   key={cat.name}
-                  onClick={() => {
-                    setNewCategory(cat.name);
-                    setNewTitle(`Kebutuhan Proyek ${cat.name}`);
-                    setCreateStep(1);
-                    setIsCreateModalOpen(true);
-                  }}
-                  className="group flex items-center gap-4 rounded-2xl border border-border/70 bg-card p-4 shadow-xs transition-all hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5 cursor-pointer"
+                  href="/client/market"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-border/70 bg-card hover:bg-muted px-3 py-1.5 text-xs font-medium text-foreground transition-all hover:border-primary/40 hover:text-primary"
                 >
-                  <div className={`flex h-12 w-12 items-center justify-center rounded-xl border bg-gradient-to-br ${cat.color} transition-transform group-hover:scale-105 shrink-0`}>
-                    <Icon className="h-6 w-6" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-sans font-semibold text-base text-foreground group-hover:text-primary transition-colors truncate">
-                      {cat.name}
-                    </h3>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground mt-0.5">
-                      <span>{cat.projectCount}</span>
-                      <span>•</span>
-                      <span className="font-semibold text-primary">{cat.avgBudget}</span>
-                    </div>
-                  </div>
-                  <Plus className="h-4 w-4 text-muted-foreground/50 group-hover:text-primary group-hover:rotate-90 transition-all shrink-0" />
-                </div>
+                  <Icon className="h-3.5 w-3.5" />
+                  <span>{cat.name}</span>
+                  <span className="text-[10px] text-muted-foreground font-normal">({cat.avgBudget})</span>
+                </Link>
               );
             })}
           </div>

@@ -62,8 +62,9 @@ export function Navbar() {
   type NavLink = { href: string; label: string; icon?: React.ElementType };
 
   const clientLinks: NavLink[] = [
-    { href: "/client/dashboard", label: "Project Hub" },
+    { href: "/client/dashboard", label: "Dashboard" },
     { href: "/client/projects", label: "My Projects" },
+    { href: "/client/market", label: "Project Market" },
     { href: "/client/talent", label: "Find Talent" },
   ];
 
@@ -168,18 +169,6 @@ export function Navbar() {
                   <span>Post Project</span>
                 </Link>
               )}
-              
-              {isDashboard && (
-                <button
-                  onClick={isClientView ? handleSwitchToFreelancer : handleSwitchToClient}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-border/80 bg-muted/40 hover:bg-muted px-3 py-1.5 text-xs font-semibold text-foreground transition-all hover:border-primary/40"
-                  title={`Switch to ${isClientView ? 'Freelancer' : 'Client'} Mode`}
-                >
-                  <Repeat className="h-3.5 w-3.5 text-primary" />
-                  <span className="hidden xl:inline">Switch to {isClientView ? 'Freelancer' : 'Client'}</span>
-                  <span className="hidden sm:inline xl:hidden">{isClientView ? 'Freelancer' : 'Client'}</span>
-                </button>
-              )}
 
               {/* User Dropdown */}
               <div className="relative">
@@ -194,12 +183,31 @@ export function Navbar() {
                 </button>
 
                 {userDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-56 rounded-2xl border border-border/80 bg-card p-2 shadow-xl z-50 animate-in fade-in zoom-in-95">
-                    <div className="px-3 py-2 border-b border-border/40 mb-1">
+                  <div className="absolute right-0 mt-2 w-60 rounded-2xl border border-border/80 bg-card p-2 shadow-xl z-50 animate-in fade-in zoom-in-95">
+                    {/* Profile Header & Role Switcher */}
+                    <div className="px-3 py-2.5 border-b border-border/40 mb-1.5">
                       <p className="text-xs font-bold text-foreground truncate">
                         {user?.user_metadata?.full_name || "User Name"}
                       </p>
                       <p className="text-[11px] text-muted-foreground truncate">{user?.email || "user@doable.id"}</p>
+
+                      {isDashboard && (
+                        <button
+                          onClick={() => {
+                            setUserDropdownOpen(false);
+                            if (isClientView) {
+                              handleSwitchToFreelancer();
+                            } else {
+                              handleSwitchToClient();
+                            }
+                          }}
+                          className="mt-2.5 w-full flex items-center justify-center gap-2 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 px-3 py-2 text-xs font-semibold transition-all group"
+                          title={`Switch to ${isClientView ? 'Freelancer' : 'Client'} Mode`}
+                        >
+                          <Repeat className="h-3.5 w-3.5 group-hover:rotate-180 transition-transform duration-300" />
+                          <span>Switch to {isClientView ? 'Freelancer' : 'Client'}</span>
+                        </button>
+                      )}
                     </div>
 
                     {!isDashboard && (
@@ -221,6 +229,10 @@ export function Navbar() {
                         <Link href="/client/projects" className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => setUserDropdownOpen(false)}>
                           <FolderOpen className="h-3.5 w-3.5" />
                           My Projects & Orders
+                        </Link>
+                        <Link href="/client/market" className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => setUserDropdownOpen(false)}>
+                          <Compass className="h-3.5 w-3.5" />
+                          Project Market
                         </Link>
                       </>
                     )}
