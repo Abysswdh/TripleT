@@ -19,7 +19,7 @@ interface TalentMatch {
 
 const TALENTS: TalentMatch[] = [
   {
-    id: "t-1",
+    id: "tal-1",
     name: "Dimas Arya Pratama",
     role: "Fullstack Web & AI Specialist",
     avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
@@ -30,7 +30,7 @@ const TALENTS: TalentMatch[] = [
     isVerified: true,
   },
   {
-    id: "t-2",
+    id: "tal-2",
     name: "Siti Rahmawati",
     role: "Senior UI/UX & Product Designer",
     avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80",
@@ -41,12 +41,23 @@ const TALENTS: TalentMatch[] = [
     isVerified: true,
   },
   {
-    id: "t-3",
+    id: "tal-3",
+    name: "Reza Mahendra",
+    role: "AI & Machine Learning Specialist",
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+    rating: 4.9,
+    reviewsCount: 29,
+    hourlyRate: "Rp 250.000 / jam",
+    skills: ["Python", "FastAPI", "OpenAI", "LangChain"],
+    isVerified: true,
+  },
+  {
+    id: "tal-4",
     name: "Budi Santoso",
     role: "Mobile App Developer (Flutter / React Native)",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80",
     rating: 4.8,
-    reviewsCount: 29,
+    reviewsCount: 24,
     hourlyRate: "Rp 160.000 / jam",
     skills: ["Flutter", "React Native", "Firebase", "State Management"],
     isVerified: true,
@@ -92,12 +103,6 @@ export default function ClientTalentPage() {
             Temukan freelancer terbaik dengan keahlian yang telah diuji dan diverifikasi.
           </p>
         </div>
-        <Link
-          href="/client/dashboard"
-          className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors self-start md:self-auto"
-        >
-          ← Kembali ke Overview
-        </Link>
       </div>
 
       <div className="relative max-w-md">
@@ -117,7 +122,7 @@ export default function ClientTalentPage() {
             key={talent.id}
             className="flex flex-col justify-between rounded-2xl border border-border/60 bg-card p-5 shadow-sm transition-all hover:border-primary/40 hover:shadow-md"
           >
-            <div>
+            <Link href={`/client/talent/${talent.id}`} className="group/card block">
               <div className="flex items-center gap-3">
                 <img
                   src={talent.avatar}
@@ -126,7 +131,7 @@ export default function ClientTalentPage() {
                 />
                 <div>
                   <div className="flex items-center gap-1.5">
-                    <h4 className="text-sm font-bold font-sans text-foreground">{talent.name}</h4>
+                    <h4 className="text-sm font-bold font-sans text-foreground group-hover/card:text-primary transition-colors">{talent.name}</h4>
                     {talent.isVerified && <ShieldCheck className="h-4 w-4 text-primary" />}
                   </div>
                   <p className="text-xs text-muted-foreground">{talent.role}</p>
@@ -152,9 +157,15 @@ export default function ClientTalentPage() {
                   </span>
                 ))}
               </div>
-            </div>
+            </Link>
 
             <div className="mt-5 pt-3 border-t border-border/40 flex items-center gap-2">
+              <Link
+                href={`/client/talent/${talent.id}`}
+                className="flex-1 rounded-xl border border-border/80 bg-card py-2 text-center text-xs font-semibold text-foreground hover:bg-muted transition-colors"
+              >
+                Lihat Profil
+              </Link>
               <button
                 onClick={() => setSelectedTalent(talent)}
                 className="flex-1 rounded-xl bg-primary py-2 text-center text-xs font-semibold text-white shadow-sm hover:bg-primary-600 transition-colors"

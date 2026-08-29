@@ -2,7 +2,6 @@
 
 import { useState, useMemo } from "react";
 import {
-  Compass,
   Search,
   SlidersHorizontal,
   Building2,
@@ -423,62 +422,14 @@ export default function ProjectMarketPage() {
 
   return (
     <div className="animate-fade-in space-y-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-10 pb-16">
-      {/* 1. HERO HEADER */}
-      <div className="relative overflow-hidden rounded-3xl border border-border/80 bg-gradient-to-br from-card via-card to-primary/5 p-6 sm:p-8 shadow-sm">
-        <div className="absolute top-0 right-0 -mt-8 -mr-8 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
-        
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-3 max-w-3xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-              <Compass className="h-3.5 w-3.5" />
-              <span>Project Market & Benchmarking Hub</span>
-            </div>
-            
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-foreground">
-              Jelajahi Proyek yang Dibuat Klien Lain
-            </h1>
-            
-            <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-              Pelajari bagaimana klien dan perusahaan lain merancang brief spesifikasi teknis, menyusun pembagian milestone, dan mengalokasikan budget secara optimal. Gunakan proyek nyata sebagai inspirasi dan blueprint kebutuhan Anda.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 shrink-0">
-            <Link
-              href="/client/projects"
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs sm:text-sm font-bold text-primary-foreground shadow-md hover:bg-primary/90 transition-all hover:scale-105"
-            >
-              <Plus className="h-4 w-4" />
-              <span>Posting Proyek Baru</span>
-            </Link>
-            <Link
-              href="/client/dashboard"
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card/80 px-4 py-2.5 text-xs sm:text-sm font-semibold text-foreground hover:bg-muted transition-colors"
-            >
-              <span>Dashboard</span>
-            </Link>
-          </div>
-        </div>
-
-        {/* Quick Highlights Bar */}
-        <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-3 border-t border-border/50 pt-6">
-          <div className="rounded-xl bg-muted/40 p-3 border border-border/40">
-            <p className="text-[11px] font-medium text-muted-foreground">Proyek Aktif Terpublikasi</p>
-            <p className="text-lg font-bold text-foreground mt-0.5">148+ Proyek</p>
-          </div>
-          <div className="rounded-xl bg-muted/40 p-3 border border-border/40">
-            <p className="text-[11px] font-medium text-muted-foreground">Rata-rata Budget Pasar</p>
-            <p className="text-lg font-bold text-primary mt-0.5">Rp 14.800.000</p>
-          </div>
-          <div className="rounded-xl bg-muted/40 p-3 border border-border/40">
-            <p className="text-[11px] font-medium text-muted-foreground">Verifikasi Pelamar</p>
-            <p className="text-lg font-bold text-foreground mt-0.5">94% Lolos Skill Test</p>
-          </div>
-          <div className="rounded-xl bg-muted/40 p-3 border border-border/40">
-            <p className="text-[11px] font-medium text-muted-foreground">Rata-rata Milestone</p>
-            <p className="text-lg font-bold text-foreground mt-0.5">3 Tahapan Kerja</p>
-          </div>
-        </div>
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight md:text-3xl text-foreground">
+          Project Market
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Jelajahi proyek yang dibuat klien lain, pantau referensi budget, dan tinjau spesifikasi teknis.
+        </p>
       </div>
 
       {/* 2. SEARCH & FILTER CONTROLS */}

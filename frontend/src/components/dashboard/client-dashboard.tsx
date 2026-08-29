@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -8,57 +9,36 @@ import {
   Star,
   Plus,
   ArrowRight,
-  Code2,
-  Palette,
-  Bot,
-  Smartphone,
-  Server,
-  Cloud,
+  Search,
   CheckCircle2,
   Clock,
   Users,
-  FolderOpen,
   X,
   ChevronDown,
-  Flame,
   Heart,
-  Zap,
   Building2,
+  MapPin,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Grainient from "@/components/ui/Grainient";
 import { CreateProjectModal, type CreateProjectModalProps, type CreatedProject } from "@/components/dashboard/create-project-modal";
-
-interface ProjectTemplate {
-  id: string;
-  title: string;
-  category: string;
-  description: string;
-  badge: string;
-  badgeColor: string;
-  estimatedBudget: string;
-  estimatedBudgetNumeric: number;
-  estimatedDuration: string;
-  difficulty: "Starter" | "Standard" | "Enterprise";
-  skills: string[];
-  thumbnail: string;
-  milestonesCount: number;
-  popularityScore: number;
-}
 
 interface FeaturedTalent {
   id: string;
   name: string;
   avatar: string;
+  coverImage?: string;
   role: string;
-  level: "Verified Pro" | "Top Rated" | "Level 2 Seller";
+  headline: string;
+  organization?: string;
+  location?: string;
+  level: "Verified Pro" | "Top Rated" | "Rising Star" | "Level 2 Seller";
   category: string;
-  serviceTitle: string;
-  thumbnail: string;
   rating: number;
   reviewsCount: number;
+  completedProjects?: number;
   startingPrice: string;
-  deliveryTime: string;
   skills: string[];
 }
 
@@ -100,164 +80,73 @@ interface ClientProject {
   applicants: ProposalApplicant[];
 }
 
-const PROJECT_TEMPLATES: ProjectTemplate[] = [
-  {
-    id: "tpl-1",
-    title: "SaaS Dashboard & Multi-Tenant Web App",
-    category: "Frontend & Web",
-    description: "Membangun web app SaaS lengkap dengan autentikasi multi-tenant, visual charts interaktif, dan integrasi payment gateway.",
-    badge: "Paling Populer",
-    badgeColor: "bg-blue-500/10 text-blue-600 border-blue-500/20",
-    estimatedBudget: "Rp 6.500.000 - Rp 14.000.000",
-    estimatedBudgetNumeric: 8500000,
-    estimatedDuration: "7 - 14 hari",
-    difficulty: "Standard",
-    skills: ["Next.js 14", "TypeScript", "Tailwind CSS", "Supabase", "Midtrans"],
-    thumbnail: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&auto=format&fit=crop&q=80",
-    milestonesCount: 3,
-    popularityScore: 98,
-  },
-  {
-    id: "tpl-2",
-    title: "Cross-Platform Mobile App (iOS & Android)",
-    category: "Mobile App Development",
-    description: "Aplikasi mobile responsif Flutter / React Native dengan state management solid, push notifications, dan offline-first caching.",
-    badge: "High Demand",
-    badgeColor: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
-    estimatedBudget: "Rp 9.000.000 - Rp 22.000.000",
-    estimatedBudgetNumeric: 12500000,
-    estimatedDuration: "14 - 21 hari",
-    difficulty: "Enterprise",
-    skills: ["Flutter", "Dart", "Firebase", "REST API", "State Management"],
-    thumbnail: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=600&auto=format&fit=crop&q=80",
-    milestonesCount: 4,
-    popularityScore: 95,
-  },
-  {
-    id: "tpl-3",
-    title: "Integrasi AI Agent, LLM Chatbot & RAG System",
-    category: "AI & Machine Learning",
-    description: "Integrasi LLM cerdas berbasis dokumen bisnis (RAG), voice assistant interaktif, dan automasi workflow API.",
-    badge: "Trending Tech",
-    badgeColor: "bg-purple-500/10 text-purple-600 border-purple-500/20",
-    estimatedBudget: "Rp 5.500.000 - Rp 16.000.000",
-    estimatedBudgetNumeric: 7500000,
-    estimatedDuration: "5 - 10 hari",
-    difficulty: "Standard",
-    skills: ["Python", "FastAPI", "OpenAI", "LangChain", "Vector DB"],
-    thumbnail: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=600&auto=format&fit=crop&q=80",
-    milestonesCount: 3,
-    popularityScore: 96,
-  },
-  {
-    id: "tpl-4",
-    title: "Atomic UI/UX Design System & Interactive Prototype",
-    category: "UI/UX & Product Design",
-    description: "Desain sistem komponen lengkap di Figma dengan auto-layout responsif, guideline typography, warna, dan prototipe siap uji.",
-    badge: "Quick Turnaround",
-    badgeColor: "bg-pink-500/10 text-pink-600 border-pink-500/20",
-    estimatedBudget: "Rp 3.500.000 - Rp 8.000.000",
-    estimatedBudgetNumeric: 4500000,
-    estimatedDuration: "4 - 7 hari",
-    difficulty: "Starter",
-    skills: ["Figma", "Atomic Design", "Wireframing", "User Research", "Prototyping"],
-    thumbnail: "https://images.unsplash.com/photo-1581291518857-4e27b48ff24e?w=600&auto=format&fit=crop&q=80",
-    milestonesCount: 2,
-    popularityScore: 92,
-  },
-  {
-    id: "tpl-5",
-    title: "High-Throughput Microservice API & Database Architecture",
-    category: "Backend & Database",
-    description: "Arsitektur backend scalable dengan clean architecture, caching Redis, query optimization PostgreSQL, dan automated unit test.",
-    badge: "Robust Backend",
-    badgeColor: "bg-amber-500/10 text-amber-600 border-amber-500/20",
-    estimatedBudget: "Rp 7.000.000 - Rp 18.000.000",
-    estimatedBudgetNumeric: 9500000,
-    estimatedDuration: "7 - 14 hari",
-    difficulty: "Enterprise",
-    skills: ["Go / Python", "PostgreSQL", "Redis", "Docker", "REST & GraphQL"],
-    thumbnail: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=600&auto=format&fit=crop&q=80",
-    milestonesCount: 3,
-    popularityScore: 90,
-  },
-  {
-    id: "tpl-6",
-    title: "Landing Page Modern & Performance SEO Speed 98+",
-    category: "Frontend & Web",
-    description: "Landing page konversi tinggi dengan micro-animations mulus, dark mode, dan performa Google Lighthouse skor 98+.",
-    badge: "Fast Launch",
-    badgeColor: "bg-cyan-500/10 text-cyan-600 border-cyan-500/20",
-    estimatedBudget: "Rp 2.800.000 - Rp 6.000.000",
-    estimatedBudgetNumeric: 3500000,
-    estimatedDuration: "3 - 5 hari",
-    difficulty: "Starter",
-    skills: ["Next.js", "Tailwind CSS", "Framer Motion", "SEO Best Practice"],
-    thumbnail: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&auto=format&fit=crop&q=80",
-    milestonesCount: 2,
-    popularityScore: 89,
-  },
-];
-
 const FEATURED_TALENTS: FeaturedTalent[] = [
   {
     id: "tal-1",
     name: "Dimas Arya Pratama",
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+    coverImage: "https://images.unsplash.com/photo-1557683316-973673baf926?w=600&auto=format&fit=crop&q=80",
     role: "Fullstack Web & SaaS Specialist",
+    headline: "Senior Fullstack Engineer | Next.js 14, React, Supabase & Cloud Architect",
+    organization: "Institut Teknologi Bandung",
+    location: "Bandung, Jawa Barat",
     level: "Verified Pro",
     category: "Frontend",
-    serviceTitle: "Membangun SaaS Dashboard Fullstack Modern dengan Next.js 14, Tailwind & Supabase",
-    thumbnail: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&auto=format&fit=crop&q=80",
     rating: 4.9,
     reviewsCount: 38,
+    completedProjects: 42,
     startingPrice: "Rp 3.500.000",
-    deliveryTime: "5 hari",
     skills: ["Next.js", "TypeScript", "Tailwind CSS", "Supabase"],
   },
   {
     id: "tal-2",
     name: "Siti Rahmawati",
-    avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80",
+    avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200&auto=format&fit=crop&q=80",
+    coverImage: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80",
     role: "Lead UI/UX & Product Designer",
+    headline: "Lead UI/UX Designer | Figma Atomic Design Systems, User Research & Interactive Prototype",
+    organization: "Universitas Indonesia",
+    location: "Jakarta Selatan, DKI Jakarta",
     level: "Top Rated",
     category: "UI/UX",
-    serviceTitle: "Desain UI/UX Mobile & Web App Lengkap dengan Figma Atomic Design System & Prototype",
-    thumbnail: "https://images.unsplash.com/photo-1581291518857-4e27b48ff24e?w=600&auto=format&fit=crop&q=80",
     rating: 5.0,
     reviewsCount: 52,
+    completedProjects: 56,
     startingPrice: "Rp 2.800.000",
-    deliveryTime: "4 hari",
     skills: ["Figma", "Design Systems", "Prototyping", "Wireframing"],
   },
   {
     id: "tal-3",
     name: "Reza Mahendra",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80",
+    coverImage: "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=600&auto=format&fit=crop&q=80",
     role: "AI Engineer & Python Developer",
+    headline: "AI & Machine Learning Engineer | FastAPI, OpenAI Realtime, LangChain & WebSockets",
+    organization: "Universitas Gadjah Mada",
+    location: "Yogyakarta, DI Yogyakarta",
     level: "Verified Pro",
     category: "AI & Machine",
-    serviceTitle: "Integrasi AI Voice Agent & LLM Chatbot dengan FastAPI, WebSockets & OpenAI",
-    thumbnail: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=600&auto=format&fit=crop&q=80",
     rating: 4.9,
     reviewsCount: 29,
+    completedProjects: 31,
     startingPrice: "Rp 5.500.000",
-    deliveryTime: "7 hari",
     skills: ["Python", "FastAPI", "OpenAI", "WebSockets"],
   },
   {
     id: "tal-4",
     name: "Budi Santoso",
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80",
+    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80",
+    coverImage: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=600&auto=format&fit=crop&q=80",
     role: "Mobile App Flutter Specialist",
+    headline: "Mobile Engineer | Flutter, Dart, Firebase & Midtrans Payment Gateway Solutions",
+    organization: "BINUS University",
+    location: "Malang, Jawa Timur",
     level: "Top Rated",
     category: "Mobile",
-    serviceTitle: "Aplikasi Mobile Flutter Cross-Platform (iOS & Android) dengan Midtrans Payment",
-    thumbnail: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=600&auto=format&fit=crop&q=80",
     rating: 4.8,
     reviewsCount: 24,
+    completedProjects: 39,
     startingPrice: "Rp 4.200.000",
-    deliveryTime: "8 hari",
     skills: ["Flutter", "Dart", "Midtrans", "Firebase"],
   },
 ];
@@ -388,16 +277,11 @@ const INITIAL_CLIENT_PROJECTS: ClientProject[] = [
   },
 ];
 
-const CATEGORIES = [
-  { name: "Frontend & Web", icon: Code2, projectCount: "140+ Proyek", avgBudget: "Rp 4M - 15M", color: "from-blue-500/10 to-indigo-500/10 text-blue-600 border-blue-500/20" },
-  { name: "Mobile App Solutions", icon: Smartphone, projectCount: "85+ Proyek", avgBudget: "Rp 8M - 25M", color: "from-emerald-500/10 to-teal-500/10 text-emerald-600 border-emerald-500/20" },
-  { name: "AI & Machine Learning", icon: Bot, projectCount: "60+ Proyek", avgBudget: "Rp 5M - 20M", color: "from-purple-500/10 to-violet-500/10 text-purple-600 border-purple-500/20" },
-  { name: "UI/UX & Product Design", icon: Palette, projectCount: "95+ Proyek", avgBudget: "Rp 3M - 8M", color: "from-pink-500/10 to-rose-500/10 text-pink-600 border-pink-500/20" },
-  { name: "Backend & Database", icon: Server, projectCount: "110+ Proyek", avgBudget: "Rp 6M - 18M", color: "from-amber-500/10 to-orange-500/10 text-amber-600 border-amber-500/20" },
-  { name: "DevOps & Cloud Systems", icon: Cloud, projectCount: "45+ Proyek", avgBudget: "Rp 4M - 14M", color: "from-cyan-500/10 to-sky-500/10 text-cyan-600 border-cyan-500/20" },
-];
+
 
 export function ClientDashboard() {
+  const router = useRouter();
+
   // State
   const [projects, setProjects] = useState<ClientProject[]>(INITIAL_CLIENT_PROJECTS);
   const [projectStatusFilter, setProjectStatusFilter] = useState<"All" | "Hiring" | "In Progress" | "Completed">("All");
@@ -408,6 +292,7 @@ export function ClientDashboard() {
   // Modal State for Project Creation
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [createModalInitialData, setCreateModalInitialData] = useState<CreateProjectModalProps["initialData"]>(undefined);
+  const [isChoiceModalOpen, setIsChoiceModalOpen] = useState(false);
 
   // Proposal Review Modal State
   const [selectedProjectForProposals, setSelectedProjectForProposals] = useState<ClientProject | null>(null);
@@ -464,9 +349,17 @@ export function ClientDashboard() {
     );
   };
 
-  // Handle Quick Prompt from Hero -> Open Onboarding-Styled Modal
-  const handleLaunchQuickPrompt = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
+  // Handle Search Market from Hero
+  const handleSearchMarket = () => {
+    if (quickPrompt.trim()) {
+      router.push(`/client/market?q=${encodeURIComponent(quickPrompt.trim())}`);
+    } else {
+      router.push("/client/market");
+    }
+  };
+
+  // Handle Quick Create Project from Hero
+  const handleCreateProjectFromHero = () => {
     setCreateModalInitialData({
       title: quickPrompt || "",
       description: quickPrompt ? `Kebutuhan pengerjaan untuk: ${quickPrompt}` : "",
@@ -474,19 +367,17 @@ export function ClientDashboard() {
     setIsCreateModalOpen(true);
   };
 
-  // Open Project Creation with Pre-filled Template Blueprint in Modal
-  const handleApplyTemplate = (tpl: ProjectTemplate) => {
-    setCreateModalInitialData({
-      title: tpl.title,
-      category: tpl.category,
-      description: tpl.description,
-      skills: tpl.skills,
-      budget: String(tpl.estimatedBudgetNumeric || 5000000),
-      durationDays: tpl.estimatedDuration.replace(/\D/g, "") || "14",
-      difficulty: tpl.difficulty,
-    });
-    setIsCreateModalOpen(true);
+  // Form submit handler (e.g. on Enter key press) -> Open Choice Modal
+  const handleHeroFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (quickPrompt.trim()) {
+      setIsChoiceModalOpen(true);
+    } else {
+      handleCreateProjectFromHero();
+    }
   };
+
+
 
   // Handle Project Creation Submission Success
   const handleProjectCreated = (newProj: CreatedProject) => {
@@ -527,8 +418,7 @@ export function ClientDashboard() {
             borderLeftWidth: `${p}px`,
             borderRightWidth: `${p}px`,
             borderTopWidth: `${p}px`,
-            borderBottomWidth: "1px",
-            minHeight: `calc((100vh - 6.5rem) * ${1 - p} + 0px)`,
+            minHeight: `calc((100dvh - 4rem) * (1 - ${p}) + ${p * 480}px)`,
             paddingTop: `${Math.round(48 + (1 - p) * 16)}px`,
             paddingBottom: `${Math.round(48 + (1 - p) * 16)}px`,
             paddingLeft: `${Math.round(32 + p * 16)}px`,
@@ -577,54 +467,40 @@ export function ClientDashboard() {
               Pasang proyek dalam hitungan menit, tentukan milestone pengerjaan, dan dapatkan proposal terbaik dari developer & desainer terverifikasi dengan proteksi escrow 100%.
             </p>
 
-            {/* Quick Project Scoper Bar */}
-            <form onSubmit={handleLaunchQuickPrompt} className="pt-2 w-full max-w-2xl mx-auto">
+            {/* Quick Project Scoper & Market Search Bar */}
+            <form onSubmit={handleHeroFormSubmit} className="pt-2 w-full max-w-2xl mx-auto">
               <div className="flex flex-col sm:flex-row items-stretch gap-2 rounded-2xl bg-white/95 p-2 shadow-2xl backdrop-blur-md">
-                <div className="flex-1 flex items-center gap-3 px-3">
+                <div className="flex-1 flex items-center gap-3 px-3 py-1">
                   <Sparkles className="h-5 w-5 text-primary shrink-0" />
                   <input
                     type="text"
-                    placeholder='Deskripsikan proyekmu (e.g. "SaaS AI Dashboard dengan Next.js & Supabase")...'
+                    placeholder='Deskripsikan proyekmu atau cari referensi (e.g. "SaaS AI Dashboard")...'
                     value={quickPrompt}
                     onChange={(e) => setQuickPrompt(e.target.value)}
                     className="w-full text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none bg-transparent"
                   />
                 </div>
-                <button
-                  type="submit"
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white shadow-md hover:bg-primary-600 transition-all hover:scale-[1.01]"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span>Buat Proyek</span>
-                </button>
-              </div>
-
-              {/* Quick Template Chips */}
-              <div className="mt-3.5 flex flex-wrap items-center justify-center gap-2 text-xs text-slate-300">
-                <span className="font-semibold text-slate-300 flex items-center gap-1">
-                  <Flame className="h-3.5 w-3.5 text-amber-400" />
-                  <span>Blueprint Siap Pakai:</span>
-                </span>
-                {[
-                  { name: "Web App SaaS", icon: Code2, tplId: "tpl-1" },
-                  { name: "Mobile Flutter App", icon: Smartphone, tplId: "tpl-2" },
-                  { name: "AI Agent / Chatbot", icon: Bot, tplId: "tpl-3" },
-                  { name: "UI/UX Design System", icon: Palette, tplId: "tpl-4" },
-                  { name: "Backend API Scalable", icon: Zap, tplId: "tpl-5" },
-                ].map((item) => (
+                <div className="flex items-center gap-2 shrink-0">
                   <button
                     type="button"
-                    key={item.tplId}
-                    onClick={() => {
-                      const found = PROJECT_TEMPLATES.find((t) => t.id === item.tplId);
-                      if (found) handleApplyTemplate(found);
-                    }}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/10 px-2.5 py-1 text-xs font-medium text-white/95 hover:bg-white/20 transition-all backdrop-blur-sm hover:scale-[1.02]"
+                    onClick={handleSearchMarket}
+                    title="Cari proyek serupa di Project Market"
+                    className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-100 hover:bg-slate-200/90 px-3.5 sm:px-4 py-2.5 text-xs font-bold text-slate-700 transition-all hover:scale-[1.02]"
                   >
-                    <item.icon className="h-3 w-3" />
-                    {item.name}
+                    <Search className="h-3.5 w-3.5 text-slate-600" />
+                    <span>Cari di Market</span>
                   </button>
-                ))}
+
+                  <button
+                    type="button"
+                    onClick={handleCreateProjectFromHero}
+                    title="Buat proyek baru dari deskripsi ini"
+                    className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary px-4 sm:px-5 py-2.5 text-xs font-bold text-white shadow-md hover:bg-primary-600 transition-all hover:scale-[1.02]"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>Buat Proyek</span>
+                  </button>
+                </div>
               </div>
             </form>
 
@@ -673,60 +549,44 @@ export function ClientDashboard() {
         {/* ============================================================ */}
         {/* 2. ACTIVE PROJECTS PIPELINE & PROPOSAL MANAGEMENT */}
         {/* ============================================================ */}
-        <div className="rounded-2xl border border-border/70 bg-card p-6 shadow-sm space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <div className="flex items-center gap-2">
-                <FolderOpen className="h-5 w-5 text-primary" />
-                <h2 className="text-xl font-bold text-foreground">
-                  Proyek Saya
-                </h2>
-                <span className="flex h-5 min-w-5 px-1 items-center justify-center rounded-full bg-rose-500 text-[11px] font-bold text-white shadow-xs">
-                  {projects.length}
-                </span>
+              <h2 className="text-xl font-bold tracking-tight text-foreground">
+                Proyek Saya
+              </h2>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 self-start sm:self-auto">
+              {/* Filter Status Tabs */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                {(["All", "Hiring", "In Progress", "Completed"] as const).map((status) => {
+                  const label = status === "All" ? "Semua" : status === "Hiring" ? "Dalam Seleksi" : status === "In Progress" ? "Sedang Berjalan" : "Selesai";
+                  const isActive = projectStatusFilter === status;
+
+                  return (
+                    <button
+                      key={status}
+                      onClick={() => setProjectStatusFilter(status)}
+                      className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${isActive
+                        ? "bg-primary text-white shadow-xs"
+                        : "border border-border/80 bg-card text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                        }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
               </div>
-            </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  setCreateModalInitialData(undefined);
-                  setIsCreateModalOpen(true);
-                }}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-primary hover:bg-primary-600 text-white px-4 py-2 text-xs font-semibold shadow-sm shadow-primary/20 transition-all hover:scale-[1.02]"
+              <Link
+                href="/client/projects"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline ml-1"
               >
-                <Plus className="h-4 w-4" />
-                <span>Pasang Proyek Baru</span>
-              </button>
+                <span>Semua Proyek</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
             </div>
-          </div>
-
-          {/* Filter Status Tabs */}
-          <div className="flex flex-wrap items-center gap-2 border-b border-border/60 pb-3">
-            {(["All", "Hiring", "In Progress", "Completed"] as const).map((status) => {
-              const count = status === "All" ? projects.length : projects.filter((p) => p.status === status).length;
-              const label = status === "All" ? "Semua Proyek" : status === "Hiring" ? "Dalam Seleksi" : status === "In Progress" ? "Sedang Berjalan" : "Selesai";
-              const isActive = projectStatusFilter === status;
-
-              return (
-                <button
-                  key={status}
-                  onClick={() => setProjectStatusFilter(status)}
-                  className={`flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all ${isActive
-                    ? "bg-primary text-white shadow-xs"
-                    : "border border-border/80 bg-muted/40 text-muted-foreground hover:text-foreground hover:bg-muted"
-                    }`}
-                >
-                  <span>{label}</span>
-                  <span
-                    className={`rounded-full px-1.5 py-0.2 text-xs ${isActive ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"
-                      }`}
-                  >
-                    {count}
-                  </span>
-                </button>
-              );
-            })}
           </div>
 
           {/* Project Pipeline List */}
@@ -865,10 +725,6 @@ export function ClientDashboard() {
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 mb-1">
-                <CheckCircle2 className="h-3.5 w-3.5" />
-                <span>100% Talent Telah Diverifikasi & Lulus Skill Test</span>
-              </div>
               <h2 className="text-xl font-bold tracking-tight text-foreground">
                 Cari Talenta & Jasa Pilihan Teratas
               </h2>
@@ -901,46 +757,55 @@ export function ClientDashboard() {
             </div>
           </div>
 
-          {/* Talents Grid */}
+          {/* Talents Grid - Freelancer Profile Summary Cards */}
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {filteredTalents.map((tal) => (
-              <div
+              <Link
                 key={tal.id}
-                className="group flex flex-col justify-between rounded-2xl border border-border/70 bg-card overflow-hidden shadow-xs transition-all hover:border-primary/40 hover:shadow-lg hover:-translate-y-1"
+                href={`/client/talent/${tal.id}`}
+                className="group flex flex-col justify-between rounded-2xl border border-border/70 bg-card overflow-hidden shadow-xs transition-all hover:border-primary/40 hover:shadow-lg hover:-translate-y-1 cursor-pointer"
               >
                 <div>
-                  {/* Thumbnail Image */}
-                  <div className="relative aspect-[16/10] w-full overflow-hidden bg-muted">
-                    <img
-                      src={tal.thumbnail}
-                      alt={tal.serviceTitle}
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src =
-                          "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&auto=format&fit=crop&q=80";
-                      }}
-                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
+                  {/* Profile Banner / Cover Image */}
+                  <div className="relative h-20 w-full overflow-hidden bg-gradient-to-r from-blue-600/30 via-indigo-600/25 to-purple-600/35">
+                    {tal.coverImage && (
+                      <img
+                        src={tal.coverImage}
+                        alt="Cover"
+                        className="h-full w-full object-cover opacity-50"
+                      />
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+
+                    {/* Category Badge on Cover */}
+                    <span className="absolute top-2.5 left-3 rounded-md bg-black/50 backdrop-blur-md px-2 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider">
+                      {tal.category}
+                    </span>
+
+                    {/* Bookmark Button */}
                     <button
-                      onClick={(e) => toggleSaveTalent(tal.id, e)}
-                      className="absolute right-2.5 top-2.5 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md transition-colors hover:bg-black/70"
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleSaveTalent(tal.id, e);
+                      }}
+                      className="absolute right-2.5 top-2.5 flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md transition-colors hover:bg-black/70 z-10"
                       title="Simpan Talent"
                     >
                       <Heart
-                        className={`h-4 w-4 ${savedTalents.includes(tal.id)
-                          ? "fill-rose-500 text-rose-500"
-                          : "text-white"
-                          }`}
+                        className={`h-3.5 w-3.5 ${
+                          savedTalents.includes(tal.id)
+                            ? "fill-rose-500 text-rose-500"
+                            : "text-white"
+                        }`}
                       />
                     </button>
-                    <span className="absolute bottom-2 left-2.5 rounded-md bg-black/60 px-2 py-0.5 text-xs font-semibold text-white backdrop-blur-md">
-                      {tal.category}
-                    </span>
                   </div>
 
-                  {/* Content */}
-                  <div className="p-4 space-y-3">
-                    {/* Seller Header */}
-                    <div className="flex items-center gap-2.5">
+                  {/* Profile Avatar & Verified Badge (overlapping cover) */}
+                  <div className="px-4 -mt-8 flex items-end justify-between">
+                    <div className="relative">
                       <img
                         src={tal.avatar}
                         alt={tal.name}
@@ -948,58 +813,78 @@ export function ClientDashboard() {
                           (e.target as HTMLImageElement).src =
                             "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80";
                         }}
-                        className="h-7 w-7 rounded-full object-cover border border-border shrink-0"
+                        className="h-16 w-16 rounded-full object-cover border-4 border-card bg-muted shadow-md shrink-0"
                       />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1">
-                          <span className="font-sans font-semibold text-sm text-foreground truncate">{tal.name}</span>
-                          <ShieldCheck className="h-3.5 w-3.5 text-primary shrink-0" />
-                        </div>
-                        <span className="text-xs text-muted-foreground font-medium">{tal.level}</span>
+                    </div>
+                    <span className="rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 text-[10px] font-bold text-emerald-600 inline-flex items-center gap-1">
+                      <ShieldCheck className="h-3 w-3" />
+                      <span>{tal.level}</span>
+                    </span>
+                  </div>
+
+                  {/* Profile Information Body */}
+                  <div className="p-4 pt-3 space-y-3">
+                    {/* Name */}
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <h3 className="font-sans font-bold text-base text-foreground truncate group-hover:text-primary transition-colors">
+                          {tal.name}
+                        </h3>
+                        <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
                       </div>
+                      {/* Headline */}
+                      <p className="text-xs text-muted-foreground line-clamp-2 mt-1 leading-relaxed">
+                        {tal.headline}
+                      </p>
                     </div>
 
-                    {/* Service Title */}
-                    <h3 className="font-sans font-medium text-sm text-foreground leading-snug line-clamp-2 group-hover:text-primary transition-colors">
-                      {tal.serviceTitle}
-                    </h3>
-
-                    {/* Rating & Reviews */}
-                    <div className="flex items-center gap-1 text-xs">
-                      <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
-                      <span className="font-bold text-foreground">{tal.rating}</span>
-                      <span className="text-muted-foreground text-xs">({tal.reviewsCount})</span>
+                    {/* Location & Organization Badges */}
+                    <div className="space-y-1.5 text-xs text-muted-foreground">
+                      {tal.location && (
+                        <div className="flex items-center gap-1.5 text-[11px]">
+                          <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
+                          <span className="truncate">{tal.location}</span>
+                        </div>
+                      )}
+                      {tal.organization && (
+                        <div className="inline-flex items-center gap-1.5 rounded-lg bg-muted/60 px-2 py-1 text-[11px] font-medium text-foreground max-w-full">
+                          <Building2 className="h-3 w-3 text-primary shrink-0" />
+                          <span className="truncate">{tal.organization}</span>
+                        </div>
+                      )}
                     </div>
 
-                    {/* Skills tags */}
+                    {/* Rating & Stats Strip */}
+                    <div className="flex items-center justify-between text-xs py-1.5 border-y border-border/40">
+                      <div className="flex items-center gap-1">
+                        <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
+                        <span className="font-bold text-foreground">{tal.rating}</span>
+                        <span className="text-muted-foreground text-[11px]">({tal.reviewsCount})</span>
+                      </div>
+                      <span className="text-[11px] text-muted-foreground font-medium">
+                        {tal.completedProjects || 30}+ Selesai
+                      </span>
+                    </div>
+
+                    {/* Skills Tags */}
                     <div className="flex flex-wrap gap-1">
                       {tal.skills.slice(0, 3).map((skill) => (
                         <span
                           key={skill}
-                          className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
+                          className="rounded-md bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
                         >
                           {skill}
                         </span>
                       ))}
+                      {tal.skills.length > 3 && (
+                        <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                          +{tal.skills.length - 3}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
-
-                {/* Card Footer: Starting Price & Hire CTA */}
-                <div className="border-t border-border/40 p-4 pt-3 flex items-center justify-between bg-muted/10">
-                  <div>
-                    <span className="text-xs text-muted-foreground block uppercase font-semibold">Mulai dari</span>
-                    <span className="text-sm font-bold text-primary">{tal.startingPrice}</span>
-                  </div>
-
-                  <button
-                    onClick={() => setSelectedTalentForInvite(tal)}
-                    className="rounded-xl bg-primary px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-primary-600 transition-colors"
-                  >
-                    Hire Talent
-                  </button>
-                </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
@@ -1031,13 +916,6 @@ export function ClientDashboard() {
               <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                 Trending di Project Market Minggu Ini
               </span>
-              <Link
-                href="/client/market"
-                className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
-              >
-                <span>Lihat Semua Proyek (148+)</span>
-                <ArrowRight className="h-3 w-3" />
-              </Link>
             </div>
 
             <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
@@ -1153,25 +1031,6 @@ export function ClientDashboard() {
               </div>
             </div>
           </div>
-
-          {/* Quick Category Discovery Chips */}
-          <div className="relative z-10 pt-2 flex flex-wrap items-center gap-2 border-t border-border/40">
-            <span className="text-xs font-semibold text-muted-foreground mr-1">Telusuri Kategori di Market:</span>
-            {CATEGORIES.map((cat) => {
-              const Icon = cat.icon;
-              return (
-                <Link
-                  key={cat.name}
-                  href="/client/market"
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-border/70 bg-card hover:bg-muted px-3 py-1.5 text-xs font-medium text-foreground transition-all hover:border-primary/40 hover:text-primary"
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                  <span>{cat.name}</span>
-                  <span className="text-[10px] text-muted-foreground font-normal">({cat.avgBudget})</span>
-                </Link>
-              );
-            })}
-          </div>
         </div>
 
         {/* ============================================================ */}
@@ -1280,7 +1139,104 @@ export function ClientDashboard() {
       </div>
 
       {/* ============================================================ */}
-      {/* 8. INTERACTIVE ONBOARDING-STYLED "PASANG PROYEK BARU" MODAL */}
+      {/* 8. CHOICE MODAL (PROMPTED WHEN PRESSING ENTER IN HERO BAR) */}
+      {/* ============================================================ */}
+      {mounted &&
+        isChoiceModalOpen &&
+        createPortal(
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200 overflow-y-auto">
+            {/* Backdrop with dark blur */}
+            <div
+              className="fixed inset-0 bg-black/60 backdrop-blur-md transition-opacity"
+              onClick={() => setIsChoiceModalOpen(false)}
+            />
+            <div className="relative z-10 w-full max-w-lg rounded-3xl border border-border/80 bg-card p-6 md:p-8 shadow-2xl space-y-6 animate-in zoom-in-95 duration-200">
+              {/* Close Button */}
+              <button
+                onClick={() => setIsChoiceModalOpen(false)}
+                className="absolute right-5 top-5 rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+
+              <div className="space-y-2">
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  <span>Pilihan Aksi Cerdas</span>
+                </div>
+                <h3 className="text-xl font-bold tracking-tight text-foreground">
+                  Apa yang ingin Anda lakukan?
+                </h3>
+                {quickPrompt && (
+                  <div className="p-3 rounded-xl bg-muted/50 border border-border/60 text-xs text-foreground font-medium italic line-clamp-2">
+                    &ldquo;{quickPrompt}&rdquo;
+                  </div>
+                )}
+              </div>
+
+              {/* 2 Choice Options */}
+              <div className="grid gap-3.5 sm:grid-cols-2">
+                {/* Option 1: Buat Proyek Baru */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsChoiceModalOpen(false);
+                    handleCreateProjectFromHero();
+                  }}
+                  className="group flex flex-col justify-between text-left p-5 rounded-2xl border-2 border-primary/30 bg-primary/5 hover:border-primary hover:bg-primary/10 transition-all hover:scale-[1.02] shadow-sm space-y-3"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="h-10 w-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-md shadow-primary/25">
+                      <Plus className="h-5 w-5" />
+                    </div>
+                    <span className="text-[10px] font-bold text-primary bg-primary/15 px-2 py-0.5 rounded-md">
+                      Rekomendasi
+                    </span>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">
+                      Pasang Proyek Baru
+                    </h4>
+                    <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
+                      Buat draf spesifikasi proyek dari ide ini, tentukan milestone, dan buka tender proposal ke freelancer.
+                    </p>
+                  </div>
+                </button>
+
+                {/* Option 2: Cari di Market */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsChoiceModalOpen(false);
+                    handleSearchMarket();
+                  }}
+                  className="group flex flex-col justify-between text-left p-5 rounded-2xl border-2 border-border/80 bg-card hover:border-primary/40 hover:bg-muted/40 transition-all hover:scale-[1.02] shadow-sm space-y-3"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="h-10 w-10 rounded-xl bg-muted border border-border text-foreground flex items-center justify-center shadow-xs">
+                      <Search className="h-5 w-5 text-primary" />
+                    </div>
+                    <span className="text-[10px] font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
+                      Eksplorasi
+                    </span>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">
+                      Cari di Market
+                    </h4>
+                    <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
+                      Lihat proyek serupa yang pernah dibuat, bandingkan estimasi budget riil, dan temukan referensi.
+                    </p>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {/* ============================================================ */}
+      {/* 9. INTERACTIVE ONBOARDING-STYLED "PASANG PROYEK BARU" MODAL */}
       {/* ============================================================ */}
       <CreateProjectModal
         isOpen={isCreateModalOpen}
@@ -1396,14 +1352,12 @@ export function ClientDashboard() {
                                     name: app.name,
                                     avatar: app.avatar,
                                     role: app.role,
+                                    headline: app.pitch || app.role,
                                     level: "Verified Pro",
                                     category: selectedProjectForProposals.category,
-                                    serviceTitle: selectedProjectForProposals.title,
-                                    thumbnail: "",
                                     rating: app.rating,
                                     reviewsCount: app.reviewsCount,
                                     startingPrice: app.bidAmount,
-                                    deliveryTime: `${app.deliveryDays} hari`,
                                     skills: app.skills,
                                   });
                                 }}
@@ -1536,6 +1490,14 @@ export function ClientDashboard() {
           </div>,
           document.body
         )}
+
+      {/* Onboarding-Styled Create Project Modal Popup */}
+      <CreateProjectModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={handleProjectCreated}
+        initialData={createModalInitialData}
+      />
     </div>
   );
 }
