@@ -1,15 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   Plus,
   Clock,
   Users,
   ArrowRight,
-  Sparkles,
-  ShieldCheck
 } from "lucide-react";
+import { CreateProjectModal, CreatedProject } from "@/components/dashboard/create-project-modal";
 
 interface ProjectItem {
   id: string;
@@ -66,8 +66,20 @@ const INITIAL_PROJECTS: ProjectItem[] = [
   },
 ];
 
-export default function ClientProjectsPage() {
-  const [projects] = useState<ProjectItem[]>(INITIAL_PROJECTS);
+function ClientProjectsContent() {
+  const searchParams = useSearchParams();
+  const [projects, setProjects] = useState<ProjectItem[]>(INITIAL_PROJECTS);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("create") === "true") {
+      setIsCreateModalOpen(true);
+    }
+  }, [searchParams]);
+
+  const handleProjectCreated = (newProj: CreatedProject) => {
+    setProjects((prev) => [newProj, ...prev]);
+  };
 
   return (
     <div className="animate-fade-in space-y-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-10 pb-16">
@@ -89,13 +101,14 @@ export default function ClientProjectsPage() {
           >
             ← Kembali ke Dashboard
           </Link>
-          <Link
-            href="/client/projects/create"
+          <button
+            type="button"
+            onClick={() => setIsCreateModalOpen(true)}
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary/25 hover:bg-primary-600 transition-all hover:scale-[1.02]"
           >
             <Plus className="h-4 w-4" />
             <span>Pasang Proyek Baru</span>
-          </Link>
+          </button>
         </div>
       </div>
 
@@ -177,6 +190,21 @@ export default function ClientProjectsPage() {
           </div>
         ))}
       </div>
+
+      {/* Onboarding-Styled Create Project Modal Popup */}
+      <CreateProjectModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={handleProjectCreated}
+      />
     </div>
+  );
+}
+
+export default function ClientProjectsPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-muted-foreground text-sm">Memuat Proyek...</div>}>
+      <ClientProjectsContent />
+    </Suspense>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import {
   Compass,
   Search,
@@ -8,8 +8,6 @@ import {
   Building2,
   ShieldCheck,
   TrendingUp,
-  Clock,
-  Users,
   CheckCircle2,
   ArrowRight,
   Plus,
@@ -372,7 +370,6 @@ const CATEGORY_TABS = [
 ] as const;
 
 export default function ProjectMarketPage() {
-  const [mounted, setMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("Semua Kategori");
   const [selectedStatus, setSelectedStatus] = useState<string>("Semua Status");
@@ -382,10 +379,6 @@ export default function ProjectMarketPage() {
   // Selected project for inspection modal
   const [activeProject, setActiveProject] = useState<MarketProject | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   // Filtered & Sorted Projects
   const filteredProjects = useMemo(() => {
@@ -541,7 +534,7 @@ export default function ProjectMarketPage() {
             {/* Sort Selector */}
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
+              onChange={(e) => setSortBy(e.target.value as "newest" | "budget_high" | "proposals" | "name")}
               aria-label="Urutkan proyek"
               className="h-11 rounded-2xl border border-border bg-card px-3 text-xs font-medium text-foreground focus:border-primary focus:outline-none shadow-xs cursor-pointer"
             >

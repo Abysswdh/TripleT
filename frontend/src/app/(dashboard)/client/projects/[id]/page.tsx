@@ -5,27 +5,18 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
-  Calendar,
   Clock,
-  DollarSign,
   ShieldCheck,
   Users,
   CheckCircle2,
-  AlertCircle,
   Plus,
-  Sparkles,
   Layers,
-  Send,
   MessageSquare,
   X,
   UserCheck,
   Check,
   AlertTriangle,
-  Award,
-  RefreshCw,
-  MoveRight,
-  Edit3,
-  CalendarDays
+  Edit3
 } from "lucide-react";
 import {
   GanttProvider,
@@ -307,7 +298,6 @@ export default function ClientProjectDetailPage() {
   // Gantt State (Daily / Weekly focused)
   const [features, setFeatures] = useState<GanttFeature[]>(project.initialFeatures);
   const [range, setRange] = useState<"daily" | "weekly">("daily");
-  const [zoom, setZoom] = useState<number>(100);
 
   // Selected task to move/shift/reschedule
   const [selectedTaskToMove, setSelectedTaskToMove] = useState<GanttFeature | null>(null);
@@ -554,7 +544,7 @@ export default function ClientProjectDetailPage() {
                 </span>
               </h4>
               <p className="text-xs text-muted-foreground leading-relaxed max-w-2xl">
-                Klien mengajukan penyesuaian jadwal pada task <strong>"{pendingChange.taskName}"</strong>.
+                Klien mengajukan penyesuaian jadwal pada task <strong>&ldquo;{pendingChange.taskName}&rdquo;</strong>.
                 {pendingChange.oldStart && pendingChange.oldEnd && (
                   <span className="ml-1 font-medium text-foreground">
                     (Semula: {new Date(pendingChange.oldStart).toLocaleDateString("id-ID", { day: "numeric", month: "short" })} – {new Date(pendingChange.oldEnd).toLocaleDateString("id-ID", { day: "numeric", month: "short" })} &rarr; Menjadi: {new Date(pendingChange.newStart).toLocaleDateString("id-ID", { day: "numeric", month: "short" })} – {new Date(pendingChange.newEnd).toLocaleDateString("id-ID", { day: "numeric", month: "short" })})
@@ -562,7 +552,7 @@ export default function ClientProjectDetailPage() {
                 )}
               </p>
               <p className="text-[11px] text-amber-700/90 dark:text-amber-300/80 italic">
-                Catatan: "{pendingChange.note}"
+                Catatan: &ldquo;{pendingChange.note}&rdquo;
               </p>
             </div>
           </div>
@@ -656,7 +646,7 @@ export default function ClientProjectDetailPage() {
               <div className="flex items-center gap-2">
                 <Edit3 className="h-4 w-4 text-primary" />
                 <h4 className="text-xs font-bold uppercase tracking-wider text-primary">
-                  Geser Jadwal Task: "{selectedTaskToMove.name}"
+                  Geser Jadwal Task: &ldquo;{selectedTaskToMove.name}&rdquo;
                 </h4>
               </div>
               <button
@@ -875,7 +865,7 @@ export default function ClientProjectDetailPage() {
             key={range}
             className="h-[420px] w-full rounded-2xl"
             range={range}
-            zoom={zoom}
+            zoom={100}
             startDate={new Date("2026-03-01")}
             endDate={new Date("2026-03-21")}
             todayDate={new Date("2026-03-06")}
