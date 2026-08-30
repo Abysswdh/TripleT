@@ -5,12 +5,12 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { useDashboardRole, type DashboardRole } from "@/context/role-context";
+import { useTranslation } from "@/context/language-context";
 import { BrandLogo } from "@/components/branding/BrandLogo";
 import { Container } from "@/components/layout/Container";
 import {
   Search,
   Plus,
-  Repeat,
   ChevronDown,
   LogOut,
   LayoutDashboard,
@@ -21,7 +21,8 @@ import {
   CreditCard,
   Settings,
   Menu,
-  X
+  X,
+  ArrowLeftRight
 } from "lucide-react";
 
 export function Navbar() {
@@ -32,6 +33,7 @@ export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, signOut } = useAuth();
+  const { t } = useTranslation();
   
   // Safe role hook access (if used outside role provider, provide fallback)
   let role: DashboardRole = "customer";
@@ -70,39 +72,38 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [isClientDashboard]);
 
-  const handleSwitchToClient = () => {
-    setRole("customer");
-    router.push("/client/dashboard");
-  };
-
-  const handleSwitchToFreelancer = () => {
-    setRole("freelancer");
-    router.push("/freelancer/dashboard");
+  // Switching role requires going through onboarding selection page
+  const handleSwitchRole = () => {
+    // Clear saved role so the /dashboard page shows the role selection screen
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("triplet_active_dashboard_role");
+    }
+    router.push("/dashboard");
   };
 
   // Nav Items configuration
   type NavLink = { href: string; label: string; icon?: React.ElementType };
 
   const clientLinks: NavLink[] = [
-    { href: "/client/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/client/projects", label: "My Projects", icon: FolderOpen },
-    { href: "/client/market", label: "Project Market", icon: Compass },
-    { href: "/client/talent", label: "Find Talent", icon: Search },
+    { href: "/client/dashboard", label: t("nav.dashboard", "Dashboard"), icon: LayoutDashboard },
+    { href: "/client/projects", label: t("nav.myProjects", "My Projects"), icon: FolderOpen },
+    { href: "/client/market", label: t("nav.projectMarket", "Project Market"), icon: Compass },
+    { href: "/client/talent", label: t("nav.findTalent", "Find Talent"), icon: Search },
   ];
 
   const freelancerLinks: NavLink[] = [
-    { href: "/freelancer/dashboard", label: "Overview", icon: LayoutDashboard },
-    { href: "/freelancer/explore", label: "Explore Quests", icon: Compass },
-    { href: "/freelancer/my-work", label: "My Work", icon: Briefcase },
-    { href: "/freelancer/skills", label: "Skills", icon: Award },
-    { href: "/freelancer/earnings", label: "Earnings", icon: CreditCard },
+    { href: "/freelancer/dashboard", label: t("nav.overview", "Overview"), icon: LayoutDashboard },
+    { href: "/freelancer/explore", label: t("nav.exploreQuests", "Explore Quests"), icon: Compass },
+    { href: "/freelancer/my-work", label: t("nav.myWork", "My Work"), icon: Briefcase },
+    { href: "/freelancer/skills", label: t("nav.skills", "Skills"), icon: Award },
+    { href: "/freelancer/earnings", label: t("nav.earnings", "Earnings"), icon: CreditCard },
   ];
 
   const publicLinks = [
-    { href: "/#our-story", label: "Our Story" },
-    { href: "/#realitas", label: "Impact" },
-    { href: "/#transformasi-ai", label: "Methodology" },
-    { href: "/#filosofi", label: "Careers" },
+    { href: "/#our-story", label: t("nav.ourStory", "Our Story") },
+    { href: "/#realitas", label: t("nav.impact", "Impact") },
+    { href: "/#transformasi-ai", label: t("nav.methodology", "Methodology") },
+    { href: "/#filosofi", label: t("nav.careers", "Careers") },
   ];
 
   return (
@@ -133,7 +134,7 @@ export function Navbar() {
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Cari proyek, blueprint template, atau talent..."
+                placeholder={t("nav.searchPlaceholder", "Cari proyek, blueprint template, atau talent...")}
                 className="h-9 w-full rounded-xl border border-border/80 bg-muted/40 pl-9 pr-4 text-xs placeholder:text-muted-foreground focus:border-primary focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
               />
             </div>
@@ -180,13 +181,13 @@ export function Navbar() {
                   href="/login"
                   className="text-sm font-semibold text-primary hover:text-primary/80 px-3 py-2 transition-all hover:scale-105 inline-block hidden sm:block"
                 >
-                  Sign In
+                  {t("nav.signIn", "Sign In")}
                 </Link>
                 <Link
                   href="/register"
                   className="rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/90 hover:scale-105 hover:shadow-lg transition-all"
                 >
-                  Get Started
+                  {t("nav.getStarted", "Get Started")}
                 </Link>
               </div>
             ) : (
@@ -204,7 +205,7 @@ export function Navbar() {
                       className="hidden sm:inline-flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-2 text-xs font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition-all whitespace-nowrap"
                     >
                       <Plus className="h-3.5 w-3.5" />
-                      <span>Buat Proyek</span>
+                      <span>{t("nav.createProject", "Buat Proyek")}</span>
                     </Link>
                   </div>
                 )}
@@ -234,17 +235,12 @@ export function Navbar() {
                         <button
                           onClick={() => {
                             setUserDropdownOpen(false);
-                            if (isClientView) {
-                              handleSwitchToFreelancer();
-                            } else {
-                              handleSwitchToClient();
-                            }
+                            handleSwitchRole();
                           }}
-                          className="mt-2.5 w-full flex items-center justify-center gap-2 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 px-3 py-2 text-xs font-semibold transition-all group"
-                          title={`Switch to ${isClientView ? 'Freelancer' : 'Client'} Mode`}
+                          className="mt-2.5 w-full flex items-center justify-center gap-2 rounded-xl bg-muted hover:bg-muted/80 text-foreground border border-border px-3 py-2 text-xs font-semibold transition-all"
                         >
-                          <Repeat className="h-3.5 w-3.5 group-hover:rotate-180 transition-transform duration-300" />
-                          <span>Switch to {isClientView ? 'Freelancer' : 'Client'}</span>
+                          <ArrowLeftRight className="h-3.5 w-3.5" />
+                          <span>{isClientView ? t("nav.switchToFreelancer", "Beralih ke Freelancer") : t("nav.switchToClient", "Beralih ke Client")}</span>
                         </button>
                       )}
                     </div>
@@ -257,7 +253,7 @@ export function Navbar() {
                           className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
                         >
                           <LayoutDashboard className="h-3.5 w-3.5" />
-                          Go to Dashboard
+                          {t("nav.goToDashboard", "Go to Dashboard")}
                         </Link>
                         <Link
                           href={role === "freelancer" ? "/freelancer/settings" : "/client/settings"}
@@ -265,7 +261,7 @@ export function Navbar() {
                           className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
                         >
                           <Settings className="h-3.5 w-3.5" />
-                          Settings
+                          {t("nav.settings", "Settings")}
                         </Link>
                       </>
                     )}
@@ -273,11 +269,11 @@ export function Navbar() {
                       <>
                         <Link href="/client/dashboard" className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => setUserDropdownOpen(false)}>
                           <LayoutDashboard className="h-3.5 w-3.5" />
-                          Dashboard
+                          {t("nav.dashboard", "Dashboard")}
                         </Link>
                         <Link href="/client/settings" className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => setUserDropdownOpen(false)}>
                           <Settings className="h-3.5 w-3.5" />
-                          Settings
+                          {t("nav.settings", "Settings")}
                         </Link>
                       </>
                     )}
@@ -285,7 +281,7 @@ export function Navbar() {
                       <>
                         <Link href="/freelancer/settings" className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => setUserDropdownOpen(false)}>
                           <Settings className="h-3.5 w-3.5" />
-                          Settings
+                          {t("nav.settings", "Settings")}
                         </Link>
                       </>
                     )}
@@ -299,7 +295,7 @@ export function Navbar() {
                       className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors"
                     >
                       <LogOut className="h-3.5 w-3.5" />
-                      Sign Out
+                      {t("nav.signOut", "Sign Out")}
                     </button>
                   </div>
                 )}

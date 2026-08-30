@@ -4,6 +4,8 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useDashboardRole, DashboardRole } from "@/context/role-context";
+import { useTranslation, type Locale } from "@/context/language-context";
+import { useCurrency, type Currency } from "@/context/currency-context";
 import { createClient } from "@/lib/supabase/client";
 import { api } from "@/lib/api";
 import {
@@ -91,6 +93,8 @@ const COMPANY_SIZES = [
 export function SettingsView({ initialTab = "profile", defaultRole }: SettingsViewProps) {
   const { user } = useAuth();
   const { role: activeRole } = useDashboardRole();
+  const { locale, setLocale, t } = useTranslation();
+  const { currency: globalCurrency, setCurrency: setGlobalCurrency, formatMoney } = useCurrency();
   const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
   const currentRole = defaultRole || activeRole;
 
@@ -146,14 +150,23 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
   });
 
   // Preferences
-  const [language, setLanguage] = useState("id");
-  const [currency, setCurrency] = useState("IDR");
+  const [language, setLanguage] = useState<Locale>(locale);
+  const [currency, setCurrency] = useState<Currency>(globalCurrency);
 
   // Status & Feedback
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+
+  // Keep local language & currency state in sync if changed externally
+  useEffect(() => {
+    setLanguage(locale);
+  }, [locale]);
+
+  useEffect(() => {
+    setCurrency(globalCurrency);
+  }, [globalCurrency]);
 
   // Load user data on mount
   useEffect(() => {
@@ -167,8 +180,16 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
       setAvatarUrl(meta.avatar_url || "");
       if (meta.company_name) setCompanyName(meta.company_name);
       if (meta.hourly_rate) setHourlyRate(String(meta.hourly_rate));
+      if (meta.preferred_language && (meta.preferred_language === "id" || meta.preferred_language === "en")) {
+        setLocale(meta.preferred_language as Locale);
+        setLanguage(meta.preferred_language as Locale);
+      }
+      if (meta.preferred_currency && (meta.preferred_currency === "IDR" || meta.preferred_currency === "USD")) {
+        setGlobalCurrency(meta.preferred_currency as Currency);
+        setCurrency(meta.preferred_currency as Currency);
+      }
     }
-  }, [user, currentRole]);
+  }, [user, currentRole, setLocale, setGlobalCurrency]);
 
   const handleToggleSkill = (skill: string) => {
     if (selectedSkills.includes(skill)) {
@@ -196,6 +217,14 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
     setSaveSuccess(false);
 
     try {
+      // 1. Immediately apply the language & currency changes app-wide
+      if (language !== locale) {
+        setLocale(language);
+      }
+      if (currency !== globalCurrency) {
+        setGlobalCurrency(currency);
+      }
+
       const supabase = createClient();
       
       // Update Supabase Auth User Metadata
@@ -207,6 +236,8 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
         location: location,
         timezone: timezone,
         avatar_url: avatarUrl,
+        preferred_language: language,
+        preferred_currency: currency,
       };
 
       if (currentRole === "freelancer") {
@@ -251,7 +282,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
       }
 
       setSaveSuccess(true);
-      setSaveMessage("Settings successfully saved!");
+      setSaveMessage(t("settings.savedSuccess", "Pengaturan berhasil disimpan!"));
       setTimeout(() => setSaveSuccess(false), 4000);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to save settings";
@@ -264,11 +295,11 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPassword || newPassword !== confirmPassword) {
-      setErrorMessage("New passwords do not match or are empty");
+      setErrorMessage(t("settings.passwordMismatch", "Kata sandi baru tidak cocok atau masih kosong"));
       return;
     }
     if (newPassword.length < 6) {
-      setErrorMessage("Password must be at least 6 characters");
+      setErrorMessage(t("settings.passwordMinLength", "Kata sandi harus memiliki minimal 6 karakter"));
       return;
     }
 
@@ -284,7 +315,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
       setNewPassword("");
       setConfirmPassword("");
       setSaveSuccess(true);
-      setSaveMessage("Password updated successfully!");
+      setSaveMessage(t("settings.passwordUpdated", "Kata sandi berhasil diperbarui!"));
       setTimeout(() => setSaveSuccess(false), 4000);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to update password";
@@ -301,13 +332,17 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
         <div>
           <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary mb-2">
             <SlidersHorizontal className="h-3.5 w-3.5" />
-            <span>Account Control Center</span>
+            <span>{t("settings.badge", "Pusat Kontrol Akun")}</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-heading">
-            Settings & Preferences
+            {t("settings.title", "Pengaturan & Preferensi")}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Manage your {currentRole === "customer" ? "Client & Company" : "Freelancer Pro"} profile, security, notifications, and payouts.
+            {t("settings.subtitle", {
+              role: currentRole === "customer" 
+                ? t("settings.clientRole", "Klien & Perusahaan") 
+                : t("settings.freelancerRole", "Freelancer Pro")
+            })}
           </p>
         </div>
       </div>
@@ -342,7 +377,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
             >
               <div className="flex items-center gap-2.5">
                 <User className="h-4 w-4" />
-                <span>Profile & Identity</span>
+                <span>{t("settings.tabs.profile", "Profil & Identitas")}</span>
               </div>
               <ChevronRight className="h-3.5 w-3.5 opacity-60" />
             </button>
@@ -362,7 +397,9 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                   <Briefcase className="h-4 w-4" />
                 )}
                 <span>
-                  {currentRole === "customer" ? "Company & Hiring" : "Skills & Work Rates"}
+                  {currentRole === "customer" 
+                    ? t("settings.tabs.workClient", "Perusahaan & Perekrutan") 
+                    : t("settings.tabs.workFreelancer", "Keahlian & Tarif")}
                 </span>
               </div>
               <ChevronRight className="h-3.5 w-3.5 opacity-60" />
@@ -378,7 +415,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
             >
               <div className="flex items-center gap-2.5">
                 <Shield className="h-4 w-4" />
-                <span>Security & Login</span>
+                <span>{t("settings.tabs.security", "Keamanan & Masuk")}</span>
               </div>
               <ChevronRight className="h-3.5 w-3.5 opacity-60" />
             </button>
@@ -393,7 +430,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
             >
               <div className="flex items-center gap-2.5">
                 <Bell className="h-4 w-4" />
-                <span>Notifications</span>
+                <span>{t("settings.tabs.notifications", "Notifikasi")}</span>
               </div>
               <ChevronRight className="h-3.5 w-3.5 opacity-60" />
             </button>
@@ -408,7 +445,11 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
             >
               <div className="flex items-center gap-2.5">
                 <CreditCard className="h-4 w-4" />
-                <span>{currentRole === "customer" ? "Payment Methods" : "Payouts & Bank"}</span>
+                <span>
+                  {currentRole === "customer" 
+                    ? t("settings.tabs.billingClient", "Metode Pembayaran") 
+                    : t("settings.tabs.billingFreelancer", "Penarikan & Rekening")}
+                </span>
               </div>
               <ChevronRight className="h-3.5 w-3.5 opacity-60" />
             </button>
@@ -423,7 +464,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
             >
               <div className="flex items-center gap-2.5">
                 <Globe className="h-4 w-4" />
-                <span>Language & Display</span>
+                <span>{t("settings.tabs.preferences", "Bahasa & Tampilan")}</span>
               </div>
               <ChevronRight className="h-3.5 w-3.5 opacity-60" />
             </button>
@@ -433,17 +474,17 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
           <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-tertiary/5 to-card p-4 shadow-sm space-y-2">
             <div className="flex items-center gap-2 text-xs font-bold text-primary">
               <Sparkles className="h-4 w-4" />
-              <span>Account Status</span>
+              <span>{t("settings.badge", "Status Akun")}</span>
             </div>
             <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">Profile Completeness</span>
+              <span className="text-muted-foreground">{t("settings.profileCompleteness", "Kelengkapan Profil")}</span>
               <span className="font-bold text-foreground">85%</span>
             </div>
             <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
               <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: "85%" }} />
             </div>
             <p className="text-[11px] text-muted-foreground">
-              Complete your verification quiz and portfolio to unlock the Verified Pro badge.
+              {t("settings.profileCompletenessDesc", "Selesaikan kuis verifikasi dan portofolio untuk membuka lencana Verified Pro.")}
             </p>
           </div>
         </div>
@@ -455,8 +496,12 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
             <div className="bg-card border border-border/70 rounded-3xl p-6 sm:p-8 shadow-sm space-y-8">
               <div className="flex items-center justify-between border-b border-border/50 pb-4">
                 <div>
-                  <h2 className="text-lg font-bold text-foreground">Personal Information</h2>
-                  <p className="text-xs text-muted-foreground">Update your public identity, bio, and contact details.</p>
+                  <h2 className="text-lg font-bold text-foreground">
+                    {t("settings.profile.title", "Informasi Pribadi")}
+                  </h2>
+                  <p className="text-xs text-muted-foreground">
+                    {t("settings.profile.subtitle", "Perbarui identitas publik, bio, dan detail kontak Anda.")}
+                  </p>
                 </div>
               </div>
 
@@ -476,11 +521,11 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                 </div>
                 <div className="space-y-1.5 text-center sm:text-left flex-1">
                   <h4 className="text-sm font-bold text-foreground">{fullName || "Your Full Name"}</h4>
-                  <p className="text-xs text-muted-foreground">PNG, JPG, or SVG. Maximum file size 2MB.</p>
+                  <p className="text-xs text-muted-foreground">{t("settings.profile.avatarHelp", "PNG, JPG, atau SVG. Ukuran maksimum 2MB.")}</p>
                   <div className="flex flex-wrap gap-2 pt-1 justify-center sm:justify-start">
                     <input
                       type="text"
-                      placeholder="Paste image URL here..."
+                      placeholder={t("settings.profile.avatarPlaceholder", "Tempel URL gambar di sini...")}
                       value={avatarUrl}
                       onChange={(e) => setAvatarUrl(e.target.value)}
                       className="h-8 max-w-xs text-xs rounded-xl border border-border bg-background px-3 focus:outline-none focus:ring-2 focus:ring-primary/20"
@@ -490,7 +535,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                         onClick={() => setAvatarUrl("")}
                         className="px-2.5 py-1 text-xs text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
                       >
-                        Reset
+                        {t("settings.profile.reset", "Reset")}
                       </button>
                     )}
                   </div>
@@ -502,7 +547,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                     <User className="h-3.5 w-3.5 text-muted-foreground" />
-                    Full Legal Name
+                    {t("settings.profile.fullName", "Nama Lengkap Sesuai Identitas")}
                   </label>
                   <input
                     type="text"
@@ -516,7 +561,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                     <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
-                    Username / Handle
+                    {t("settings.profile.username", "Username / Handle")}
                   </label>
                   <div className="relative">
                     <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">@</span>
@@ -533,7 +578,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                     <Mail className="h-3.5 w-3.5 text-muted-foreground" />
-                    Email Address
+                    {t("settings.profile.email", "Alamat Email")}
                   </label>
                   <input
                     type="email"
@@ -541,13 +586,13 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                     disabled
                     className="h-10 w-full rounded-xl border border-border/60 bg-muted/40 px-3.5 text-xs text-muted-foreground cursor-not-allowed"
                   />
-                  <p className="text-[10px] text-muted-foreground">Email linked to your authentication provider.</p>
+                  <p className="text-[10px] text-muted-foreground">{t("settings.profile.emailNotice", "Email terhubung ke akun autentikasi Anda.")}</p>
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                     <Phone className="h-3.5 w-3.5 text-muted-foreground" />
-                    Phone Number
+                    {t("settings.profile.phone", "Nomor Telepon / WhatsApp")}
                   </label>
                   <input
                     type="tel"
@@ -561,7 +606,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                     <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-                    Location
+                    {t("settings.profile.location", "Lokasi")}
                   </label>
                   <input
                     type="text"
@@ -575,7 +620,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                     <Globe className="h-3.5 w-3.5 text-muted-foreground" />
-                    Timezone
+                    {t("settings.profile.timezone", "Zona Waktu")}
                   </label>
                   <select
                     value={timezone}
@@ -597,13 +642,13 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                   <FileText className="h-3.5 w-3.5 text-muted-foreground" />
-                  Bio & Introduction
+                  {t("settings.profile.bio", "Bio & Pengenalan Singkat")}
                 </label>
                 <textarea
                   rows={4}
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
-                  placeholder="Share a brief overview of your background, experience, and what you specialize in..."
+                  placeholder={t("settings.profile.bioPlaceholder", "Ceritakan ringkasan pengalaman, keahlian, dan apa yang Anda minati...")}
                   className="w-full rounded-xl border border-border bg-background p-3.5 text-xs text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
                 />
                 <p className="text-[11px] text-muted-foreground text-right">{bio.length}/500 characters</p>
@@ -618,7 +663,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                   className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/90 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
                 >
                   <Save className="h-4 w-4" />
-                  <span>{isSaving ? "Saving changes..." : "Save Profile Details"}</span>
+                  <span>{isSaving ? t("common.saving", "Menyimpan...") : t("settings.profile.saveBtn", "Simpan Detail Profil")}</span>
                 </button>
               </div>
             </div>
@@ -639,7 +684,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                         <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
-                        Target Hourly Rate (USD)
+                        {t("settings.work.hourlyRate", "Target Tarif per Jam (USD)")}
                       </label>
                       <div className="relative">
                         <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground">$</span>
@@ -654,7 +699,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                         <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground">/ hr</span>
                       </div>
                       <p className="text-[10px] text-muted-foreground">
-                        ≈ Rp {(parseInt(hourlyRate || "0", 10) * 16200).toLocaleString("id-ID")}/jam
+                        ≈ {formatMoney(parseInt(hourlyRate || "0", 10), "USD")}/jam
                       </p>
                     </div>
 
@@ -662,7 +707,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                         <Layers className="h-3.5 w-3.5 text-muted-foreground" />
-                        Experience Level
+                        {t("settings.work.experienceLevel", "Tingkat Pengalaman")}
                       </label>
                       <select
                         value={experienceLevel}
@@ -1252,17 +1297,19 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                 <div className="space-y-6">
                   <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div>
-                      <span className="text-[11px] font-bold text-primary uppercase tracking-wider">Available Balance</span>
-                      <h3 className="text-2xl font-bold text-foreground font-heading">Rp 14.850.000</h3>
-                      <p className="text-xs text-muted-foreground mt-0.5">Ready for instant payout to your verified bank account.</p>
+                      <span className="text-[11px] font-bold text-primary uppercase tracking-wider">{t("settings.billing.availableBalance", "Saldo Tersedia")}</span>
+                      <h3 className="text-2xl font-bold text-foreground font-heading">
+                        {formatMoney(14850000, "IDR")}
+                      </h3>
+                      <p className="text-xs text-muted-foreground mt-0.5">{t("settings.billing.instantPayoutDesc", "Siap ditarik langsung ke rekening bank terverifikasi Anda.")}</p>
                     </div>
                     <button className="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/90 transition-all shrink-0">
-                      Withdraw Earnings
+                      {t("settings.billing.withdrawBtn", "Tarik Pendapatan")}
                     </button>
                   </div>
 
                   <div className="space-y-3">
-                    <h4 className="text-xs font-bold text-foreground">Connected Bank Accounts</h4>
+                    <h4 className="text-xs font-bold text-foreground">{t("settings.billing.connectedBanks", "Rekening Bank Terhubung")}</h4>
                     
                     <div className="p-4 rounded-2xl border border-border/80 bg-muted/20 flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -1275,14 +1322,14 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                         </div>
                       </div>
                       <span className="text-[11px] font-bold text-emerald-600 bg-emerald-500/10 px-2.5 py-1 rounded-lg">
-                        Primary Account
+                        {t("settings.billing.primaryAccount", "Rekening Utama")}
                       </span>
                     </div>
 
                     <div className="p-4 rounded-2xl border border-dashed border-border flex items-center justify-center">
                       <button className="inline-flex items-center gap-2 text-xs font-semibold text-primary hover:underline">
                         <Plus className="h-4 w-4" />
-                        <span>Add New Bank (Mandiri, BRI, BNI, GoPay, OVO)</span>
+                        <span>{t("settings.billing.addBank", "Tambah Rekening Baru (BCA, Mandiri, BRI, BNI, GoPay, OVO)")}</span>
                       </button>
                     </div>
                   </div>
@@ -1291,7 +1338,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                 /* Client Payment Methods */
                 <div className="space-y-6">
                   <div className="space-y-3">
-                    <h4 className="text-xs font-bold text-foreground">Payment Methods</h4>
+                    <h4 className="text-xs font-bold text-foreground">{t("settings.billing.paymentMethods", "Metode Pembayaran")}</h4>
 
                     <div className="p-4 rounded-2xl border border-border/80 bg-muted/20 flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -1304,14 +1351,14 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                         </div>
                       </div>
                       <span className="text-[11px] font-bold text-emerald-600 bg-emerald-500/10 px-2.5 py-1 rounded-lg">
-                        Default
+                        {t("settings.billing.defaultCard", "Kartu Utama")}
                       </span>
                     </div>
 
                     <div className="p-4 rounded-2xl border border-dashed border-border flex items-center justify-center">
                       <button className="inline-flex items-center gap-2 text-xs font-semibold text-primary hover:underline">
                         <Plus className="h-4 w-4" />
-                        <span>Add Credit Card or Virtual Account</span>
+                        <span>{t("settings.billing.addPaymentMethod", "Tambah Kartu Kredit atau Virtual Account")}</span>
                       </button>
                     </div>
                   </div>
@@ -1324,39 +1371,61 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
           {activeTab === "preferences" && (
             <div className="bg-card border border-border/70 rounded-3xl p-6 sm:p-8 shadow-sm space-y-8">
               <div className="border-b border-border/50 pb-4">
-                <h2 className="text-lg font-bold text-foreground">Language & Regional Settings</h2>
-                <p className="text-xs text-muted-foreground">Customize your interface language, currency format, and regional localization.</p>
+                <h2 className="text-lg font-bold text-foreground">
+                  {t("settings.preferences.title", "Pengaturan Bahasa & Regional")}
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  {t("settings.preferences.subtitle", "Sesuaikan bahasa antarmuka, format mata uang, dan lokalisasi regional Anda.")}
+                </p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                     <Globe className="h-3.5 w-3.5 text-muted-foreground" />
-                    Display Language
+                    {t("settings.preferences.languageLabel", "Bahasa Tampilan")}
                   </label>
                   <select
                     value={language}
-                    onChange={(e) => setLanguage(e.target.value)}
+                    onChange={(e) => {
+                      const nextLang = e.target.value as Locale;
+                      setLanguage(nextLang);
+                      setLocale(nextLang);
+                    }}
                     className="h-10 w-full rounded-xl border border-border bg-background px-3.5 text-xs text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                   >
-                    <option value="id">Bahasa Indonesia</option>
-                    <option value="en">English (US)</option>
+                    <option value="id">{t("settings.preferences.languageId", "Bahasa Indonesia (Default)")}</option>
+                    <option value="en">{t("settings.preferences.languageEn", "English (US)")}</option>
                   </select>
+                  <p className="text-[11px] text-muted-foreground">
+                    {locale === "id" 
+                      ? "Bahasa default adalah Bahasa Indonesia. Anda dapat mengubahnya ke English kapan saja." 
+                      : "Default language is Indonesian. You can switch to English anytime."}
+                  </p>
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                     <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
-                    Preferred Currency
+                    {t("settings.preferences.currencyLabel", "Mata Uang Pilihan")}
                   </label>
                   <select
                     value={currency}
-                    onChange={(e) => setCurrency(e.target.value)}
+                    onChange={(e) => {
+                      const nextCurr = e.target.value as Currency;
+                      setCurrency(nextCurr);
+                      setGlobalCurrency(nextCurr);
+                    }}
                     className="h-10 w-full rounded-xl border border-border bg-background px-3.5 text-xs text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                   >
-                    <option value="IDR">IDR (Rp - Rupiah)</option>
-                    <option value="USD">USD ($ - US Dollar)</option>
+                    <option value="IDR">{t("settings.preferences.currencyIdr", "IDR (Rp - Rupiah)")}</option>
+                    <option value="USD">{t("settings.preferences.currencyUsd", "USD ($ - US Dollar)")}</option>
                   </select>
+                  <p className="text-[11px] text-muted-foreground">
+                    {currency === "IDR"
+                      ? "Mata uang default adalah Rupiah (IDR). Format harga akan menyesuaikan otomatis."
+                      : "Display currency is US Dollar (USD). Amounts convert automatically."}
+                  </p>
                 </div>
               </div>
 
@@ -1369,7 +1438,11 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                   className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/90 transition-all disabled:opacity-50"
                 >
                   <Save className="h-4 w-4" />
-                  <span>{isSaving ? "Saving..." : "Save Preferences"}</span>
+                  <span>
+                    {isSaving 
+                      ? t("common.saving", "Menyimpan...") 
+                      : t("settings.preferences.saveBtn", "Simpan Preferensi Bahasa")}
+                  </span>
                 </button>
               </div>
             </div>

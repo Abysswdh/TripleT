@@ -1,5 +1,7 @@
 "use client";
 
+import { LanguageProvider } from "@/context/language-context";
+import { CurrencyProvider } from "@/context/currency-context";
 import { RoleProvider } from "@/context/role-context";
 import { Navbar } from "./Navbar";
 import { Footer } from "./Footer";
@@ -13,16 +15,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const isAuthPage = pathname.startsWith("/login") || pathname.startsWith("/register") || pathname.startsWith("/onboarding");
 
   return (
-    <RoleProvider>
-      {/* AOS initialised globally — safe on all pages */}
-      <AOSProvider />
-      <div className="flex min-h-screen flex-col bg-background">
-        {!isAuthPage && <Navbar />}
-        <main className="flex-1 w-full flex flex-col">
-          {children}
-        </main>
-        {!isAuthPage && <Footer />}
-      </div>
-    </RoleProvider>
+    <LanguageProvider>
+      <CurrencyProvider>
+        <RoleProvider>
+          {/* AOS initialised globally — safe on all pages */}
+          <AOSProvider />
+          <div className="flex min-h-screen flex-col bg-background">
+            {!isAuthPage && <Navbar />}
+            <main className="flex-1 w-full flex flex-col">
+              {children}
+            </main>
+            {!isAuthPage && <Footer />}
+          </div>
+        </RoleProvider>
+      </CurrencyProvider>
+    </LanguageProvider>
   );
 }
