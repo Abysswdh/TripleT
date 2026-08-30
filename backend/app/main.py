@@ -15,10 +15,10 @@ async def lifespan(app: FastAPI):
     """Application lifespan: startup & shutdown events."""
     # Startup
     settings = get_settings()
-    print(f"🚀 {settings.APP_NAME} v{settings.APP_VERSION} starting up...")
+    print(f"[STARTUP] {settings.APP_NAME} v{settings.APP_VERSION} starting up...")
     yield
     # Shutdown
-    print(f"👋 {settings.APP_NAME} shutting down...")
+    print(f"[SHUTDOWN] {settings.APP_NAME} shutting down...")
 
 
 def create_app() -> FastAPI:

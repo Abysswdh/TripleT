@@ -23,6 +23,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Grainient from "@/components/ui/Grainient";
 import { CreateProjectModal, type CreateProjectModalProps, type CreatedProject } from "@/components/dashboard/create-project-modal";
+import { createClient } from "@/lib/supabase/client";
 
 interface FeaturedTalent {
   id: string;
@@ -80,210 +81,14 @@ interface ClientProject {
   applicants: ProposalApplicant[];
 }
 
-const FEATURED_TALENTS: FeaturedTalent[] = [
-  {
-    id: "tal-1",
-    name: "Dimas Arya Pratama",
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
-    coverImage: "https://images.unsplash.com/photo-1557683316-973673baf926?w=600&auto=format&fit=crop&q=80",
-    role: "Fullstack Web & SaaS Specialist",
-    headline: "Senior Fullstack Engineer | Next.js 14, React, Supabase & Cloud Architect",
-    organization: "Institut Teknologi Bandung",
-    location: "Bandung, Jawa Barat",
-    level: "Verified Pro",
-    category: "Frontend",
-    rating: 4.9,
-    reviewsCount: 38,
-    completedProjects: 42,
-    startingPrice: "Rp 3.500.000",
-    skills: ["Next.js", "TypeScript", "Tailwind CSS", "Supabase"],
-  },
-  {
-    id: "tal-2",
-    name: "Siti Rahmawati",
-    avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200&auto=format&fit=crop&q=80",
-    coverImage: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80",
-    role: "Lead UI/UX & Product Designer",
-    headline: "Lead UI/UX Designer | Figma Atomic Design Systems, User Research & Interactive Prototype",
-    organization: "Universitas Indonesia",
-    location: "Jakarta Selatan, DKI Jakarta",
-    level: "Top Rated",
-    category: "UI/UX",
-    rating: 5.0,
-    reviewsCount: 52,
-    completedProjects: 56,
-    startingPrice: "Rp 2.800.000",
-    skills: ["Figma", "Design Systems", "Prototyping", "Wireframing"],
-  },
-  {
-    id: "tal-3",
-    name: "Reza Mahendra",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80",
-    coverImage: "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=600&auto=format&fit=crop&q=80",
-    role: "AI Engineer & Python Developer",
-    headline: "AI & Machine Learning Engineer | FastAPI, OpenAI Realtime, LangChain & WebSockets",
-    organization: "Universitas Gadjah Mada",
-    location: "Yogyakarta, DI Yogyakarta",
-    level: "Verified Pro",
-    category: "AI & Machine",
-    rating: 4.9,
-    reviewsCount: 29,
-    completedProjects: 31,
-    startingPrice: "Rp 5.500.000",
-    skills: ["Python", "FastAPI", "OpenAI", "WebSockets"],
-  },
-  {
-    id: "tal-4",
-    name: "Budi Santoso",
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80",
-    coverImage: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=600&auto=format&fit=crop&q=80",
-    role: "Mobile App Flutter Specialist",
-    headline: "Mobile Engineer | Flutter, Dart, Firebase & Midtrans Payment Gateway Solutions",
-    organization: "BINUS University",
-    location: "Malang, Jawa Timur",
-    level: "Top Rated",
-    category: "Mobile",
-    rating: 4.8,
-    reviewsCount: 24,
-    completedProjects: 39,
-    startingPrice: "Rp 4.200.000",
-    skills: ["Flutter", "Dart", "Midtrans", "Firebase"],
-  },
-];
-
-const INITIAL_CLIENT_PROJECTS: ClientProject[] = [
-  {
-    id: "proj-1",
-    title: "E-Commerce Mobile App Redesign with Flutter",
-    category: "Mobile App Development",
-    budget: "Rp 15.000.000",
-    budgetNumeric: 15000000,
-    status: "Hiring",
-    proposalsCount: 8,
-    dueDate: "14 hari lagi",
-    postedDate: "2 hari lalu",
-    description: "Peremajaan total antarmuka UI/UX mobile app dengan arsitektur modular Flutter, integrasi gateway Midtrans, dan push notification Firebase.",
-    skills: ["Flutter", "Dart", "Midtrans", "Firebase", "State Management"],
-    milestones: [
-      { id: "m1", title: "Setup Project & UI Kit Implementation", amount: "Rp 5.000.000", status: "completed", dueDate: "Selesai" },
-      { id: "m2", title: "API Integration & Checkout Flow", amount: "Rp 6.000.000", status: "in_progress", dueDate: "7 hari lagi" },
-      { id: "m3", title: "Testing, QA & Play Store Deployment", amount: "Rp 4.000.000", status: "pending", dueDate: "14 hari lagi" },
-    ],
-    applicants: [
-      {
-        id: "app-1",
-        name: "Dimas Arya Pratama",
-        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-        role: "Senior Flutter & Fullstack Engineer",
-        rating: 4.9,
-        reviewsCount: 38,
-        bidAmount: "Rp 14.500.000",
-        deliveryDays: 12,
-        pitch: "Saya telah membangun 6 aplikasi e-commerce Flutter di Play Store & App Store dengan integrasi Midtrans. Siap menyelesaikan dalam 12 hari dengan milestone terstruktur.",
-        skills: ["Flutter", "Dart", "Midtrans", "BLoC"],
-        badge: "Verified Pro",
-      },
-      {
-        id: "app-2",
-        name: "Budi Santoso",
-        avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80",
-        role: "Mobile App Specialist",
-        rating: 4.8,
-        reviewsCount: 24,
-        bidAmount: "Rp 15.000.000",
-        deliveryDays: 14,
-        pitch: "Portofolio saya mencakup aplikasi retail dengan 50k+ user aktif. Desain pixel-perfect sesuai mockup Figma Anda.",
-        skills: ["Flutter", "Firebase", "REST API"],
-        badge: "Top Rated",
-      },
-      {
-        id: "app-3",
-        name: "Farhan Maulana",
-        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
-        role: "Cross-Platform Developer",
-        rating: 5.0,
-        reviewsCount: 19,
-        bidAmount: "Rp 13.800.000",
-        deliveryDays: 10,
-        pitch: "Fast turnaround dengan clean code architecture, offline SQLite caching, dan laporan progress harian via Slack/Discord.",
-        skills: ["Flutter", "Dart", "Provider"],
-        badge: "Rising Star",
-      },
-    ],
-  },
-  {
-    id: "proj-2",
-    title: "AI Chatbot & Voice Agent Integration for Customer Support",
-    category: "AI & Machine Learning",
-    budget: "Rp 8.500.000",
-    budgetNumeric: 8500000,
-    status: "In Progress",
-    proposalsCount: 4,
-    dueDate: "5 hari lagi",
-    postedDate: "4 hari lalu",
-    description: "Membangun sistem chatbot customer service pintar yang membaca knowledge base internal dan terhubung ke WhatsApp Cloud API.",
-    skills: ["Python", "FastAPI", "OpenAI", "WebSockets", "RAG"],
-    milestones: [
-      { id: "m2-1", title: "RAG Vector Store & Prompt Engineering", amount: "Rp 4.500.000", status: "completed", dueDate: "Selesai" },
-      { id: "m2-2", title: "WhatsApp Gateway & Dashboard Monitoring", amount: "Rp 4.000.000", status: "in_progress", dueDate: "5 hari lagi" },
-    ],
-    applicants: [
-      {
-        id: "app-4",
-        name: "Reza Mahendra",
-        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
-        role: "AI & Backend Engineer",
-        rating: 4.9,
-        reviewsCount: 29,
-        bidAmount: "Rp 8.500.000",
-        deliveryDays: 7,
-        pitch: "Kontrak sedang aktif berjalan. Sedang menyelesaikan fase sinkronisasi webhook WhatsApp Cloud API.",
-        skills: ["Python", "FastAPI", "OpenAI"],
-        badge: "Verified Pro",
-      },
-    ],
-  },
-  {
-    id: "proj-3",
-    title: "FinTech Landing Page & Atomic Design System",
-    category: "UI/UX & Product Design",
-    budget: "Rp 5.000.000",
-    budgetNumeric: 5000000,
-    status: "Completed",
-    proposalsCount: 12,
-    dueDate: "Selesai",
-    postedDate: "2 minggu lalu",
-    description: "Design system komprehensif di Figma lengkap dengan 40+ variasi komponen dan prototipe landing page interaktif.",
-    skills: ["Figma", "Atomic Design", "Design Systems"],
-    milestones: [
-      { id: "m3-1", title: "Wireframe & Information Architecture", amount: "Rp 2.000.000", status: "completed", dueDate: "Selesai" },
-      { id: "m3-2", title: "High-Fidelity UI & Design System Component", amount: "Rp 3.000.000", status: "completed", dueDate: "Selesai" },
-    ],
-    applicants: [
-      {
-        id: "app-5",
-        name: "Siti Rahmawati",
-        avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80",
-        role: "Lead UI/UX Designer",
-        rating: 5.0,
-        reviewsCount: 52,
-        bidAmount: "Rp 5.000.000",
-        deliveryDays: 5,
-        pitch: "Proyek telah selesai 100% dan dana escrow telah sukses dicairkan.",
-        skills: ["Figma", "Design Systems"],
-        badge: "Top Rated",
-      },
-    ],
-  },
-];
-
-
+import { getTalents } from "@/lib/services/talents";
 
 export function ClientDashboard() {
   const router = useRouter();
 
   // State
-  const [projects, setProjects] = useState<ClientProject[]>(INITIAL_CLIENT_PROJECTS);
+  const [projects, setProjects] = useState<ClientProject[]>([]);
+  const [featuredTalents, setFeaturedTalents] = useState<FeaturedTalent[]>([]);
   const [projectStatusFilter, setProjectStatusFilter] = useState<"All" | "Hiring" | "In Progress" | "Completed">("All");
   const [talentCategory, setTalentCategory] = useState("Semua");
   const [savedTalents, setSavedTalents] = useState<string[]>([]);
@@ -327,6 +132,83 @@ export function ClientDashboard() {
     };
   }, []);
 
+  // Fetch live projects and talents from Supabase
+  useEffect(() => {
+    async function loadDashboardData() {
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        // 1. Load Projects
+        let projectQuery = supabase
+          .from("projects")
+          .select("*, milestones(*)")
+          .order("created_at", { ascending: false });
+
+        if (user) {
+          projectQuery = projectQuery.eq("owner_id", user.id);
+        }
+
+        const { data: dbProjects } = await projectQuery;
+
+        if (dbProjects && dbProjects.length > 0) {
+          const mapped: ClientProject[] = dbProjects.map((p) => ({
+            id: p.id,
+            title: p.title,
+            category: p.category || "Web Development",
+            budget: p.budget_display || `Rp ${(p.budget_min || 0).toLocaleString("id-ID")}`,
+            budgetNumeric: p.budget_min || 0,
+            status: p.status === "hiring" ? "Hiring" : p.status === "in_progress" ? "In Progress" : "Completed",
+            proposalsCount: p.proposals_count || 0,
+            dueDate: `${p.timeline_days || 14} hari lagi`,
+            postedDate: "Baru saja",
+            description: p.description,
+            skills: p.required_skills || [],
+            milestones: (p.milestones || []).map((m: { id: string; title: string; amount_display?: string; amount?: number; status?: string; percentage?: number }) => ({
+              id: m.id,
+              title: m.title,
+              amount: m.amount_display || `Rp ${(m.amount || 0).toLocaleString("id-ID")}`,
+              status: (m.status as "completed" | "in_progress" | "pending") || "pending",
+              dueDate: `${m.percentage || 50}% phase`,
+            })),
+            applicants: [],
+          }));
+          setProjects(mapped);
+        }
+
+        // 2. Load Talents
+        const liveTalents = await getTalents();
+        if (liveTalents && liveTalents.length > 0) {
+          setFeaturedTalents(
+            liveTalents.map((t) => ({
+              id: t.id,
+              name: t.name,
+              avatar: t.avatar,
+              coverImage: t.coverImage,
+              role: t.role,
+              headline: t.headline,
+              organization: t.organization,
+              location: t.location,
+              level: t.level,
+              category: t.category,
+              rating: t.rating,
+              reviewsCount: t.reviewsCount,
+              completedProjects: t.completedProjects,
+              startingPrice: t.startingPrice,
+              skills: t.skills,
+            }))
+          );
+        }
+      } catch (err) {
+        console.error("Failed to load dashboard data from Supabase:", err);
+      }
+    }
+
+    loadDashboardData();
+  }, []);
+
   const p = scrollProgress;
 
   // Filtered Projects
@@ -337,9 +219,9 @@ export function ClientDashboard() {
 
   // Filtered Talents
   const filteredTalents = useMemo(() => {
-    if (talentCategory === "Semua") return FEATURED_TALENTS;
-    return FEATURED_TALENTS.filter((t) => t.category.includes(talentCategory));
-  }, [talentCategory]);
+    if (talentCategory === "Semua") return featuredTalents;
+    return featuredTalents.filter((t) => t.category.includes(talentCategory));
+  }, [featuredTalents, talentCategory]);
 
   // Toggle Save Talent
   const toggleSaveTalent = (id: string, e: React.MouseEvent) => {
@@ -591,7 +473,27 @@ export function ClientDashboard() {
 
           {/* Project Pipeline List */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredProjects.map((proj) => {
+            {filteredProjects.length === 0 ? (
+              <div className="col-span-full rounded-2xl border border-dashed border-border/80 p-8 text-center bg-card/50 space-y-3">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <Plus className="h-6 w-6" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-base font-bold text-foreground">Belum ada proyek dibuat</h3>
+                  <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                    Mulai posting kebutuhan proyek teknologi atau desain Anda untuk mendapatkan proposal dari talenta terverifikasi.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsCreateModalOpen(true)}
+                  className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-primary-600 transition-colors"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Buat Proyek Baru</span>
+                </button>
+              </div>
+            ) : (
+              filteredProjects.map((proj) => {
               const completedMilestones = proj.milestones.filter((m) => m.status === "completed").length;
               const totalMilestones = proj.milestones.length;
               const progressPercent = totalMilestones > 0 ? Math.round((completedMilestones / totalMilestones) * 100) : 0;
@@ -713,7 +615,7 @@ export function ClientDashboard() {
                   </div>
                 </div>
               );
-            })}
+            }))}
           </div>
         </div>
 
@@ -759,7 +661,13 @@ export function ClientDashboard() {
 
           {/* Talents Grid - Freelancer Profile Summary Cards */}
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {filteredTalents.map((tal) => (
+            {filteredTalents.length === 0 ? (
+              <div className="col-span-full rounded-2xl border border-dashed border-border/80 p-8 text-center bg-card/50 space-y-2">
+                <p className="text-sm font-semibold text-foreground">Belum ada talenta terdaftar</p>
+                <p className="text-xs text-muted-foreground">Undang freelancer atau buka lowongan proyek untuk mulai menerima tawaran kerja sama.</p>
+              </div>
+            ) : (
+              filteredTalents.map((tal) => (
               <Link
                 key={tal.id}
                 href={`/client/talent/${tal.id}`}
@@ -885,7 +793,7 @@ export function ClientDashboard() {
                   </div>
                 </div>
               </Link>
-            ))}
+            )))}
           </div>
         </div>
 

@@ -20,6 +20,7 @@ import {
   Globe,
   Database,
 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 import logoWithoutText from "@/assets/logo_wo_text.svg";
 
 // Dynamically import Silk with SSR disabled so WebGL canvas initializes cleanly on client
@@ -184,52 +185,162 @@ export function CreateProjectModal({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     const budgetNum = parseInt(budget.replace(/\D/g, "") || "5000000", 10);
     const formattedBudget = `Rp ${budgetNum.toLocaleString("id-ID")}`;
+    const parsedDuration = parseInt(durationDays || "14", 10);
+    const m1Amount = Math.round(budgetNum * 0.4);
+    const m2Amount = budgetNum - m1Amount;
 
-    const newProj: CreatedProject = {
-      id: `proj-${Date.now()}`,
-      title: title || "Proyek Baru Doable!",
-      category,
-      budget: formattedBudget,
-      budgetNumeric: budgetNum,
-      status: "Hiring",
-      proposalsCount: 0,
-      dueDate: `${durationDays || "14"} hari`,
-      postedDate: "Baru saja",
-      description: description || "Deskripsi kebutuhan proyek teknologi.",
-      skills: selectedSkills.length > 0 ? selectedSkills : ["Next.js", "TypeScript"],
-      difficulty,
-      milestones: [
-        {
-          id: `m-${Date.now()}-1`,
-          title: "Milestone 1: Prototype & Initial Architecture",
-          amount: `Rp ${(budgetNum * 0.4).toLocaleString("id-ID")}`,
-          status: "pending",
-          dueDate: `${Math.round(parseInt(durationDays || "14", 10) * 0.4)} hari`,
-        },
-        {
-          id: `m-${Date.now()}-2`,
-          title: "Milestone 2: Final Delivery, Testing & Handover",
-          amount: `Rp ${(budgetNum * 0.6).toLocaleString("id-ID")}`,
-          status: "pending",
-          dueDate: `${durationDays || "14"} hari`,
-        },
-      ],
-      applicants: [],
-    };
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-    setTimeout(() => {
-      setIsSubmitting(false);
+      let createdProjectId = `proj-${Date.now()}`;
+
+      if (!user) {
+        // User is not logged in
+        console.warn("User is not authenticated. Project created as local preview.");
+        alert("Perhatian: Anda belum login. Silakan login atau daftar akun agar proyek ini tersimpan permanen di database Supabase.");
+      } else {
+        // 1. Ensure user exists in public.users to satisfy Foreign Key constraints
+        await supabase.from("users").upsert(
+          {
+            id: user.id,
+            email: user.email || `${user.id}@user.local`,
+            full_name: user.user_metadata?.full_name || "Klien Doable!",
+            role: "customer",
+            is_active: true,
+            is_verified: true,
+            onboarding_completed: true,
+          },
+          { onConflict: "id" }
+        );
+
+        // 2. Insert into Supabase projects table
+        const { data: projectData, error: projectError } = await supabase
+          .from("projects")
+          .insert({
+            owner_id: user.id,
+            title: title || "Proyek Baru Doable!",
+            description: description || "Deskripsi kebutuhan proyek teknologi.",
+            category: category,
+            required_skills: selectedSkills.length > 0 ? selectedSkills : ["Next.js", "TypeScript"],
+            difficulty: difficulty,
+            budget_type: "fixed",
+            budget_min: budgetNum,
+            budget_max: budgetNum,
+            budget_display: formattedBudget,
+            timeline_days: parsedDuration,
+            status: "hiring",
+            posted_at: new Date().toISOString(),
+          })
+          .select()
+          .single();
+
+        if (projectError) {
+          console.error("Error inserting project into Supabase:", projectError);
+          alert(`Gagal menyimpan ke Supabase: ${projectError.message}\nPastikan tabel migrasi telah dijalankan.`);
+        } else if (projectData) {
+          createdProjectId = projectData.id;
+
+          // 3. Insert milestones into Supabase milestones table
+          await supabase.from("milestones").insert([
+            {
+              project_id: projectData.id,
+              phase: "Milestone 1",
+              title: "Milestone 1: Prototype & Initial Architecture",
+              percentage: 40,
+              amount: m1Amount,
+              amount_display: `Rp ${m1Amount.toLocaleString("id-ID")}`,
+              sort_order: 1,
+            },
+            {
+              project_id: projectData.id,
+              phase: "Milestone 2",
+              title: "Milestone 2: Final Delivery, Testing & Handover",
+              percentage: 60,
+              amount: m2Amount,
+              amount_display: `Rp ${m2Amount.toLocaleString("id-ID")}`,
+              sort_order: 2,
+            },
+          ]);
+
+          // 4. Auto-generate project tasks for the Gantt timeline
+          await supabase.from("project_tasks").insert([
+            {
+              project_id: projectData.id,
+              name: "Project Setup & Tech Architecture",
+              status: "in_progress",
+              is_auto_generated: true,
+              sort_order: 1,
+            },
+            {
+              project_id: projectData.id,
+              name: "Sprint Feature Implementation",
+              status: "planned",
+              is_auto_generated: true,
+              sort_order: 2,
+            },
+            {
+              project_id: projectData.id,
+              name: "Testing, QA & Client Handover",
+              status: "planned",
+              is_auto_generated: true,
+              sort_order: 3,
+            },
+          ]);
+        }
+      }
+
+      const newProj: CreatedProject = {
+        id: createdProjectId,
+        title: title || "Proyek Baru Doable!",
+        category,
+        budget: formattedBudget,
+        budgetNumeric: budgetNum,
+        status: "Hiring",
+        proposalsCount: 0,
+        dueDate: `${durationDays || "14"} hari`,
+        postedDate: "Baru saja",
+        description: description || "Deskripsi kebutuhan proyek teknologi.",
+        skills: selectedSkills.length > 0 ? selectedSkills : ["Next.js", "TypeScript"],
+        difficulty,
+        milestones: [
+          {
+            id: `m-${Date.now()}-1`,
+            title: "Milestone 1: Prototype & Initial Architecture",
+            amount: `Rp ${m1Amount.toLocaleString("id-ID")}`,
+            status: "pending",
+            dueDate: `${Math.round(parsedDuration * 0.4)} hari`,
+          },
+          {
+            id: `m-${Date.now()}-2`,
+            title: "Milestone 2: Final Delivery, Testing & Handover",
+            amount: `Rp ${m2Amount.toLocaleString("id-ID")}`,
+            status: "pending",
+            dueDate: `${durationDays || "14"} hari`,
+          },
+        ],
+        applicants: [],
+      };
+
       setStep(4);
       if (onSuccess) {
         onSuccess(newProj);
       }
-    }, 1000);
+    } catch (err) {
+      console.error("Failed to create project:", err);
+      // Fallback transition so UX doesn't freeze
+      setStep(4);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const currentInfo = STEP_INFO[step] || STEP_INFO[1];

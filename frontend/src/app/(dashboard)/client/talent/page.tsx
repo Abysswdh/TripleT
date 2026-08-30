@@ -4,78 +4,28 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Search, Star, ShieldCheck, X, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
-
-interface TalentMatch {
-  id: string;
-  name: string;
-  role: string;
-  avatar: string;
-  rating: number;
-  reviewsCount: number;
-  hourlyRate: string;
-  skills: string[];
-  isVerified: boolean;
-}
-
-const TALENTS: TalentMatch[] = [
-  {
-    id: "tal-1",
-    name: "Dimas Arya Pratama",
-    role: "Fullstack Web & AI Specialist",
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-    rating: 4.9,
-    reviewsCount: 38,
-    hourlyRate: "Rp 175.000 / jam",
-    skills: ["Next.js", "FastAPI", "PostgreSQL", "PyTorch"],
-    isVerified: true,
-  },
-  {
-    id: "tal-2",
-    name: "Siti Rahmawati",
-    role: "Senior UI/UX & Product Designer",
-    avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80",
-    rating: 5.0,
-    reviewsCount: 52,
-    hourlyRate: "Rp 150.000 / jam",
-    skills: ["Figma", "Design Systems", "Prototyping", "User Research"],
-    isVerified: true,
-  },
-  {
-    id: "tal-3",
-    name: "Reza Mahendra",
-    role: "AI & Machine Learning Specialist",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
-    rating: 4.9,
-    reviewsCount: 29,
-    hourlyRate: "Rp 250.000 / jam",
-    skills: ["Python", "FastAPI", "OpenAI", "LangChain"],
-    isVerified: true,
-  },
-  {
-    id: "tal-4",
-    name: "Budi Santoso",
-    role: "Mobile App Developer (Flutter / React Native)",
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80",
-    rating: 4.8,
-    reviewsCount: 24,
-    hourlyRate: "Rp 160.000 / jam",
-    skills: ["Flutter", "React Native", "Firebase", "State Management"],
-    isVerified: true,
-  },
-];
+import { getTalents, type TalentRecord } from "@/lib/services/talents";
 
 export default function ClientTalentPage() {
   const [mounted, setMounted] = useState(false);
+  const [talents, setTalents] = useState<TalentRecord[]>([]);
   const [search, setSearch] = useState("");
-  const [selectedTalent, setSelectedTalent] = useState<TalentMatch | null>(null);
+  const [selectedTalent, setSelectedTalent] = useState<TalentRecord | null>(null);
   const [inviteMessage, setInviteMessage] = useState("");
   const [inviteSuccess, setInviteSuccess] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    async function loadTalents() {
+      const data = await getTalents();
+      if (data && data.length > 0) {
+        setTalents(data);
+      }
+    }
+    loadTalents();
   }, []);
 
-  const filtered = TALENTS.filter(
+  const filtered = talents.filter(
     (t) =>
       t.name.toLowerCase().includes(search.toLowerCase()) ||
       t.role.toLowerCase().includes(search.toLowerCase()) ||
@@ -117,7 +67,13 @@ export default function ClientTalentPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {filtered.map((talent) => (
+        {filtered.length === 0 ? (
+          <div className="col-span-full rounded-3xl border border-dashed border-border/80 p-12 text-center bg-card/50 space-y-2">
+            <p className="text-base font-bold text-foreground">Tidak ada talent yang ditemukan</p>
+            <p className="text-xs text-muted-foreground">Belum ada profil freelancer terdaftar atau coba gunakan kata kunci pencarian lain.</p>
+          </div>
+        ) : (
+          filtered.map((talent) => (
           <div
             key={talent.id}
             className="flex flex-col justify-between rounded-2xl border border-border/60 bg-card p-5 shadow-sm transition-all hover:border-primary/40 hover:shadow-md"
@@ -174,7 +130,7 @@ export default function ClientTalentPage() {
               </button>
             </div>
           </div>
-        ))}
+        )))}
       </div>
 
       {/* Invite Modal (PORTAL) */}

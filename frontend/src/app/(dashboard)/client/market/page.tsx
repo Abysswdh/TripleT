@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Search,
   SlidersHorizontal,
@@ -16,6 +16,7 @@ import {
   X
 } from "lucide-react";
 import Link from "next/link";
+import { getOpenProjects } from "@/lib/services/projects";
 
 interface Milestone {
   phase: string;
@@ -49,315 +50,6 @@ interface MarketProject {
   benchmarkNote: string;
 }
 
-const MARKET_PROJECTS: MarketProject[] = [
-  {
-    id: "mkt-1",
-    title: "Enterprise SaaS Analytics Dashboard & Team Billing System",
-    clientName: "Nexa Corporation",
-    clientType: "Enterprise",
-    clientLocation: "Jakarta Selatan",
-    clientVerified: true,
-    category: "Web & Fullstack",
-    budget: "Rp 18.500.000",
-    rawBudget: 18500000,
-    budgetType: "Fixed Scope",
-    timeline: "21 hari",
-    status: "Menerima Proposal",
-    difficulty: "Enterprise",
-    proposalsCount: 8,
-    postedAt: "2 jam lalu",
-    description:
-      "Membangun dashboard analitik multi-tenant dengan visualisasi chart interaktif, dark mode, audit log trails, dan integrasi recurring billing Midtrans/Stripe.",
-    objectives: [
-      "Dashboard real-time analytics dengan latency < 200ms",
-      "Role-based access control (Admin, Manager, Member)",
-      "Integrasi webhook payment otomatis Midtrans Snap API",
-      "Responsive di semua viewport desktop & tablet"
-    ],
-    skills: ["Next.js 14", "TypeScript", "Tailwind CSS", "PostgreSQL", "Prisma", "Chart.js"],
-    milestones: [
-      {
-        phase: "Tahap 1",
-        title: "Arsitektur Database & Autentikasi RBAC",
-        percentage: 30,
-        amount: "Rp 5.550.000",
-        deliverables: ["Schema Prisma & Migrasi DB", "Setup Auth & NextAuth Session", "Layout Wireframe Dashboard"]
-      },
-      {
-        phase: "Tahap 2",
-        title: "Modul Visualisasi Metrik & Chart Realtime",
-        percentage: 45,
-        amount: "Rp 8.325.000",
-        deliverables: ["Widget Data Grid Interaktif", "Filtering Periode & Export CSV/PDF", "Endpoint API Aggregation"]
-      },
-      {
-        phase: "Tahap 3",
-        title: "Integrasi Billing Payment & QA Deployment",
-        percentage: 25,
-        amount: "Rp 4.625.000",
-        deliverables: ["Webhook Payment Verification", "Penetration Testing Ringan", "Vercel / AWS Production Deploy"]
-      }
-    ],
-    benchmarkScore: "Ideal Budget (-6% vs rata-rata Enterprise)",
-    benchmarkNote: "Budget terdistribusi seimbang dengan standar pasar software house lokal."
-  },
-  {
-    id: "mkt-2",
-    title: "AI Voice Agent Support & Intelligent Ticket Dispatcher",
-    clientName: "Alpha Labs Tech",
-    clientType: "Startup",
-    clientLocation: "Bandung",
-    clientVerified: true,
-    category: "AI & Machine Learning",
-    budget: "Rp 14.000.000",
-    rawBudget: 14000000,
-    budgetType: "Fixed Scope",
-    timeline: "28 hari",
-    status: "Menerima Proposal",
-    difficulty: "Enterprise",
-    proposalsCount: 5,
-    postedAt: "5 jam lalu",
-    description:
-      "Implementasi AI voice conversational agent berbasis OpenAI Realtime API dan LangChain untuk menangani panggilan inbound CS serta auto-dispatch ticket Zendesk.",
-    objectives: [
-      "Voice pipeline latensi ultra-rendah (< 600ms audio turnaround)",
-      "Knowledge retrieval dari knowledge base PDF internal via RAG",
-      "Auto sentiment analysis & ticket summary generator",
-      "Dashboard monitoring rekaman call & speech metrics"
-    ],
-    skills: ["Python", "FastAPI", "OpenAI Realtime", "LangChain", "Pinecone", "WebSockets"],
-    milestones: [
-      {
-        phase: "Tahap 1",
-        title: "Pipeline RAG & Vector Indexing Knowledge Base",
-        percentage: 35,
-        amount: "Rp 4.900.000",
-        deliverables: ["Chunking & Embedding Dokumen SOP", "Evaluasi Akurasi Retrieval RAG > 92%"]
-      },
-      {
-        phase: "Tahap 2",
-        title: "Voice Streaming WebSockets & Function Calling",
-        percentage: 45,
-        amount: "Rp 6.300.000",
-        deliverables: ["Low-latency WebRTC Audio Client", "Tool Calling Handler untuk Zendesk API"]
-      },
-      {
-        phase: "Tahap 3",
-        title: "Stress Testing, Observability & Handoff Rule",
-        percentage: 20,
-        amount: "Rp 2.800.000",
-        deliverables: ["Human Agent Fallback Protocol", "Observability Logs & Tracing Dashboard"]
-      }
-    ],
-    benchmarkScore: "High Value (+12% vs market standard)",
-    benchmarkNote: "Menawarkan kompensasi kompetitif untuk keahlian AI Audio terkini."
-  },
-  {
-    id: "mkt-3",
-    title: "Cross-Platform Fintech Mobile App (Wallet & QRIS Scanner)",
-    clientName: "PT FinTech Solusindo",
-    clientType: "Enterprise",
-    clientLocation: "Jakarta Pusat",
-    clientVerified: true,
-    category: "Mobile Apps",
-    budget: "Rp 25.000.000",
-    rawBudget: 25000000,
-    budgetType: "Fixed Scope",
-    timeline: "35 hari",
-    status: "Sedang Dikerjakan",
-    difficulty: "Enterprise",
-    proposalsCount: 14,
-    postedAt: "1 hari lalu",
-    description:
-      "Pengembangan aplikasi mobile Flutter untuk ekosistem dompet digital, transfer antar bank via BI-FAST, scan QRIS dinamis, dan enkripsi biometric security.",
-    objectives: [
-      "Mendukung Android 8+ dan iOS 14+ dengan zero glitch 60fps",
-      "Integrasi camera scanner QRIS ultra-cepat",
-      "Enkripsi keychain token & biometric passcode",
-      "Fitur split-bill & history transaksi berkategori"
-    ],
-    skills: ["Flutter", "Dart", "Riverpod", "Dio", "Biometrics", "RESTful API"],
-    milestones: [
-      {
-        phase: "Tahap 1",
-        title: "UI Architecture & State Management Boilerplate",
-        percentage: 25,
-        amount: "Rp 6.250.000",
-        deliverables: ["Design System Flutter", "Authentication & PIN Screen", "Navigation Flow"]
-      },
-      {
-        phase: "Tahap 2",
-        title: "Core Wallet, QRIS Scanner & BI-FAST Module",
-        percentage: 50,
-        amount: "Rp 12.500.000",
-        deliverables: ["QR Code Parser", "Integrasi API Saldo & Mutasi", "Animasi Sukses Transaksi"]
-      },
-      {
-        phase: "Tahap 3",
-        title: "Security Hardening & Store Release Prep",
-        percentage: 25,
-        amount: "Rp 6.250.000",
-        deliverables: ["Root/Jailbreak Detection", "App Bundle Release (.aab / .ipa)"]
-      }
-    ],
-    benchmarkScore: "Benchmark Emas",
-    benchmarkNote: "Spesifikasi komplit dengan struktur milestone paling rapi di kategori Mobile."
-  },
-  {
-    id: "mkt-4",
-    title: "Design System & Figma Component Library for B2B Logistics",
-    clientName: "Studio Kreatif Nusantara",
-    clientType: "Agensi",
-    clientLocation: "Surabaya",
-    clientVerified: true,
-    category: "UI/UX & Design",
-    budget: "Rp 7.500.000",
-    rawBudget: 7500000,
-    budgetType: "Fixed Scope",
-    timeline: "14 hari",
-    status: "Menerima Proposal",
-    difficulty: "Standard",
-    proposalsCount: 9,
-    postedAt: "1 hari lalu",
-    description:
-      "Perancangan UI kit lengkap berbasis atomic design di Figma: typography scale, semantic color palette, 60+ komponen auto-layout v5, dan prototipe web tracking logistik.",
-    objectives: [
-      "Figma Tokens terstruktur sinkron dengan Tailwind CSS variables",
-      "60+ reusable component variants (Buttons, Forms, Modals, Tables)",
-      "High-fidelity clickable prototype untuk user testing klien B2B",
-      "Dokumentasi panduan desain (Guidelines & Dos/Don'ts)"
-    ],
-    skills: ["Figma", "UI/UX Design", "Design Systems", "Prototyping", "Design Tokens"],
-    milestones: [
-      {
-        phase: "Tahap 1",
-        title: "Design Tokens & Foundations (Colors, Typography)",
-        percentage: 30,
-        amount: "Rp 2.250.000",
-        deliverables: ["Color Palette Semantic Dark/Light", "Type Scale & Spacing System"]
-      },
-      {
-        phase: "Tahap 2",
-        title: "Atomic UI Components & States",
-        percentage: 50,
-        amount: "Rp 3.750.000",
-        deliverables: ["Komponen Input & Button Matrix", "Data Tables & Modal Layouts"]
-      },
-      {
-        phase: "Tahap 3",
-        title: "Interactive Prototype & Documentation Handoff",
-        percentage: 20,
-        amount: "Rp 1.500.000",
-        deliverables: ["Prototype Alur Pengiriman", "Panduan Handoff Developer"]
-      }
-    ],
-    benchmarkScore: "Akurat & Kompetitif",
-    benchmarkNote: "Budget standar agensi desain menengah untuk 60+ komponen modular."
-  },
-  {
-    id: "mkt-5",
-    title: "High-Throughput Microservice API & Cloud Deployment (Go & Kafka)",
-    clientName: "PT Logistik Prima Express",
-    clientType: "Enterprise",
-    clientLocation: "Tangerang",
-    clientVerified: true,
-    category: "Backend & Cloud",
-    budget: "Rp 22.000.000",
-    rawBudget: 22000000,
-    budgetType: "Fixed Scope",
-    timeline: "30 hari",
-    status: "Menerima Proposal",
-    difficulty: "Enterprise",
-    proposalsCount: 6,
-    postedAt: "3 hari lalu",
-    description:
-      "Membangun service tracking resi berkecepatan tinggi dengan Golang, Apache Kafka event streaming, Redis caching, dan orchestrasi Kubernetes (EKS).",
-    objectives: [
-      "Mampu melayani 5.000 RPS dengan response time p99 < 50ms",
-      "Event-driven architecture menggunakan Kafka message broker",
-      "Zero-downtime rolling update via Kubernetes manifest",
-      "Grafana Prometheus dashboard monitoring"
-    ],
-    skills: ["Golang", "Apache Kafka", "PostgreSQL", "Redis", "Docker", "Kubernetes", "AWS"],
-    milestones: [
-      {
-        phase: "Tahap 1",
-        title: "Service Go Core & Producer-Consumer Kafka",
-        percentage: 35,
-        amount: "Rp 7.700.000",
-        deliverables: ["Rest API & gRPC Handler", "Event Schema Protobuf", "Unit Test > 85%"]
-      },
-      {
-        phase: "Tahap 2",
-        title: "Redis Cluster Caching & PostgreSQL Partitioning",
-        percentage: 40,
-        amount: "Rp 8.800.000",
-        deliverables: ["Cache Invalidation Strategy", "Query Optimization DB Resi"]
-      },
-      {
-        phase: "Tahap 3",
-        title: "Helm Chart Kubernetes & Load Testing (k6)",
-        percentage: 25,
-        amount: "Rp 5.500.000",
-        deliverables: ["Hasil Benchmark k6 5.000 RPS", "CI/CD GitHub Actions Workflow"]
-      }
-    ],
-    benchmarkScore: "Enterprise Tier",
-    benchmarkNote: "Cocok sebagai referensi arsitektur backend berkapasitas skala tinggi."
-  },
-  {
-    id: "mkt-6",
-    title: "Gamified Learning Management System (LMS) with Quiz Engine",
-    clientName: "EduTech Pintar Bangsa",
-    clientType: "Scale-Up",
-    clientLocation: "Yogyakarta",
-    clientVerified: true,
-    category: "Web & Fullstack",
-    budget: "Rp 12.500.000",
-    rawBudget: 12500000,
-    budgetType: "Fixed Scope",
-    timeline: "20 hari",
-    status: "Selesai (Blueprint)",
-    difficulty: "Standard",
-    proposalsCount: 11,
-    postedAt: "4 hari lalu",
-    description:
-      "Platform belajar interaktif dengan sistem XP, reward badges, real-time leaderboard, dan generator kuis adaptif untuk siswa sekolah menengah.",
-    objectives: [
-      "Modul kuis interaktif dengan timer dan penilaian otomatis",
-      "Sistem gamifikasi level, quest harian, dan sertifikat otomatis PDF",
-      "Dashboard laporan progress siswa untuk guru / instruktur",
-      "Optimasi load time cepat di koneksi internet 3G/4G"
-    ],
-    skills: ["Next.js", "React", "Tailwind CSS", "Supabase", "Zustand", "Canvas Confetti"],
-    milestones: [
-      {
-        phase: "Tahap 1",
-        title: "Struktur Kursus & Engine Kuis Adaptif",
-        percentage: 40,
-        amount: "Rp 5.000.000",
-        deliverables: ["UI Kuis Interaktif", "Supabase Database & Storage"]
-      },
-      {
-        phase: "Tahap 2",
-        title: "Engine Gamifikasi (XP, Badge & Leaderboard)",
-        percentage: 35,
-        amount: "Rp 4.375.000",
-        deliverables: ["Realtime Leaderboard", "Sertifikat Generator Dinamis"]
-      },
-      {
-        phase: "Tahap 3",
-        title: "Guru Admin Panel & User Testing",
-        percentage: 25,
-        amount: "Rp 3.125.000",
-        deliverables: ["Panel Kelola Soal & Siswa", "Deployment & UAT"]
-      }
-    ],
-    benchmarkScore: "Best Practice Blueprint",
-    benchmarkNote: "Proyek sukses selesai dengan rating 5.0 — blueprint terbaik kategori EdTech."
-  }
-];
-
 const CATEGORY_TABS = [
   "Semua Kategori",
   "Web & Fullstack",
@@ -369,6 +61,7 @@ const CATEGORY_TABS = [
 ] as const;
 
 export default function ProjectMarketPage() {
+  const [marketProjects, setMarketProjects] = useState<MarketProject[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("Semua Kategori");
   const [selectedStatus, setSelectedStatus] = useState<string>("Semua Status");
@@ -379,9 +72,57 @@ export default function ProjectMarketPage() {
   const [activeProject, setActiveProject] = useState<MarketProject | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
+  useEffect(() => {
+    async function loadMarket() {
+      const data = await getOpenProjects();
+      if (data && data.length > 0) {
+        const mapped: MarketProject[] = data.map((p) => ({
+          id: p.id,
+          title: p.title,
+          clientName: p.owner?.fullName || "Klien Terverifikasi",
+          clientType: "Startup",
+          clientLocation: p.owner?.location || "Indonesia",
+          clientVerified: true,
+          category: p.category.includes("Mobile")
+            ? "Mobile Apps"
+            : p.category.includes("UI/UX")
+            ? "UI/UX & Design"
+            : p.category.includes("AI")
+            ? "AI & Machine Learning"
+            : p.category.includes("Backend")
+            ? "Backend & Cloud"
+            : "Web & Fullstack",
+          budget: p.budget,
+          rawBudget: p.budgetNumeric,
+          budgetType: "Fixed Scope",
+          timeline: p.dueDate,
+          status: p.status === "Completed" ? "Selesai (Blueprint)" : p.status === "In Progress" ? "Sedang Dikerjakan" : "Menerima Proposal",
+          difficulty: p.difficulty,
+          proposalsCount: p.proposalsCount,
+          postedAt: p.postedDate,
+          description: p.description,
+          objectives: p.objectives && p.objectives.length > 0 ? p.objectives : ["Menyelesaikan milestone sesuai timeline"],
+          skills: p.skills,
+          milestones: p.milestones.map((m) => ({
+            phase: m.dueDate,
+            title: m.title,
+            percentage: 50,
+            amount: m.amount,
+            deliverables: m.deliverables && m.deliverables.length > 0 ? m.deliverables : ["Source Code", "Dokumentasi"],
+          })),
+          benchmarkScore: "Benchmark Terverifikasi",
+          benchmarkNote: "Spesifikasi proyek terverifikasi dengan milestone escrow.",
+        }));
+
+        setMarketProjects(mapped);
+      }
+    }
+    loadMarket();
+  }, []);
+
   // Filtered & Sorted Projects
   const filteredProjects = useMemo(() => {
-    return MARKET_PROJECTS.filter((proj) => {
+    return marketProjects.filter((proj) => {
       // Search
       const matchesSearch =
         proj.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -410,7 +151,7 @@ export default function ProjectMarketPage() {
       if (sortBy === "name") return a.title.localeCompare(b.title);
       return 0; // default newest
     });
-  }, [searchQuery, selectedCategory, selectedStatus, selectedBudgetTier, sortBy]);
+  }, [marketProjects, searchQuery, selectedCategory, selectedStatus, selectedBudgetTier, sortBy]);
 
   const handleCopyLink = (projId: string) => {
     if (typeof navigator !== "undefined") {

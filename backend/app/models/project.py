@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import String, Text, Integer, Numeric, Enum, ForeignKey
+from sqlalchemy import String, Text, Integer, Boolean, ForeignKey, DateTime
 from sqlalchemy.dialects.postgresql import UUID, ARRAY
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -20,6 +20,7 @@ class ProjectStatus(str, enum.Enum):
     """Project lifecycle status."""
     DRAFT = "draft"
     OPEN = "open"
+    HIRING = "hiring"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
     CANCELLED = "cancelled"
@@ -51,6 +52,7 @@ class Project(Base, TimestampMixin):
     required_skills: Mapped[Optional[list[str]]] = mapped_column(
         ARRAY(String), nullable=True
     )
+    difficulty: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)
     experience_level: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
 
     # Budget
@@ -59,11 +61,32 @@ class Project(Base, TimestampMixin):
     )
     budget_min: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     budget_max: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    budget_display: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+
+    # Timeline
+    timeline_days: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
     # Status
     status: Mapped[str] = mapped_column(
-        String(20), default=ProjectStatus.DRAFT, nullable=False
+        String(30), default=ProjectStatus.DRAFT, nullable=False
     )
+
+    # Dummy project flag
+    is_dummy: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    # Marketplace stats
+    proposals_count: Mapped[int] = mapped_column(Integer, default=0)
+
+    # Content
+    objectives: Mapped[Optional[list[str]]] = mapped_column(ARRAY(String), nullable=True)
+    benchmark_score: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    benchmark_note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    # Escrow
+    escrow_secured: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    # Dates
+    posted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # Owner (customer)
     owner_id: Mapped[uuid.UUID] = mapped_column(
@@ -82,6 +105,11 @@ class Project(Base, TimestampMixin):
     # Relationships
     owner = relationship("User", back_populates="projects", foreign_keys=[owner_id])
     freelancer = relationship("User", foreign_keys=[freelancer_id])
+    milestones = relationship("Milestone", back_populates="project", lazy="selectin")
+    tasks = relationship("ProjectTask", back_populates="project", lazy="selectin")
+    proposals = relationship("Proposal", back_populates="project", lazy="selectin")
+    contracts = relationship("Contract", back_populates="project", lazy="selectin")
+    files = relationship("ProjectFile", back_populates="project", lazy="selectin")
 
     def __repr__(self) -> str:
         return f"<Project '{self.title}' ({self.status})>"
