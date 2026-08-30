@@ -37,11 +37,9 @@ export function Navbar() {
   
   // Safe role hook access (if used outside role provider, provide fallback)
   let role: DashboardRole = "customer";
-  let setRole: (role: DashboardRole) => void = () => {};
   try {
     const roleCtx = useDashboardRole();
     role = roleCtx?.role || "customer";
-    if (roleCtx?.setRole) setRole = roleCtx.setRole;
   } catch {
     // If we're not in dashboard, we can fallback gracefully
   }

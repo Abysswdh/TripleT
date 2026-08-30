@@ -2,39 +2,25 @@
 
 import { useState, useMemo } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { useTranslation } from "@/context/language-context";
 import { useCurrency } from "@/context/currency-context";
 import {
-  Search,
-  Sparkles,
   Flame,
   Zap,
   Briefcase,
   Clock,
   ChevronRight,
   ArrowUpRight,
-  DollarSign,
-  Star,
   Target,
   ShieldCheck,
   Compass,
   X,
   CheckCircle2,
-  Bookmark,
-  SlidersHorizontal,
-  Calendar,
-  Check,
-  Layers,
   FileText,
-  UploadCloud,
-  ExternalLink,
   Award,
   CircleDot,
   Send,
   CreditCard,
-  TrendingUp,
   ArrowRight,
-  CheckSquare
 } from "lucide-react";
 import Link from "next/link";
 import Grainient from "@/components/ui/Grainient";
@@ -314,7 +300,6 @@ const CATEGORIES = ["Semua", "Desain Grafis", "Simulasi Portofolio", "Frontend",
 
 export function FreelancerDashboard() {
   const { user } = useAuth();
-  const { t } = useTranslation();
   const { formatMoney } = useCurrency();
 
   // Timeline & Missions State
@@ -330,7 +315,6 @@ export function FreelancerDashboard() {
   const [submissionSuccess, setSubmissionSuccess] = useState(false);
 
   // Quest Feed State
-  const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Semua");
   const [selectedQuest, setSelectedQuest] = useState<QuestOpportunity | null>(null);
   const [bidAmount, setBidAmount] = useState("");
@@ -427,20 +411,12 @@ export function FreelancerDashboard() {
   // Filtered Quests
   const filteredQuests = useMemo(() => {
     return mockQuests.filter((quest) => {
-      const query = searchQuery.toLowerCase().trim();
-      const matchesQuery =
-        !query ||
-        quest.title.toLowerCase().includes(query) ||
-        quest.category.toLowerCase().includes(query) ||
-        quest.clientName.toLowerCase().includes(query) ||
-        quest.matchingSkills.some((s) => s.toLowerCase().includes(query));
-
       const matchesCategory =
         selectedCategory === "Semua" || quest.category === selectedCategory;
 
-      return matchesQuery && matchesCategory;
+      return matchesCategory;
     });
-  }, [searchQuery, selectedCategory]);
+  }, [selectedCategory]);
 
   const completedMissionsCount = dailyMissions.filter((m) => m.completed).length;
 
