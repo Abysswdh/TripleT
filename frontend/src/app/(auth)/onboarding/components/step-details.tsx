@@ -1,6 +1,12 @@
 "use client";
 
-import { ExperienceLevel, HiringType, OnboardingData } from "@/hooks/use-onboarding";
+import {
+  ExperienceLevel,
+  FreelancerBackground,
+  ClientHiringType,
+  ClientBudgetPref,
+  OnboardingData,
+} from "@/hooks/use-onboarding";
 import { ArrowLeft, ArrowRight, Check, Plus } from "lucide-react";
 import { useState } from "react";
 
@@ -14,27 +20,37 @@ interface StepDetailsProps {
 }
 
 const POPULAR_SKILLS = [
-  "React",
+  "Figma",
+  "UI/UX Design",
   "Next.js",
+  "React",
   "TypeScript",
+  "Tailwind CSS",
   "Python",
   "FastAPI",
-  "Tailwind CSS",
-  "UI/UX Design",
-  "Figma",
   "AI & ML",
+  "Flutter",
+  "Photoshop",
+  "Canva",
+  "Brand Identity",
   "PostgreSQL",
-  "Mobile Dev",
   "Docker",
 ];
 
 const PROJECT_CATEGORIES = [
-  "Web Development",
-  "Full-Stack Web App",
-  "AI & Machine Learning",
+  "Branding & Desain Visual UMKM",
   "UI/UX & Product Design",
-  "Mobile Apps (iOS & Android)",
-  "API & Backend Engineering",
+  "Website & Web App Development",
+  "Mobile Apps (Flutter / React Native)",
+  "Otomasi Bisnis & Integrasi AI",
+  "Backend API & Database Cloud",
+];
+
+const STARTING_PRICE_OPTIONS = [
+  { value: 250000, label: "Rp 250.000", desc: "Starter / Tugas Ringan" },
+  { value: 500000, label: "Rp 500.000", desc: "Standar Desain / Fitur" },
+  { value: 1000000, label: "Rp 1.000.000", desc: "Proyek Modul Menengah" },
+  { value: 2500000, label: "Rp 2.500.000", desc: "Proyek Komprehensif" },
 ];
 
 export function StepDetails({
@@ -58,25 +74,100 @@ export function StepDetails({
   const isFreelancer = data.role === "freelancer";
 
   return (
-    <div className="flex h-full flex-col justify-between space-y-4">
+    <div className="flex h-full flex-col justify-between space-y-5">
       <div>
-        <h2 className="text-xl sm:text-2xl font-heading font-bold text-foreground">
-          {isFreelancer ? "Keahlian & Pengalaman" : "Kebutuhan Proyek"}
+        <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+          {isFreelancer ? "Keahlian & Pengalaman" : "Kebutuhan Usaha & Proyek"}
         </h2>
         <p className="mt-1 text-xs text-muted-foreground">
           {isFreelancer
-            ? "Pilih skill utama dan tingkat pengalamanmu."
-            : "Pilih kategori proyek yang sesuai dengan kebutuhanmu."}
+            ? "Lengkapi latar belakang, skill utama, dan estimasi tarif minimum per proyek."
+            : "Lengkapi data usaha dan jenis kebutuhan proyek Anda."}
         </p>
       </div>
 
       {isFreelancer ? (
-        /* Freelancer Details */
-        <div className="space-y-4">
+        /* FREELANCER ONBOARDING DETAILS */
+        <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+          {/* Background / Status */}
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold text-foreground">
+              Latar Belakang / Status
+            </label>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {(
+                [
+                  { id: "mahasiswa", label: "Mahasiswa / Pelajar", desc: "Aktif studi" },
+                  { id: "fresh_grad", label: "Fresh Graduate", desc: "< 1 th lulus" },
+                  { id: "switch_career", label: "Switch Career", desc: "Belajar bidang baru" },
+                  { id: "professional", label: "Profesional", desc: "Berpengalaman" },
+                ] as const
+              ).map((bg) => (
+                <button
+                  key={bg.id}
+                  type="button"
+                  onClick={() => onUpdate({ backgroundType: bg.id as FreelancerBackground })}
+                  className={`rounded-xl border p-2.5 text-left transition-all ${
+                    data.backgroundType === bg.id
+                      ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                      : "border-border/70 bg-card hover:border-border hover:bg-muted/40"
+                  }`}
+                >
+                  <p className="text-xs font-bold text-foreground">{bg.label}</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{bg.desc}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Experience Level */}
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold text-foreground">
+              Tingkat Pengalaman
+            </label>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+              {(
+                [
+                  {
+                    level: "starter",
+                    label: "Pemula (0 Portofolio)",
+                    desc: "Belum ada pengalaman komersial.",
+                  },
+                  {
+                    level: "intermediate",
+                    label: "Menengah (1-2 Tahun)",
+                    desc: "Pernah menyelesaikan beberapa proyek.",
+                  },
+                  {
+                    level: "expert",
+                    label: "Expert (3+ Tahun)",
+                    desc: "Memiliki portofolio & rekam jejak matang.",
+                  },
+                ] as const
+              ).map((item) => (
+                <button
+                  key={item.level}
+                  type="button"
+                  onClick={() => onUpdate({ experienceLevel: item.level as ExperienceLevel })}
+                  className={`rounded-xl border p-3 text-left transition-all ${
+                    data.experienceLevel === item.level
+                      ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                      : "border-border/70 bg-card hover:border-border hover:bg-muted/40"
+                  }`}
+                >
+                  <p className="text-xs font-bold text-foreground">{item.label}</p>
+                  <p className="text-[10px] text-muted-foreground mt-1 leading-relaxed">
+                    {item.desc}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Skill Selector */}
           <div>
             <label className="mb-1.5 block text-xs font-semibold text-foreground">
-              Pilih Skill Utama <span className="text-[11px] text-muted-foreground font-normal">(Minimal 1)</span>
+              Pilih Keahlian Utama <span className="text-[11px] text-muted-foreground font-normal">(Minimal 1)</span>
             </label>
             <div className="flex flex-wrap gap-1.5">
               {POPULAR_SKILLS.map((skill) => {
@@ -88,8 +179,8 @@ export function StepDetails({
                     onClick={() => onToggleSkill(skill)}
                     className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium transition-all ${
                       isSelected
-                        ? "bg-primary text-white shadow-sm shadow-primary/30 ring-2 ring-primary/20"
-                        : "border border-slate-200 bg-white text-slate-700 hover:border-primary/50 hover:bg-slate-50"
+                        ? "bg-primary text-white shadow-xs ring-2 ring-primary/20"
+                        : "border border-border/70 bg-card text-foreground hover:border-primary/50 hover:bg-muted/50"
                     }`}
                   >
                     {isSelected ? <Check className="h-3 w-3 stroke-[3]" /> : <Plus className="h-3 w-3" />}
@@ -105,74 +196,114 @@ export function StepDetails({
                 type="text"
                 value={customSkill}
                 onChange={(e) => setCustomSkill(e.target.value)}
-                placeholder="Tambah skill lain (misal: Flutter, PyTorch)..."
-                className="h-8 flex-1 rounded-lg border border-slate-200 bg-white px-3 text-xs transition-colors placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                placeholder="Tambah skill lain (misal: Flutter, Midtrans, Canva)..."
+                className="h-8 flex-1 rounded-xl border border-border bg-card px-3 text-xs placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
               <button
                 type="submit"
-                className="h-8 rounded-lg bg-slate-800 px-3 text-xs font-medium text-white hover:bg-slate-900 transition-colors"
+                className="h-8 rounded-xl bg-secondary px-3 text-xs font-semibold text-foreground hover:bg-secondary/80 transition-colors"
               >
                 Tambah
               </button>
             </form>
           </div>
 
-          {/* Experience Level */}
+          {/* Starting Price Per Project */}
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">Tingkat Pengalaman</label>
-            <div className="grid grid-cols-3 gap-2">
+            <label className="mb-1.5 block text-xs font-semibold text-foreground">
+              Estimasi Tarif Minimum Mulai (Per Proyek)
+            </label>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 mb-2">
+              {STARTING_PRICE_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => onUpdate({ startingPrice: opt.value })}
+                  className={`rounded-xl border p-2.5 text-left transition-all ${
+                    data.startingPrice === opt.value
+                      ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                      : "border-border/70 bg-card hover:border-border hover:bg-muted/40"
+                  }`}
+                >
+                  <p className="text-xs font-bold text-foreground">{opt.label}</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{opt.desc}</p>
+                </button>
+              ))}
+            </div>
+
+            <div className="relative max-w-[240px]">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold text-xs">
+                Rp
+              </span>
+              <input
+                id="startingPriceInput"
+                type="number"
+                step={50000}
+                min={100000}
+                max={50000000}
+                value={data.startingPrice ?? 500000}
+                onChange={(e) => onUpdate({ startingPrice: Number(e.target.value) })}
+                className="h-9 w-full rounded-xl border border-border bg-card pl-10 pr-3 text-xs font-medium focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-1">
+              Tarif dasar ini akan ditampilkan di profil publik Anda sebagai patokan awal untuk klien.
+            </p>
+          </div>
+        </div>
+      ) : (
+        /* CLIENT ONBOARDING DETAILS */
+        <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+          {/* Entity / Business Type */}
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold text-foreground">
+              Tipe Usaha / Entitas
+            </label>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {(
                 [
-                  { level: "entry", label: "Junior", desc: "0-2 tahun" },
-                  { level: "intermediate", label: "Middle", desc: "2-5 tahun" },
-                  { level: "expert", label: "Senior", desc: "5+ tahun" },
+                  { type: "umkm", label: "UMKM / Bisnis Lokal", desc: "Kedai Kopi, Retail, F&B, Toko Online" },
+                  { type: "startup", label: "Startup Teknologi", desc: "Tim produk berkembang" },
+                  { type: "agency", label: "Agensi / Studio", desc: "Eksekusi proyek klien" },
+                  { type: "individual", label: "Individu / Personal", desc: "Proyek mandiri" },
                 ] as const
               ).map((item) => (
                 <button
-                  key={item.level}
+                  key={item.type}
                   type="button"
-                  onClick={() => onUpdate({ experienceLevel: item.level as ExperienceLevel })}
+                  onClick={() => onUpdate({ hiringType: item.type as ClientHiringType })}
                   className={`rounded-xl border p-2.5 text-left transition-all ${
-                    data.experienceLevel === item.level
+                    data.hiringType === item.type
                       ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                      : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+                      : "border-border/70 bg-card hover:border-border hover:bg-muted/40"
                   }`}
                 >
-                  <p className="text-xs font-bold text-slate-800">{item.label}</p>
-                  <p className="text-[10px] text-muted-foreground">{item.desc}</p>
+                  <p className="text-xs font-bold text-foreground">{item.label}</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{item.desc}</p>
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Hourly Rate */}
+          {/* Business Name */}
           <div>
-            <label htmlFor="hourlyRate" className="mb-1 block text-xs font-semibold text-foreground">
-              Ekspektasi Tarif <span className="text-[10px] text-muted-foreground font-normal">(USD/jam)</span>
+            <label htmlFor="businessName" className="mb-1 block text-xs font-semibold text-foreground">
+              Nama Usaha / Brand / Perusahaan
             </label>
-            <div className="relative max-w-[200px]">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium text-xs">
-                $
-              </span>
-              <input
-                id="hourlyRate"
-                type="number"
-                min={5}
-                max={500}
-                value={data.hourlyRate ?? 35}
-                onChange={(e) => onUpdate({ hourlyRate: Number(e.target.value) })}
-                className="h-8 w-full rounded-lg border border-slate-200 bg-white pl-7 pr-3 text-xs transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-              />
-            </div>
+            <input
+              id="businessName"
+              type="text"
+              value={data.businessName || ""}
+              onChange={(e) => onUpdate({ businessName: e.target.value })}
+              placeholder="Contoh: Kopi Seduh Kenari, PT Inovasi Digital..."
+              className="h-9 w-full rounded-xl border border-border bg-card px-3 text-xs placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+            />
           </div>
-        </div>
-      ) : (
-        /* Client Details */
-        <div className="space-y-4">
-          {/* Project Category Picker */}
+
+          {/* Primary Hiring Needs / Category */}
           <div>
             <label className="mb-1.5 block text-xs font-semibold text-foreground">
-              Pilih Kategori Proyek
+              Kategori Kebutuhan Proyek
             </label>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               {PROJECT_CATEGORIES.map((cat) => {
@@ -185,7 +316,7 @@ export function StepDetails({
                     className={`flex items-center justify-between rounded-xl border p-3 text-left text-xs font-medium transition-all ${
                       isSelected
                         ? "border-primary bg-primary/5 text-primary ring-2 ring-primary/20"
-                        : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+                        : "border-border/70 bg-card hover:border-border hover:bg-muted/40"
                     }`}
                   >
                     <span>{cat}</span>
@@ -196,29 +327,32 @@ export function StepDetails({
             </div>
           </div>
 
-          {/* Hiring As */}
+          {/* Budget Tier Preference */}
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-foreground">Merekrut Sebagai:</label>
+            <label className="mb-1.5 block text-xs font-semibold text-foreground">
+              Kisaran Budget Proyek
+            </label>
             <div className="grid grid-cols-3 gap-2">
               {(
                 [
-                  { type: "individual", label: "Individu", desc: "Proyek personal" },
-                  { type: "startup", label: "Startup / UKM", desc: "Tim berkembang" },
-                  { type: "company", label: "Perusahaan", desc: "Skala korporat" },
+                  { pref: "umkm", label: "Ramah UMKM", desc: "< Rp 2 Juta", note: "Proyek awal & esensial" },
+                  { pref: "standard", label: "Standar Bisnis", desc: "Rp 2jt - 10jt", note: "Cakupan fitur lengkap" },
+                  { pref: "enterprise", label: "Enterprise", desc: "> Rp 10 Juta", note: "Skala besar & custom" },
                 ] as const
               ).map((item) => (
                 <button
-                  key={item.type}
+                  key={item.pref}
                   type="button"
-                  onClick={() => onUpdate({ hiringType: item.type as HiringType })}
+                  onClick={() => onUpdate({ budgetPreference: item.pref as ClientBudgetPref })}
                   className={`rounded-xl border p-2.5 text-left transition-all ${
-                    data.hiringType === item.type
+                    data.budgetPreference === item.pref
                       ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                      : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+                      : "border-border/70 bg-card hover:border-border hover:bg-muted/40"
                   }`}
                 >
-                  <p className="text-xs font-bold text-slate-800">{item.label}</p>
-                  <p className="text-[10px] text-muted-foreground">{item.desc}</p>
+                  <p className="text-xs font-bold text-foreground">{item.label}</p>
+                  <p className="text-xs font-semibold text-primary mt-0.5">{item.desc}</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">{item.note}</p>
                 </button>
               ))}
             </div>
@@ -227,11 +361,11 @@ export function StepDetails({
       )}
 
       {/* Navigation */}
-      <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+      <div className="flex items-center justify-between pt-3 border-t border-border/40">
         <button
           type="button"
           onClick={onPrev}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-4 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           <span>Kembali</span>
@@ -240,7 +374,7 @@ export function StepDetails({
         <button
           type="button"
           onClick={onNext}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-5 py-2 text-xs font-semibold text-white shadow-md shadow-primary/25 hover:bg-primary-600 transition-all"
+          className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-5 py-2 text-xs font-semibold text-white shadow-md shadow-primary/25 hover:bg-primary-600 transition-all"
         >
           <span>Lanjutkan</span>
           <ArrowRight className="h-3.5 w-3.5" />

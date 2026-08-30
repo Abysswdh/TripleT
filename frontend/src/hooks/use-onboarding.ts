@@ -5,31 +5,50 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 export type RoleType = "freelancer" | "customer";
-export type ExperienceLevel = "entry" | "intermediate" | "expert";
-export type HiringType = "individual" | "startup" | "company";
+export type ExperienceLevel = "starter" | "intermediate" | "expert";
+export type FreelancerBackground = "mahasiswa" | "fresh_grad" | "switch_career" | "professional";
+export type ClientHiringType = "umkm" | "startup" | "agency" | "individual";
+export type ClientBudgetPref = "umkm" | "standard" | "enterprise";
 
 export interface OnboardingData {
   role: RoleType;
-  skills: string[];
+  fullName: string;
+  // Freelancer specific
+  backgroundType: FreelancerBackground;
   experienceLevel: ExperienceLevel;
-  hourlyRate?: number;
+  skills: string[];
+  headline: string;
+  startingPrice: number; // Tarif mulai per proyek (bukan per jam)
+  // Client specific
+  hiringType: ClientHiringType;
+  businessName: string;
+  budgetPreference: ClientBudgetPref;
   projectCategories: string[];
-  hiringType: HiringType;
+  // Shared
   bio: string;
+  locationCity: string;
   avatarUrl: string;
+  willingToVerifyKtp: boolean;
 }
 
 const STORAGE_KEY = "doable_onboarding_data";
 
 const initialData: OnboardingData = {
   role: "freelancer",
-  skills: [],
-  experienceLevel: "intermediate",
-  hourlyRate: 35,
-  projectCategories: [],
-  hiringType: "individual",
+  fullName: "",
+  backgroundType: "mahasiswa",
+  experienceLevel: "starter",
+  skills: ["Figma", "UI/UX Design"],
+  headline: "",
+  startingPrice: 500000,
+  hiringType: "umkm",
+  businessName: "",
+  budgetPreference: "umkm",
+  projectCategories: ["UI/UX & Product Design"],
   bio: "",
+  locationCity: "Jakarta, DKI Jakarta",
   avatarUrl: "avatar-1",
+  willingToVerifyKtp: true,
 };
 
 export function useOnboarding() {
@@ -111,63 +130,98 @@ export function useOnboarding() {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        throw new Error("You must be signed in to complete onboarding");
+        throw new Error("Silakan masuk terlebih dahulu untuk menyelesaikan onboarding");
       }
 
-      // Update profile in backend API or Supabase user metadata
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-      
-      const payload = {
-        role: data.role,
-        skills: data.role === "freelancer" ? data.skills : [],
-        experience_level: data.role === "freelancer" ? data.experienceLevel : undefined,
-        hourly_rate: data.role === "freelancer" ? data.hourlyRate : undefined,
-        bio: data.bio || undefined,
-        avatar_url: data.avatarUrl || undefined,
-      };
+      const displayName = data.fullName || user.user_metadata?.full_name || (data.role === "customer" ? (data.businessName || "Klien Doable!") : "Talenta Muda Doable!");
 
-      // 1. Update Supabase Auth user metadata
+      // 1. Update/Upsert public.users table
+      await supabase.from("users").upsert(
+        {
+          id: user.id,
+          email: user.email,
+          full_name: displayName,
+          role: data.role,
+          bio: data.bio || (data.role === "freelancer" ? "Siap mengerjakan proyek desain & teknologi." : "Klien pemberi kerja di platform Doable!"),
+          avatar_url: data.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+          location: data.locationCity || "Jakarta, Indonesia",
+          onboarding_completed: true,
+          is_active: true,
+          is_verified: false,
+        },
+        { onConflict: "id" }
+      );
+
+      // 2. Role-specific profile table insertion
+      if (data.role === "freelancer") {
+        const headlineText = data.headline || `${data.skills[0] || "Digital & Tech"} Specialist`;
+        const eduText = data.backgroundType === "mahasiswa" ? "Mahasiswa / Pelajar Aktif" : data.backgroundType === "fresh_grad" ? "Fresh Graduate" : data.backgroundType === "switch_career" ? "Career Switcher" : "Profesional";
+
+        await supabase.from("freelancer_profiles").upsert(
+          {
+            user_id: user.id,
+            headline: headlineText,
+            bio: data.bio || `Halo! Saya ${displayName}, ${headlineText}. Siap berkolaborasi dalam proyek.`,
+            skills: data.skills.length > 0 ? data.skills : ["UI/UX Design", "Figma"],
+            hourly_rate: data.startingPrice,
+            starting_price: `Mulai Rp ${(data.startingPrice || 500000).toLocaleString("id-ID")}`,
+            category: data.projectCategories[0] || "Web Development",
+            years_experience: data.experienceLevel === "starter" ? 0 : data.experienceLevel === "expert" ? 4 : 2,
+            education: eduText,
+            completed_projects_count: 0,
+            average_rating: 5.0,
+            total_reviews_count: 0,
+          },
+          { onConflict: "user_id" }
+        );
+      } else {
+        await supabase.from("client_profiles").upsert(
+          {
+            user_id: user.id,
+            company_name: data.businessName || "Bisnis UMKM / Startup",
+            company_size: data.hiringType === "umkm" ? "1-10 Karyawan (UMKM)" : data.hiringType === "startup" ? "11-50 Karyawan (Startup)" : "Personal / Proyek Sendiri",
+            industry: data.projectCategories[0] || "Teknologi & Kreatif",
+            hiring_needs: data.projectCategories,
+            budget_range: data.budgetPreference === "umkm" ? "< Rp 2.000.000 (Ramah UMKM)" : data.budgetPreference === "enterprise" ? "> Rp 10.000.000 (Enterprise)" : "Rp 2.000.000 - Rp 10.000.000 (Standar)",
+            verified_badge: false,
+          },
+          { onConflict: "user_id" }
+        );
+      }
+
+      // 3. Update Supabase Auth user metadata
       await supabase.auth.updateUser({
         data: {
-          ...payload,
+          role: data.role,
+          full_name: displayName,
           onboarding_completed: true,
+          experience_level: data.experienceLevel,
+          willing_to_verify_ktp: data.willingToVerifyKtp,
         },
       });
-
-      // 2. Try updating FastAPI backend if reachable
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.access_token) {
-          await fetch(`${apiUrl}/api/v1/users/me`, {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${session.access_token}`,
-            },
-            body: JSON.stringify(payload),
-          });
-        }
-      } catch {
-        // Fallback gracefully if backend is offline during local dev
-        console.warn("Backend sync failed, saved in Supabase metadata");
-      }
 
       // Clear session storage
       try {
         sessionStorage.removeItem(STORAGE_KEY);
       } catch {}
 
-      // Advance to Step 4 (Welcome & Confetti)
+      // Advance to Step 4 (Welcome)
       setStep(4);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save profile");
+      console.error("Error during onboarding submit:", err);
+      setError(err instanceof Error ? err.message : "Gagal menyimpan profil");
     } finally {
       setLoading(false);
     }
   }, [data, supabase]);
 
   const finishAndGoToDashboard = useCallback(() => {
-    if (data.role === "customer") {
+    const targetRole = data.role === "customer" ? "customer" : "freelancer";
+    if (typeof window !== "undefined") {
+      localStorage.setItem("triplet_active_dashboard_role", targetRole);
+    }
+
+    if (targetRole === "customer") {
       router.push("/client/dashboard");
     } else {
       router.push("/freelancer/dashboard");
