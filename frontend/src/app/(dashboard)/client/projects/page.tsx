@@ -24,51 +24,11 @@ interface ProjectItem {
   difficulty?: "Starter" | "Standard" | "Enterprise";
 }
 
-const INITIAL_PROJECTS: ProjectItem[] = [
-  {
-    id: "proj-1",
-    title: "E-Commerce Mobile App Redesign with Flutter",
-    category: "Mobile App Development",
-    budget: "Rp 6.500.000",
-    proposalsCount: 8,
-    status: "In Progress",
-    dueDate: "14 hari",
-    description:
-      "Redesign UI/UX komprehensif aplikasi mobile toko online ke Flutter modern dengan state management Riverpod, payment gateway Midtrans, dan push notification.",
-    skills: ["Flutter", "Dart", "Riverpod", "Figma", "REST API"],
-    difficulty: "Starter",
-  },
-  {
-    id: "proj-2",
-    title: "AI Chatbot Integration for Customer Support",
-    category: "AI & Machine Learning",
-    budget: "Rp 5.500.000",
-    proposalsCount: 4,
-    status: "In Progress",
-    dueDate: "10 hari",
-    description:
-      "Integrasi LLM OpenAI / LangChain untuk knowledge base internal customer support CS 24/7 dengan vector database Pinecone.",
-    skills: ["Python", "FastAPI", "OpenAI API", "Pinecone", "LangChain"],
-    difficulty: "Starter",
-  },
-  {
-    id: "proj-3",
-    title: "Landing Page & Brand Design System",
-    category: "UI/UX & Product Design",
-    budget: "Rp 3.500.000",
-    proposalsCount: 12,
-    status: "Completed",
-    dueDate: "Selesai",
-    description:
-      "Pembuatan visual identity, Figma component tokens, responsive landing page Next.js, dan aset promosi digital marketing.",
-    skills: ["Figma", "UI/UX", "Tailwind CSS", "Design System"],
-    difficulty: "Starter",
-  },
-];
+import { getClientProjects } from "@/lib/services/projects";
 
 function ClientProjectsContent() {
   const searchParams = useSearchParams();
-  const [projects, setProjects] = useState<ProjectItem[]>(INITIAL_PROJECTS);
+  const [projects, setProjects] = useState<ProjectItem[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   useEffect(() => {
@@ -76,6 +36,28 @@ function ClientProjectsContent() {
       setIsCreateModalOpen(true);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    async function loadClientProjects() {
+      const data = await getClientProjects();
+      if (data && data.length > 0) {
+        const mapped: ProjectItem[] = data.map((p) => ({
+          id: p.id,
+          title: p.title,
+          category: p.category,
+          budget: p.budget,
+          proposalsCount: p.proposalsCount,
+          status: p.status === "Hiring" ? "Hiring" : p.status === "In Progress" ? "In Progress" : "Completed",
+          dueDate: p.dueDate,
+          description: p.description,
+          skills: p.skills,
+          difficulty: p.difficulty,
+        }));
+        setProjects(mapped);
+      }
+    }
+    loadClientProjects();
+  }, []);
 
   const handleProjectCreated = (newProj: CreatedProject) => {
     setProjects((prev) => [newProj, ...prev]);
@@ -108,7 +90,25 @@ function ClientProjectsContent() {
 
       {/* Projects List */}
       <div className="space-y-4">
-        {projects.map((p) => (
+        {projects.length === 0 ? (
+          <div className="rounded-3xl border border-dashed border-border/80 p-12 text-center bg-card/50 space-y-3">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <Plus className="h-6 w-6" />
+            </div>
+            <h3 className="text-base font-bold text-foreground">Belum ada proyek dibuat</h3>
+            <p className="text-xs text-muted-foreground max-w-md mx-auto">
+              Anda belum memiliki postingan proyek aktif. Klik tombol di bawah untuk mulai memposting lowongan proyek baru.
+            </p>
+            <button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-primary-600 transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Pasang Proyek Baru</span>
+            </button>
+          </div>
+        ) : (
+          projects.map((p) => (
           <div
             key={p.id}
             className="flex flex-col justify-between gap-4 rounded-3xl border border-border/70 bg-card p-6 shadow-sm sm:flex-row sm:items-center hover:border-primary/40 hover:shadow-md transition-all"
@@ -182,7 +182,7 @@ function ClientProjectsContent() {
               </Link>
             </div>
           </div>
-        ))}
+        )))}
       </div>
 
       {/* Onboarding-Styled Create Project Modal Popup */}

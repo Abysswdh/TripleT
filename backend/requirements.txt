@@ -1,29 +1,29 @@
 # Doable! Backend — Python Dependencies
 
 # Core
-fastapi==0.115.*
-uvicorn[standard]==0.34.*
-pydantic[email]==2.11.*
-pydantic-settings==2.9.*
+fastapi>=0.115.0
+uvicorn[standard]>=0.34.0
+pydantic[email]>=2.11.0
+pydantic-settings>=2.9.0
 
 # Database
-sqlalchemy[asyncio]==2.0.*
-asyncpg==0.30.*
-alembic==1.15.*
+sqlalchemy[asyncio]>=2.0.0
+asyncpg>=0.30.0
+alembic>=1.15.0
 
 # Auth
-python-jose[cryptography]==3.3.*
-
-# AI/ML
-scikit-learn==1.6.*
-pandas==2.2.*
-numpy==2.2.*
-
-# Dev / Testing
-pytest==8.3.*
-pytest-asyncio==0.25.*
-httpx==0.28.*
+python-jose[cryptography]>=3.3.0
 
 # Utilities
-python-multipart==0.0.*
-python-dotenv==1.1.*
+python-multipart>=0.0.20
+python-dotenv>=1.0.0
+
+# Dev / Testing
+pytest>=8.0.0
+pytest-asyncio>=0.24.0
+httpx>=0.28.0
+
+# Optional AI/ML (uncomment when binary wheels are available for your Python version)
+# scikit-learn>=1.6.0
+# pandas>=2.2.0
+# numpy>=2.0.0

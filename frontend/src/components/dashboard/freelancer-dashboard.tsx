@@ -23,7 +23,10 @@ import {
   ArrowRight,
 } from "lucide-react";
 import Link from "next/link";
+import { useEffect } from "react";
 import Grainient from "@/components/ui/Grainient";
+import { getOpenProjects } from "@/lib/services/projects";
+import { submitProposal } from "@/lib/services/proposals";
 
 interface QuestOpportunity {
   id: string;
@@ -72,186 +75,9 @@ interface DailyMission {
   actionTarget?: string;
 }
 
-const mockQuests: QuestOpportunity[] = [
-  {
-    id: "quest-umkm-1",
-    title: "Desain Poster Promosi Instagram Kopi Beli 1 Gratis 1",
-    clientName: "Kopi Seduh Kenari (UMKM)",
-    clientRating: 5.0,
-    category: "Desain Grafis",
-    budget: "Rp 150.000",
-    budgetNumeric: 150000,
-    budgetType: "Fixed",
-    matchingSkills: ["Figma", "Photoshop", "Typography", "Social Media"],
-    matchScore: 99,
-    proposalsCount: 2,
-    postedAt: "15 menit lalu",
-    difficulty: "Entry",
-    description: "Dibutuhkan desainer kreatif untuk membuat poster Instagram feed (1:1) dan story (9:16) promo Buy 1 Get 1 Matcha Latte untuk kedai kopi lokal.",
-    xpReward: 250,
-    escrowGuaranteed: true,
-  },
-  {
-    id: "quest-1",
-    title: "Build Responsive SaaS Dashboard with Tailwind & Next.js 14",
-    clientName: "Nexa Corp",
-    clientRating: 4.9,
-    category: "Frontend",
-    budget: "Rp 6.500.000",
-    budgetNumeric: 6500000,
-    budgetType: "Fixed",
-    matchingSkills: ["Next.js", "TypeScript", "Tailwind CSS"],
-    matchScore: 98,
-    proposalsCount: 5,
-    postedAt: "1 jam lalu",
-    difficulty: "Intermediate",
-    description: "Membangun dashboard SaaS responsif dengan dark mode, visual chart interactif, dan micro-animation yang mulus.",
-    xpReward: 450,
-    escrowGuaranteed: true,
-  },
-  {
-    id: "quest-sim-1",
-    title: "Simulasi Kasus: Rebranding Identitas Visual Kedai Kopi Lokal",
-    clientName: "Doable! Career Simulator",
-    clientRating: 5.0,
-    category: "Simulasi Portofolio",
-    budget: "Simulasi Portofolio",
-    budgetNumeric: 0,
-    budgetType: "Fixed",
-    matchingSkills: ["Brand Identity", "Logo Design", "Packaging"],
-    matchScore: 95,
-    proposalsCount: 18,
-    postedAt: "Unggulan",
-    difficulty: "Entry",
-    description: "Kerjakan brief realistis desain logo, cup packaging, dan banner promo untuk membangun bukti portofolio terverifikasi pertama Anda.",
-    xpReward: 350,
-    escrowGuaranteed: true,
-    isSimulated: true,
-  },
-  {
-    id: "quest-2",
-    title: "FastAPI Backend & Supabase Auth API Integration",
-    clientName: "Studio Kreatif ID",
-    clientRating: 5.0,
-    category: "Backend",
-    budget: "Rp 8.000.000",
-    budgetNumeric: 8000000,
-    budgetType: "Fixed",
-    matchingSkills: ["Python", "FastAPI", "PostgreSQL", "Supabase"],
-    matchScore: 94,
-    proposalsCount: 3,
-    postedAt: "3 jam lalu",
-    difficulty: "Expert",
-    description: "Membangun REST API performa tinggi dengan FastAPI, otentikasi role-based Supabase, dan webhook payment gateway.",
-    xpReward: 600,
-    escrowGuaranteed: true,
-  },
-  {
-    id: "quest-3",
-    title: "Mobile App Wireframe & UI Design System in Figma",
-    clientName: "PT FinTech Solusindo",
-    clientRating: 4.8,
-    category: "UI/UX",
-    budget: "Rp 4.500.000",
-    budgetNumeric: 4500000,
-    budgetType: "Fixed",
-    matchingSkills: ["Figma", "Design Systems", "Prototyping"],
-    matchScore: 89,
-    proposalsCount: 9,
-    postedAt: "6 jam lalu",
-    difficulty: "Intermediate",
-    description: "Desain atomic UI/UX lengkap untuk aplikasi personal finance mulai dari onboarding, dashboard transaksi, hingga charts.",
-    xpReward: 350,
-    escrowGuaranteed: true,
-  },
-];
-
-const initialTimelineItems: TimelineActionItem[] = [
-  {
-    id: "tl-1",
-    projectTitle: "Desain Poster Promosi Instagram Beli 1 Gratis 1",
-    clientName: "Kopi Seduh Kenari",
-    milestoneTitle: "Milestone 1: 2 Konsep Sketsa & Moodboard Awal",
-    milestoneNumber: 1,
-    totalMilestones: 2,
-    amount: 60000,
-    currency: "IDR",
-    dueDate: "2 hari tersisa (01 Sep)",
-    urgency: "urgent",
-    progress: 75,
-    tasksChecklist: [
-      { id: "t-1", title: "Riset palet warna matcha & kopi", done: true },
-      { id: "t-2", title: "Sketsa layout feed 1:1 & story 9:16", done: true },
-      { id: "t-3", title: "Ekspor draft PNG untuk review klien", done: false },
-    ],
-  },
-  {
-    id: "tl-2",
-    projectTitle: "E-Commerce Checkout & Midtrans Integration",
-    clientName: "Tokopedika Store",
-    milestoneTitle: "Milestone 2: Payment Webhook & Invoice PDF Syncing",
-    milestoneNumber: 2,
-    totalMilestones: 3,
-    amount: 2500000,
-    currency: "IDR",
-    dueDate: "5 hari tersisa (04 Sep)",
-    urgency: "normal",
-    progress: 50,
-    tasksChecklist: [
-      { id: "t-4", title: "Setup Midtrans Snap Sandbox Environment", done: true },
-      { id: "t-5", title: "Implementasi handler webhook order paid", done: false },
-      { id: "t-6", title: "Generate dynamic invoice attachment", done: false },
-    ],
-  },
-  {
-    id: "tl-3",
-    projectTitle: "Company Landing Page Animation with Three.js",
-    clientName: "Karya Digital Nusantara",
-    milestoneTitle: "Final Milestone: Production QA & Final Delivery",
-    milestoneNumber: 3,
-    totalMilestones: 3,
-    amount: 5000000,
-    currency: "IDR",
-    dueDate: "Menunggu Review Klien",
-    urgency: "review",
-    progress: 100,
-    submittedAt: "Kemarin, 16:40 WIB",
-    tasksChecklist: [
-      { id: "t-7", title: "Optimasi FPS canvas WebGL di mobile", done: true },
-      { id: "t-8", title: "Deploy demo preview di staging Vercel", done: true },
-      { id: "t-9", title: "Kirim link dan source code repository", done: true },
-    ],
-  },
-];
-
-const initialMissions: DailyMission[] = [
-  {
-    id: "dm-1",
-    title: "Daily Platform Check-in",
-    description: "Masuk ke platform Doable! untuk mempertahankan streak harian",
-    xpReward: 20,
-    completed: true,
-    actionType: "checkin",
-  },
-  {
-    id: "dm-2",
-    title: "Submit Milestone 1 Poster Kopi",
-    description: "Kirimkan 2 draft sketsa konsep ke Kopi Seduh Kenari sebelum batas waktu",
-    xpReward: 150,
-    completed: false,
-    actionType: "submit",
-    actionTarget: "tl-1",
-  },
-  {
-    id: "dm-3",
-    title: "Ambil 1 Simulasi Portofolio",
-    description: "Kerjakan brief simulasi untuk menambah studi kasus terverifikasi",
-    xpReward: 200,
-    completed: false,
-    actionType: "quiz",
-    actionTarget: "/freelancer/explore",
-  },
-];
+const mockQuests: QuestOpportunity[] = [];
+const initialTimelineItems: TimelineActionItem[] = [];
+const initialMissions: DailyMission[] = [];
 
 // Generate 16 weeks of GitHub-style contribution data
 function generateGitHubHeatmap() {
@@ -315,12 +141,53 @@ export function FreelancerDashboard() {
   const [submissionSuccess, setSubmissionSuccess] = useState(false);
 
   // Quest Feed State
+  const [quests, setQuests] = useState<QuestOpportunity[]>(mockQuests);
   const [selectedCategory, setSelectedCategory] = useState("Semua");
   const [selectedQuest, setSelectedQuest] = useState<QuestOpportunity | null>(null);
   const [bidAmount, setBidAmount] = useState("");
   const [proposalCover, setProposalCover] = useState("");
   const [deliveryDays, setDeliveryDays] = useState("2");
   const [proposalSubmitted, setProposalSubmitted] = useState(false);
+
+  // Fetch live quests from Supabase
+  useEffect(() => {
+    async function loadLiveQuests() {
+      try {
+        const liveProjects = await getOpenProjects();
+        if (liveProjects && liveProjects.length > 0) {
+          const mapped: QuestOpportunity[] = liveProjects.map((p) => ({
+            id: p.id,
+            title: p.title,
+            clientName: p.owner?.fullName || "Klien Terverifikasi",
+            clientRating: 5.0,
+            category: p.category,
+            budget: p.budget,
+            budgetNumeric: p.budgetNumeric,
+            budgetType: "Fixed",
+            matchingSkills: p.skills.length > 0 ? p.skills : ["Digital", "Creative"],
+            matchScore: Math.floor(Math.random() * 10) + 90,
+            proposalsCount: p.proposalsCount,
+            postedAt: p.postedDate,
+            difficulty: (p.difficulty as "Entry" | "Intermediate" | "Expert") || "Intermediate",
+            description: p.description,
+            xpReward: 350,
+            escrowGuaranteed: true,
+            isSimulated: p.isDummy,
+          }));
+
+          setQuests((prev) => {
+            const liveIds = new Set(mapped.map((m) => m.id));
+            const remainingMock = prev.filter((q) => !liveIds.has(q.id));
+            return [...mapped, ...remainingMock];
+          });
+        }
+      } catch (err) {
+        console.error("Error loading quests from Supabase:", err);
+      }
+    }
+
+    loadLiveQuests();
+  }, []);
 
   // Gamification Profile State
   const freelancerName = user?.user_metadata?.full_name || "Rania Putri";
@@ -399,8 +266,24 @@ export function FreelancerDashboard() {
     setProposalSubmitted(false);
   };
 
-  const handleSubmitProposal = (e: React.FormEvent) => {
+  const handleSubmitProposal = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedQuest) return;
+
+    const numericBid = parseInt(bidAmount.replace(/\D/g, "") || "0", 10) || selectedQuest.budgetNumeric;
+
+    try {
+      await submitProposal({
+        projectId: selectedQuest.id,
+        bidAmount: numericBid,
+        deliveryDays: parseInt(deliveryDays || "7", 10),
+        coverLetter: proposalCover || "Halo! Saya sangat tertarik mengerjakan proyek ini dengan kualitas terbaik.",
+        skills: selectedQuest.matchingSkills,
+      });
+    } catch (err) {
+      console.error("Error submitting proposal to Supabase:", err);
+    }
+
     setProposalSubmitted(true);
     setTimeout(() => {
       setSelectedQuest(null);
@@ -410,13 +293,13 @@ export function FreelancerDashboard() {
 
   // Filtered Quests
   const filteredQuests = useMemo(() => {
-    return mockQuests.filter((quest) => {
+    return quests.filter((quest) => {
       const matchesCategory =
         selectedCategory === "Semua" || quest.category === selectedCategory;
 
       return matchesCategory;
     });
-  }, [selectedCategory]);
+  }, [quests, selectedCategory]);
 
   const completedMissionsCount = dailyMissions.filter((m) => m.completed).length;
 
@@ -511,7 +394,16 @@ export function FreelancerDashboard() {
 
             {/* Active Contracts & Timeline Items */}
             <div className="space-y-4">
-              {timelineItems.map((item) => {
+              {timelineItems.length === 0 ? (
+                <div className="rounded-3xl border border-dashed border-border/80 p-8 text-center bg-card/50 space-y-2">
+                  <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <Briefcase className="h-5 w-5" />
+                  </div>
+                  <p className="text-sm font-semibold text-foreground">Belum ada kontrak aktif</p>
+                  <p className="text-xs text-muted-foreground">Jelajahi quest yang tersedia dan ajukan proposal untuk memulai pekerjaan pertama Anda.</p>
+                </div>
+              ) : (
+                timelineItems.map((item) => {
                 const isUrgent = item.urgency === "urgent";
                 const isReview = item.urgency === "review";
 
@@ -611,7 +503,7 @@ export function FreelancerDashboard() {
                     </div>
                   </div>
                 );
-              })}
+              }))}
             </div>
           </section>
 
@@ -652,7 +544,13 @@ export function FreelancerDashboard() {
 
             {/* Quests List Cards */}
             <div className="grid gap-3.5">
-              {filteredQuests.slice(0, 3).map((quest) => (
+              {filteredQuests.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-border/80 p-8 text-center bg-card/50 space-y-2">
+                  <p className="text-sm font-semibold text-foreground">Belum ada quest proyek tersedia</p>
+                  <p className="text-xs text-muted-foreground">Kembali lagi nanti atau pantau lowongan baru yang diposting oleh klien.</p>
+                </div>
+              ) : (
+                filteredQuests.slice(0, 3).map((quest) => (
                 <div
                   key={quest.id}
                   className={`rounded-2xl border p-4.5 sm:p-5 shadow-xs transition-all hover:border-primary/50 hover:shadow-sm ${
@@ -715,7 +613,7 @@ export function FreelancerDashboard() {
                     </div>
                   </div>
                 </div>
-              ))}
+              )))}
             </div>
           </section>
 
