@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useAuth } from "@/hooks/use-auth";
-import logoWithText from "@/assets/logo_with_text.svg";
+import { BrandLogo } from "@/components/branding/BrandLogo";
 import { Eye, EyeOff, Loader2, CheckCircle2 } from "lucide-react";
 
 export default function RegisterPage() {
@@ -77,15 +76,7 @@ export default function RegisterPage() {
       {/* Logo */}
       <div className="mb-8 text-center">
         <Link href="/" className="inline-flex items-center justify-center">
-          <Image
-            src={logoWithText}
-            alt="Doable! Logo"
-            height={58}
-            width={Math.round(58 * (1650 / 580))}
-            style={{ height: "58px", width: "auto" }}
-            className="object-contain block select-none"
-            priority
-          />
+          <BrandLogo variant="full" height={52} />
         </Link>
       </div>
 

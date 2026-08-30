@@ -8,7 +8,6 @@ import {
   ArrowUpRight,
   CheckCircle2,
   X,
-  SlidersHorizontal,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -28,87 +27,14 @@ interface Quest {
   deadline: string;
 }
 
-const ALL_QUESTS: Quest[] = [
-  {
-    id: "q-1",
-    title: "Build Responsive SaaS Dashboard with Tailwind & Next.js 14",
-    clientName: "Nexa Corp",
-    category: "Frontend",
-    budget: "Rp 6.500.000",
-    budgetType: "Fixed",
-    skills: ["Next.js", "TypeScript", "Tailwind CSS", "React"],
-    matchScore: 98,
-    proposalsCount: 5,
-    postedAt: "1 jam lalu",
-    difficulty: "Intermediate",
-    description: "Kami membutuhkan frontend developer berpengalaman untuk membangun dashboard SaaS responsif dengan tema modern (dark mode, animations, chart visual).",
-    deadline: "14 hari",
-  },
-  {
-    id: "q-2",
-    title: "FastAPI Backend & Supabase Auth API Integration",
-    clientName: "Studio Kreatif ID",
-    category: "Backend",
-    budget: "Rp 8.000.000",
-    budgetType: "Fixed",
-    skills: ["Python", "FastAPI", "PostgreSQL", "Supabase"],
-    matchScore: 94,
-    proposalsCount: 3,
-    postedAt: "3 jam lalu",
-    difficulty: "Expert",
-    description: "Membangun REST API performa tinggi menggunakan FastAPI, SQLAlchemy/Prisma, dan integrasi role-based access control dengan Supabase Auth.",
-    deadline: "21 hari",
-  },
-  {
-    id: "q-3",
-    title: "Mobile App Wireframe & UI Design System in Figma",
-    clientName: "PT FinTech Solusindo",
-    category: "UI/UX",
-    budget: "Rp 4.500.000",
-    budgetType: "Fixed",
-    skills: ["Figma", "Design Systems", "Prototyping", "Wireframing"],
-    matchScore: 89,
-    proposalsCount: 9,
-    postedAt: "6 jam lalu",
-    difficulty: "Intermediate",
-    description: "Pembuatan full flow UI/UX aplikasi fintech mulai dari onboarding, KYC, dashboard saldo, hingga transfer antar bank dengan atomic design system.",
-    deadline: "10 hari",
-  },
-  {
-    id: "q-4",
-    title: "AI Voice Agent Integration using OpenAI Realtime API",
-    clientName: "Alpha Labs",
-    category: "AI & ML",
-    budget: "Rp 12.000.000",
-    budgetType: "Fixed",
-    skills: ["Python", "OpenAI", "WebRTC", "FastAPI"],
-    matchScore: 91,
-    proposalsCount: 2,
-    postedAt: "12 jam lalu",
-    difficulty: "Expert",
-    description: "Integrasi sistem customer support berbasis voice agent dengan latensi rendah menggunakan WebSockets dan Realtime Audio API.",
-    deadline: "30 hari",
-  },
-  {
-    id: "q-5",
-    title: "Cross-Platform Mobile App (Flutter) with Midtrans",
-    clientName: "Kopi Nusantara Co",
-    category: "Mobile",
-    budget: "Rp 9.500.000",
-    budgetType: "Fixed",
-    skills: ["Flutter", "Dart", "Midtrans", "REST API"],
-    matchScore: 86,
-    proposalsCount: 7,
-    postedAt: "1 hari lalu",
-    difficulty: "Intermediate",
-    description: "Aplikasi pemesanan kopi takeaway & delivery dengan fitur live tracking driver dan payment gateway QRIS / VA.",
-    deadline: "25 hari",
-  },
-];
+import { useEffect } from "react";
+import { getOpenProjects } from "@/lib/services/projects";
+import { submitProposal } from "@/lib/services/proposals";
 
-const CATEGORIES = ["Semua", "Frontend", "Backend", "UI/UX", "AI & ML", "Mobile"];
+const CATEGORIES = ["Semua", "Web Development", "Backend & API Engineering", "UI/UX & Product Design", "AI & Machine Learning", "Mobile App Development"];
 
 export default function FreelancerExploreQuestsPage() {
+  const [quests, setQuests] = useState<Quest[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Semua");
   const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
@@ -117,14 +43,39 @@ export default function FreelancerExploreQuestsPage() {
   const [deliveryDays, setDeliveryDays] = useState("7");
   const [submitted, setSubmitted] = useState(false);
 
-  const filteredQuests = ALL_QUESTS.filter((quest) => {
+  useEffect(() => {
+    async function loadProjects() {
+      const liveProjects = await getOpenProjects();
+      if (liveProjects && liveProjects.length > 0) {
+        const mapped: Quest[] = liveProjects.map((p) => ({
+          id: p.id,
+          title: p.title,
+          clientName: p.owner?.fullName || "Klien Terverifikasi",
+          category: p.category,
+          budget: p.budget,
+          budgetType: "Fixed",
+          skills: p.skills,
+          matchScore: 95,
+          proposalsCount: p.proposalsCount,
+          postedAt: p.postedDate,
+          difficulty: (p.difficulty as "Entry" | "Intermediate" | "Expert") || "Intermediate",
+          description: p.description,
+          deadline: p.dueDate,
+        }));
+        setQuests(mapped);
+      }
+    }
+    loadProjects();
+  }, []);
+
+  const filteredQuests = quests.filter((quest) => {
     const matchesSearch =
       quest.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       quest.skills.some((s) => s.toLowerCase().includes(searchQuery.toLowerCase())) ||
       quest.clientName.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesCategory =
-      selectedCategory === "Semua" || quest.category === selectedCategory;
+      selectedCategory === "Semua" || quest.category.toLowerCase().includes(selectedCategory.toLowerCase());
 
     return matchesSearch && matchesCategory;
   });
@@ -135,8 +86,24 @@ export default function FreelancerExploreQuestsPage() {
     setSubmitted(false);
   };
 
-  const handleSubmitProposal = (e: React.FormEvent) => {
+  const handleSubmitProposal = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedQuest) return;
+
+    const numericBid = parseInt(bidAmount.replace(/\D/g, "") || "0", 10) || 5000000;
+
+    try {
+      await submitProposal({
+        projectId: selectedQuest.id,
+        bidAmount: numericBid,
+        deliveryDays: parseInt(deliveryDays || "7", 10),
+        coverLetter: proposalCover || "Halo! Saya sangat tertarik mengerjakan proyek ini.",
+        skills: selectedQuest.skills,
+      });
+    } catch (err) {
+      console.error("Error submitting proposal:", err);
+    }
+
     setSubmitted(true);
     setTimeout(() => {
       setSelectedQuest(null);
@@ -202,7 +169,13 @@ export default function FreelancerExploreQuestsPage() {
 
       {/* Quest Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {filteredQuests.map((quest) => (
+        {filteredQuests.length === 0 ? (
+          <div className="col-span-full rounded-3xl border border-dashed border-border/80 p-12 text-center bg-card/50 space-y-2">
+            <p className="text-base font-bold text-foreground">Tidak ada quest yang ditemukan</p>
+            <p className="text-xs text-muted-foreground">Belum ada proyek yang sesuai dengan kriteria pencarian atau kategori ini.</p>
+          </div>
+        ) : (
+          filteredQuests.map((quest) => (
           <div
             key={quest.id}
             className="group flex flex-col justify-between rounded-2xl border border-border/60 bg-card p-5 shadow-sm transition-all hover:border-primary/40 hover:shadow-md"
@@ -262,18 +235,8 @@ export default function FreelancerExploreQuestsPage() {
               </button>
             </div>
           </div>
-        ))}
+        )))}
       </div>
-
-      {filteredQuests.length === 0 && (
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/80 p-12 text-center">
-          <SlidersHorizontal className="h-10 w-10 text-muted-foreground/50 mb-3" />
-          <h3 className="text-base font-bold text-foreground">Tidak ada quest ditemukan</h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Coba ubah kata kunci pencarian atau kategori filter di atas.
-          </p>
-        </div>
-      )}
 
       {/* Proposal Modal */}
       {selectedQuest && (

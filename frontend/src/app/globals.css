@@ -116,26 +116,23 @@ html {
 }
 
 .animate-breathe {
-  animation: float 2.5s ease-in-out infinite;
+  animation: float 3s ease-in-out infinite;
 }
 .animate-breathe-2 {
-  animation: float 2.5s ease-in-out infinite;
+  animation: float 3s ease-in-out infinite 0.5s;
 }
 .animate-breathe-3 {
-  animation: float 2.5s ease-in-out infinite;
+  animation: float 3s ease-in-out infinite 1s;
 }
 .animate-breathe-icon {
-  animation: float-icon 2.5s ease-in-out infinite;
+  animation: float-icon 3s ease-in-out infinite;
 }
 .animate-breathe-icon-2 {
-  animation: float-icon 2.5s ease-in-out infinite;
+  animation: float-icon 3s ease-in-out infinite 0.5s;
 }
 .animate-breathe-icon-3 {
-  animation: float-icon 2.5s ease-in-out infinite;
+  animation: float-icon 3s ease-in-out infinite 1s;
 }
-.animate-breathe-glow {}
-.animate-breathe-glow-2 {}
-.animate-breathe-glow-3 {}
 
 ::-webkit-scrollbar-thumb {
   background: hsl(var(--muted-foreground) / 0.3);

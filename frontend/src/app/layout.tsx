@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Krona_One, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+import { AppShell } from "@/components/layout/AppShell";
 
 const kronaOne = Krona_One({
   weight: "400",
@@ -27,6 +28,11 @@ export const metadata: Metadata = {
     "digital talent",
     "micro-courses",
   ],
+  icons: {
+    icon: "/icon.svg",
+    shortcut: "/icon.svg",
+    apple: "/icon.svg",
+  }
 };
 
 export default function RootLayout({
@@ -37,7 +43,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`light ${kronaOne.variable} ${plusJakartaSans.variable}`}>
       <body className="font-sans bg-background text-foreground antialiased selection:bg-primary/20 selection:text-primary">
-        {children}
+        <AppShell>
+          {children}
+        </AppShell>
       </body>
     </html>
   );

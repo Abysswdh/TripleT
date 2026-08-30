@@ -2,69 +2,30 @@
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Search, Star, ShieldCheck, X, CheckCircle2, Send } from "lucide-react";
+import { Search, Star, ShieldCheck, X, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
-
-interface TalentMatch {
-  id: string;
-  name: string;
-  role: string;
-  avatar: string;
-  rating: number;
-  reviewsCount: number;
-  hourlyRate: string;
-  skills: string[];
-  isVerified: boolean;
-}
-
-const TALENTS: TalentMatch[] = [
-  {
-    id: "t-1",
-    name: "Dimas Arya Pratama",
-    role: "Fullstack Web & AI Specialist",
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-    rating: 4.9,
-    reviewsCount: 38,
-    hourlyRate: "Rp 175.000 / jam",
-    skills: ["Next.js", "FastAPI", "PostgreSQL", "PyTorch"],
-    isVerified: true,
-  },
-  {
-    id: "t-2",
-    name: "Siti Rahmawati",
-    role: "Senior UI/UX & Product Designer",
-    avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80",
-    rating: 5.0,
-    reviewsCount: 52,
-    hourlyRate: "Rp 150.000 / jam",
-    skills: ["Figma", "Design Systems", "Prototyping", "User Research"],
-    isVerified: true,
-  },
-  {
-    id: "t-3",
-    name: "Budi Santoso",
-    role: "Mobile App Developer (Flutter / React Native)",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
-    rating: 4.8,
-    reviewsCount: 29,
-    hourlyRate: "Rp 160.000 / jam",
-    skills: ["Flutter", "React Native", "Firebase", "State Management"],
-    isVerified: true,
-  },
-];
+import { getTalents, type TalentRecord } from "@/lib/services/talents";
 
 export default function ClientTalentPage() {
   const [mounted, setMounted] = useState(false);
+  const [talents, setTalents] = useState<TalentRecord[]>([]);
   const [search, setSearch] = useState("");
-  const [selectedTalent, setSelectedTalent] = useState<TalentMatch | null>(null);
+  const [selectedTalent, setSelectedTalent] = useState<TalentRecord | null>(null);
   const [inviteMessage, setInviteMessage] = useState("");
   const [inviteSuccess, setInviteSuccess] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    async function loadTalents() {
+      const data = await getTalents();
+      if (data && data.length > 0) {
+        setTalents(data);
+      }
+    }
+    loadTalents();
   }, []);
 
-  const filtered = TALENTS.filter(
+  const filtered = talents.filter(
     (t) =>
       t.name.toLowerCase().includes(search.toLowerCase()) ||
       t.role.toLowerCase().includes(search.toLowerCase()) ||
@@ -92,12 +53,6 @@ export default function ClientTalentPage() {
             Temukan freelancer terbaik dengan keahlian yang telah diuji dan diverifikasi.
           </p>
         </div>
-        <Link
-          href="/client/dashboard"
-          className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors self-start md:self-auto"
-        >
-          ← Kembali ke Overview
-        </Link>
       </div>
 
       <div className="relative max-w-md">
@@ -112,12 +67,18 @@ export default function ClientTalentPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {filtered.map((talent) => (
+        {filtered.length === 0 ? (
+          <div className="col-span-full rounded-3xl border border-dashed border-border/80 p-12 text-center bg-card/50 space-y-2">
+            <p className="text-base font-bold text-foreground">Tidak ada talent yang ditemukan</p>
+            <p className="text-xs text-muted-foreground">Belum ada profil freelancer terdaftar atau coba gunakan kata kunci pencarian lain.</p>
+          </div>
+        ) : (
+          filtered.map((talent) => (
           <div
             key={talent.id}
             className="flex flex-col justify-between rounded-2xl border border-border/60 bg-card p-5 shadow-sm transition-all hover:border-primary/40 hover:shadow-md"
           >
-            <div>
+            <Link href={`/client/talent/${talent.id}`} className="group/card block">
               <div className="flex items-center gap-3">
                 <img
                   src={talent.avatar}
@@ -126,7 +87,7 @@ export default function ClientTalentPage() {
                 />
                 <div>
                   <div className="flex items-center gap-1.5">
-                    <h4 className="text-sm font-bold font-sans text-foreground">{talent.name}</h4>
+                    <h4 className="text-sm font-bold font-sans text-foreground group-hover/card:text-primary transition-colors">{talent.name}</h4>
                     {talent.isVerified && <ShieldCheck className="h-4 w-4 text-primary" />}
                   </div>
                   <p className="text-xs text-muted-foreground">{talent.role}</p>
@@ -152,9 +113,15 @@ export default function ClientTalentPage() {
                   </span>
                 ))}
               </div>
-            </div>
+            </Link>
 
             <div className="mt-5 pt-3 border-t border-border/40 flex items-center gap-2">
+              <Link
+                href={`/client/talent/${talent.id}`}
+                className="flex-1 rounded-xl border border-border/80 bg-card py-2 text-center text-xs font-semibold text-foreground hover:bg-muted transition-colors"
+              >
+                Lihat Profil
+              </Link>
               <button
                 onClick={() => setSelectedTalent(talent)}
                 className="flex-1 rounded-xl bg-primary py-2 text-center text-xs font-semibold text-white shadow-sm hover:bg-primary-600 transition-colors"
@@ -163,7 +130,7 @@ export default function ClientTalentPage() {
               </button>
             </div>
           </div>
-        ))}
+        )))}
       </div>
 
       {/* Invite Modal (PORTAL) */}
