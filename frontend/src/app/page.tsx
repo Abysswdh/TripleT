@@ -2,26 +2,22 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import dynamic from "next/dynamic";
-import { motion, AnimatePresence, type Variants } from "framer-motion";
-import { useAuth } from "@/hooks/use-auth";
-import { BrandLogo } from "@/components/branding/BrandLogo";
+import { motion, AnimatePresence } from "framer-motion";
+import logoWithText from "@/assets/logo_with_text.svg";
+import logoWoText from "@/assets/logo_wo_text.svg";
 import {
   ArrowRight,
-  TrendingUp,
   Users,
   GraduationCap,
   Sparkles,
-  Layers,
-  Info,
   CheckCircle2,
   BarChart2,
   ShieldCheck,
   Briefcase,
-  Globe,
   MessageSquare,
   Flame,
-  Zap,
   PieChart,
   HelpCircle,
 } from "lucide-react";
@@ -36,22 +32,20 @@ const GradientWaves = dynamic(() => import("@/components/ui/GradientWaves"), {
 });
 
 // Framer Motion Animation Variants for Scroll Fade-Up
-const fadeUpVariants: Variants = {
+const fadeUpVariants = {
   hidden: { opacity: 0, y: 35 },
-  visible: (custom: number = 0) => ({
+  visible: (customDelay: number = 0) => ({
     opacity: 1,
     y: 0,
     transition: {
       duration: 0.6,
-      ease: [0.22, 1, 0.36, 1],
-      delay: custom,
+      ease: [0.22, 1, 0.36, 1] as const,
+      delay: customDelay,
     },
   }),
 };
 
 export default function LandingPage() {
-  const { user } = useAuth();
-
   // Section 1: ASEAN Chart & Demographic States
   const [selectedAseanCountry, setSelectedAseanCountry] = useState<string>("id");
   const [activeChartTab, setActiveChartTab] = useState<"asean" | "demographics" | "informal">("asean");
@@ -177,79 +171,81 @@ export default function LandingPage() {
       {/* ========================================================================= */}
       {/* 1. TOP NAVBAR */}
       {/* ========================================================================= */}
-      <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-md transition-all">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <header className="sticky top-0 z-50 border-b border-slate-100 bg-white/95 backdrop-blur-md transition-all">
+        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6 lg:px-10">
           {/* Brand Logo */}
-          <Link href="/" className="flex items-center shrink-0 group">
-            <BrandLogo height={36} className="group-hover:opacity-90 transition-opacity hidden sm:block" />
-            <BrandLogo variant="mark" height={36} className="group-hover:opacity-90 transition-opacity sm:hidden" />
+          <Link href="/" className="flex items-center gap-2 shrink-0 group">
+            <Image
+              src={logoWithText}
+              alt="Doable! Logo"
+              height={48}
+              width={Math.round(48 * (1650 / 580))}
+              style={{ height: "48px", width: "auto" }}
+              className="object-contain block select-none group-hover:opacity-95 transition-opacity"
+              priority
+            />
           </Link>
 
           {/* Center Navigation Links */}
-          <nav className="hidden lg:flex items-center gap-7 text-xs sm:text-sm font-semibold text-muted-foreground">
+          <nav className="hidden lg:flex items-center gap-7 text-xs sm:text-sm font-semibold text-slate-600">
             <a
               href="#our-story"
-              className="text-primary font-bold border-b-2 border-primary pb-0.5 transition-colors"
+              className="text-blue-600 font-bold border-b-2 border-blue-600 pb-0.5 transition-colors"
             >
               Our Story
             </a>
             <a
+              href="#kenalan"
+              className="hover:text-blue-600 transition-colors"
+            >
+              Our Brand
+            </a>
+            <a
               href="#realitas-data"
-              className="hover:text-primary transition-colors"
+              className="hover:text-blue-600 transition-colors"
             >
               Data &amp; Impact
             </a>
             <a
               href="#kesenjangan"
-              className="hover:text-primary transition-colors"
+              className="hover:text-blue-600 transition-colors"
             >
               Kesenjangan
             </a>
             <a
               href="#solusi-doable"
-              className="hover:text-primary transition-colors"
+              className="hover:text-blue-600 transition-colors"
             >
               Solusi &amp; Workspace
             </a>
             <a
               href="#dummy-projects"
-              className="hover:text-primary transition-colors"
+              className="hover:text-blue-600 transition-colors"
             >
               Dummy Projects
             </a>
             <a
               href="#sdg-impact"
-              className="hover:text-primary transition-colors"
+              className="hover:text-blue-600 transition-colors"
             >
               SDG Impact
             </a>
           </nav>
 
           {/* Right Action Buttons */}
-          <div className="flex items-center gap-3">
-            {user ? (
-              <Link
-                href="/dashboard"
-                className="rounded-xl bg-primary px-4 py-2 text-xs sm:text-sm font-bold text-primary-foreground shadow-xs hover:bg-primary/90 transition-all hover:scale-102 active:scale-98"
-              >
-                Dashboard
-              </Link>
-            ) : (
-              <>
-                <Link
-                  href="/login"
-                  className="text-xs sm:text-sm font-semibold text-muted-foreground hover:text-foreground px-3 py-2 transition-colors"
-                >
-                  Sign In
-                </Link>
-                <Link
-                  href="/register"
-                  className="rounded-xl bg-primary px-4 py-2 text-xs sm:text-sm font-bold text-primary-foreground shadow-xs hover:bg-primary/90 transition-all hover:scale-102 active:scale-98"
-                >
-                  Get Started
-                </Link>
-              </>
-            )}
+          <div className="flex items-center gap-4">
+            <Link
+              href="/login"
+              className="text-sm font-semibold text-blue-600 hover:text-blue-800 px-3 py-2 transition-all hover:scale-105 inline-block"
+            >
+              Sign In
+            </Link>
+            <Link
+              href="/register"
+              className="rounded-xl bg-[#254BE3] px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-blue-600/20 hover:bg-blue-800 hover:scale-105 hover:shadow-lg hover:shadow-blue-600/30 active:scale-95 transition-all"
+            >
+              Get Started
+            </Link>
           </div>
         </div>
       </header>
@@ -293,11 +289,6 @@ export default function LandingPage() {
 
         {/* Hero Content (z-20) */}
         <div className="relative z-20 mx-auto max-w-5xl">
-          {/* Badge: TENTANG KAMI (Clean Pastel Pill) */}
-          <div className="inline-flex items-center justify-center rounded-full bg-[#E0EAFF] px-4 py-1.5 text-[11px] font-bold uppercase tracking-widest text-[#254BE3] shadow-sm mb-6">
-            TENTANG KAMI
-          </div>
-
           {/* H1 Heading - Wider Container */}
           <h1 className="text-3xl sm:text-5xl lg:text-[54px] font-extrabold leading-tight sm:leading-[1.35] lg:leading-[1.45] tracking-tight text-[#111827] max-w-4xl lg:max-w-5xl mx-auto">
             Misi Kami: Menjembatani Kesenjangan Antara Keterampilan &amp; Kesempatan.
@@ -322,6 +313,211 @@ export default function LandingPage() {
       </section>
 
       {/* ========================================================================= */}
+      {/* 2.5. KENALAN DENGAN DOABLE! - BENTO GRID INTRODUCTION */}
+      {/* ========================================================================= */}
+      <section id="kenalan" className="py-24 px-6 lg:px-12 max-w-7xl mx-auto scroll-mt-20">
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-40px" }}
+          variants={fadeUpVariants}
+          custom={0}
+          className="text-center max-w-3xl mx-auto mb-16"
+        >
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 flex items-center justify-center flex-wrap gap-x-4 gap-y-2">
+            <span>Kenalan dengan</span>
+            <Image
+              src={logoWithText}
+              alt="Doable!"
+              height={80}
+              className="inline-block h-14 sm:h-16 md:h-20 w-auto object-contain"
+            />
+          </h2>
+          <p className="mt-4 text-slate-600 leading-relaxed text-sm sm:text-base">
+            Platform digital terintegrasi yang mempertemukan freelancer berbakat dengan klien yang membutuhkan, dilengkapi workspace kolaboratif dan sistem portofolio tervalidasi.
+          </p>
+        </motion.div>
+
+        {/* Bento Grid Layout */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-5 auto-rows-auto">
+          {/* Card 1: Top-Left — Image + Text (spans 7 cols) */}
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-40px" }}
+            variants={fadeUpVariants}
+            custom={0.1}
+            className="md:col-span-7 rounded-3xl border border-slate-200 bg-white overflow-hidden shadow-sm hover:shadow-xl transition-all group"
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 h-full">
+              {/* Image Side */}
+              <div className="relative h-56 sm:h-full min-h-[220px] overflow-hidden">
+                <Image
+                  src="/images/doable_freelancer.jpg"
+                  alt="Freelancer kreatif mengerjakan proyek di Doable!"
+                  fill
+                  className="object-cover group-hover:scale-105 transition-transform duration-700"
+                />
+              </div>
+              {/* Text Side */}
+              <div className="p-7 flex flex-col justify-center">
+                <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 leading-snug">
+                  Bangun Portofolio,
+                </h3>
+                <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 leading-snug">
+                  Raih Karir Impian
+                </h3>
+                <p className="mt-3 text-xs sm:text-sm text-slate-600 leading-relaxed">
+                  Kerjakan proyek nyata atau simulasi, bangun portofolio tervalidasi, dan tunjukkan bukti kemampuanmu kepada dunia profesional.
+                </p>
+                <Link
+                  href="/register"
+                  className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-blue-600 hover:text-blue-800 group/link w-fit"
+                >
+                  <span className="border border-blue-200 rounded-lg px-4 py-2 group-hover/link:bg-blue-50 transition-colors">
+                    Mulai Sekarang
+                  </span>
+                  <span className="h-8 w-8 rounded-full bg-[#254BE3] text-white flex items-center justify-center group-hover/link:scale-110 transition-transform">
+                    <ArrowRight className="h-4 w-4" />
+                  </span>
+                </Link>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Card 2: Top-Right — Stat Card (spans 5 cols) */}
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-40px" }}
+            variants={fadeUpVariants}
+            custom={0.2}
+            className="md:col-span-5 rounded-3xl border border-slate-200 bg-gradient-to-br from-[#F8FAFC] to-white p-8 shadow-sm hover:shadow-xl transition-all relative overflow-hidden flex flex-col justify-between"
+          >
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="h-12 w-12 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-600/20">
+                  <Image
+                    src={logoWoText}
+                    alt="Doable! Logo"
+                    width={28}
+                    height={28}
+                    className="h-7 w-7 object-contain brightness-0 invert"
+                  />
+                </div>
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Platform Terintegrasi</span>
+              </div>
+              <div className="space-y-4">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-5xl font-black text-slate-900 tracking-tight">3-in-1</span>
+                </div>
+                <p className="text-sm text-slate-600 leading-relaxed font-medium">
+                  Marketplace + Workspace + Portofolio dalam satu ekosistem digital yang saling terintegrasi.
+                </p>
+              </div>
+            </div>
+
+            <div className="relative z-10 mt-6 grid grid-cols-3 gap-3">
+              <div className="bg-white rounded-xl p-3 border border-slate-100 text-center shadow-sm">
+                <span className="text-lg font-black text-blue-600 block"><CountUp to={100} duration={2} />%</span>
+                <span className="text-[10px] font-semibold text-slate-500 uppercase">Gratis Mulai</span>
+              </div>
+              <div className="bg-white rounded-xl p-3 border border-slate-100 text-center shadow-sm">
+                <span className="text-lg font-black text-blue-600 block"><CountUp to={24} duration={2} />/7</span>
+                <span className="text-[10px] font-semibold text-slate-500 uppercase">Akses Online</span>
+              </div>
+              <div className="bg-white rounded-xl p-3 border border-slate-100 text-center shadow-sm">
+                <span className="text-lg font-black text-blue-600 block">KTP</span>
+                <span className="text-[10px] font-semibold text-slate-500 uppercase">Terverifikasi</span>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Card 3: Bottom-Left — Feature Highlight (spans 5 cols) */}
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-40px" }}
+            variants={fadeUpVariants}
+            custom={0.25}
+            className="md:col-span-5 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm hover:shadow-xl transition-all relative overflow-hidden"
+          >
+            <div className="relative z-10">
+              <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 leading-snug">
+                <span>Ruang Kerja</span>
+                <br />
+                yang Sesungguhnya
+              </h3>
+              <p className="mt-3 text-xs sm:text-sm text-slate-600 leading-relaxed">
+                Bukan sekadar marketplace — Doable! menyediakan workspace terintegrasi dengan task management, timeline otomatis, live chat, dan file delivery. Semua dalam satu tempat.
+              </p>
+
+              {/* Mini feature list */}
+              <div className="mt-5 space-y-2.5">
+                <div className="flex items-center gap-2.5">
+                  <CheckCircle2 className="h-4 w-4 text-blue-600 shrink-0" />
+                  <span className="text-xs font-semibold text-slate-700">Auto-generated Gantt Chart &amp; Task Breakdown</span>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <CheckCircle2 className="h-4 w-4 text-blue-600 shrink-0" />
+                  <span className="text-xs font-semibold text-slate-700">GitHub-style Green Streak Gamification</span>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <CheckCircle2 className="h-4 w-4 text-blue-600 shrink-0" />
+                  <span className="text-xs font-semibold text-slate-700">Dummy Projects untuk Pemula Tanpa Pengalaman</span>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Card 4: Bottom-Right — Image + Text (spans 7 cols) */}
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-40px" }}
+            variants={fadeUpVariants}
+            custom={0.3}
+            className="md:col-span-7 rounded-3xl border border-slate-200 bg-white overflow-hidden shadow-sm hover:shadow-xl transition-all group"
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 h-full">
+              {/* Text Side */}
+              <div className="p-7 flex flex-col justify-center order-2 sm:order-1">
+                <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 leading-snug">
+                  Klien &amp; Freelancer,
+                </h3>
+                <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 leading-snug">
+                  Satu Ekosistem
+                </h3>
+                <p className="mt-3 text-xs sm:text-sm text-slate-600 leading-relaxed">
+                  Klien cukup isi brief sederhana — sistem otomatis membangun struktur proyek, timeline, dan task breakdown. Freelancer langsung kerja tanpa bingung mulai dari mana.
+                </p>
+                <Link
+                  href="/register"
+                  className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-blue-600 hover:text-blue-800 group/link w-fit"
+                >
+                  <span className="border border-blue-200 rounded-lg px-4 py-2 group-hover/link:bg-blue-50 transition-colors">
+                    Jelajahi Platform
+                  </span>
+                  <span className="h-8 w-8 rounded-full bg-[#254BE3] text-white flex items-center justify-center group-hover/link:scale-110 transition-transform">
+                    <ArrowRight className="h-4 w-4" />
+                  </span>
+                </Link>
+              </div>
+              {/* Image Side */}
+              <div className="relative h-56 sm:h-full min-h-[220px] overflow-hidden order-1 sm:order-2">
+                <Image
+                  src="/images/doable_workspace.jpg"
+                  alt="Workspace terintegrasi Doable! dengan project management tools"
+                  fill
+                  className="object-cover group-hover:scale-105 transition-transform duration-700"
+                />
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
       {/* 3. REALITAS KETENAGAKERJAAN 2026 & GRAFIK INTERAKTIF (#realitas-data) */}
       {/* ========================================================================= */}
       <section
@@ -336,10 +532,6 @@ export default function LandingPage() {
           custom={0}
           className="text-center max-w-3xl mx-auto mb-16"
         >
-          <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3.5 py-1 text-xs font-bold text-blue-600 mb-3 border border-blue-100">
-            <TrendingUp className="h-3.5 w-3.5" />
-            DATA BPS &amp; IMF PROJECTION 2026
-          </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
             Realitas Ketenagakerjaan Indonesia 2026
           </h2>
@@ -747,11 +939,6 @@ export default function LandingPage() {
               custom={0}
               className="lg:col-span-6 space-y-6"
             >
-              <div className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-[#254BE3]">
-                <Info className="h-4 w-4" />
-                RISET POPULIX &amp; KITALULUS (ANTARA)
-              </div>
-
               <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
                 Akar Masalah: Jurang Antara Kandidat &amp; Perusahaan
               </h2>
@@ -828,11 +1015,8 @@ export default function LandingPage() {
               className="lg:col-span-6"
             >
               <div className="rounded-3xl border border-slate-200 bg-white p-7 sm:p-8 shadow-xl relative">
-                <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center justify-between">
-                  <span>Dampak Lingkaran Setan vs Solusi Doable!</span>
-                  <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full">
-                    Interactive Comparison
-                  </span>
+                <h3 className="text-lg font-bold text-slate-900 mb-6">
+                  Tanpa vs Dengan Doable!
                 </h3>
 
                 <div className="space-y-4">
@@ -845,15 +1029,24 @@ export default function LandingPage() {
                       <h4 className="text-xs font-bold text-red-900 uppercase">
                         Tanpa Doable! (Jalur Lama)
                       </h4>
-                      <p className="text-xs text-red-700 mt-1">
-                        Melamar kerja <span className="font-bold text-red-500 mx-1">→</span> Ditolak karena &quot;Butuh Minimal 2 Thn Pengalaman&quot; <span className="font-bold text-red-500 mx-1">→</span> Terjebak di sektor informal low-level tanpa jalur karir.
+                      <p className="text-xs text-red-700 mt-1.5 leading-relaxed flex flex-wrap items-center gap-1">
+                        <span>Melamar kerja</span>
+                        <ArrowRight className="h-3 w-3 text-red-400 shrink-0" />
+                        <span>Ditolak karena &quot;Butuh Minimal 2 Thn Pengalaman&quot;</span>
+                        <ArrowRight className="h-3 w-3 text-red-400 shrink-0" />
+                        <span>Terjebak di sektor informal low-level tanpa jalur karir.</span>
                       </p>
                     </div>
                   </div>
 
-                  {/* Flow Arrow */}
-                  <div className="flex justify-center text-blue-600 my-1">
-                    <Zap className="h-5 w-5 animate-bounce" />
+                  {/* Flow Connector */}
+                  <div className="relative flex items-center justify-center my-2">
+                    <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                      <div className="w-full border-t border-slate-200" />
+                    </div>
+                    <div className="relative inline-flex items-center gap-1.5 bg-slate-100 text-slate-500 text-[10px] font-extrabold px-3 py-0.5 rounded-full border border-slate-200">
+                      VS
+                    </div>
                   </div>
 
                   {/* Step 2: With Doable! */}
@@ -865,8 +1058,12 @@ export default function LandingPage() {
                       <h4 className="text-xs font-bold text-blue-900 uppercase">
                         Bersama Doable! (Solusi Integrasi)
                       </h4>
-                      <p className="text-xs text-blue-800 mt-1">
-                        Ambil Proyek Simulasi / Freelance <span className="font-bold text-blue-600 mx-1">→</span> Otomatis Terstruktur di Workspace <span className="font-bold text-blue-600 mx-1">→</span> Punya Portofolio Tervalidasi &amp; Siap Kerja.
+                      <p className="text-xs text-blue-800 mt-1.5 leading-relaxed flex flex-wrap items-center gap-1">
+                        <span>Ambil Proyek Simulasi / Freelance</span>
+                        <ArrowRight className="h-3 w-3 text-blue-500 shrink-0" />
+                        <span>Otomatis Terstruktur di Workspace</span>
+                        <ArrowRight className="h-3 w-3 text-blue-500 shrink-0" />
+                        <span>Punya Portofolio Tervalidasi &amp; Siap Kerja.</span>
                       </p>
                     </div>
                   </div>
@@ -899,10 +1096,6 @@ export default function LandingPage() {
           custom={0}
           className="text-center max-w-3xl mx-auto mb-14"
         >
-          <div className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3.5 py-1 text-xs font-bold text-indigo-600 mb-3 border border-indigo-100">
-            <Sparkles className="h-3.5 w-3.5" />
-            FUSI MARKETPLACE &amp; WORKSPACE
-          </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
             Doable!: Gabungan Fiverr &amp; Notion dalam Satu Digital Space
           </h2>
@@ -959,9 +1152,6 @@ export default function LandingPage() {
                 className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center"
               >
                 <div className="lg:col-span-6 space-y-4">
-                  <span className="text-xs font-extrabold text-blue-600 uppercase tracking-widest">
-                    ALUR KLIEN INSTAN
-                  </span>
                   <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
                     Post Proyek Cepat Tanpa Pusing Susun Struktur dari Nol
                   </h3>
@@ -1038,9 +1228,6 @@ export default function LandingPage() {
                 className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center"
               >
                 <div className="lg:col-span-6 space-y-4">
-                  <span className="text-xs font-extrabold text-blue-600 uppercase tracking-widest">
-                    ALUR FREELANCER &amp; PEMULA
-                  </span>
                   <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
                     Temukan Proyek, Kerjakan di Workspace, Bangun Portofolio
                   </h3>
@@ -1131,10 +1318,6 @@ export default function LandingPage() {
             custom={0}
             className="text-center max-w-3xl mx-auto mb-16"
           >
-            <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3.5 py-1 text-xs font-bold text-blue-600 mb-3 border border-blue-100">
-              <Layers className="h-3.5 w-3.5" />
-              INTEGRATED WORKSPACE FEATURES
-            </div>
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
               Workspace Otomatis &amp; Gamifikasi Streak
             </h2>
@@ -1154,9 +1337,6 @@ export default function LandingPage() {
           >
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100">
               <div>
-                <span className="text-xs font-bold text-blue-600 uppercase tracking-widest block">
-                  DEMO TIMELINE WORKFLOW OTOMATIS
-                </span>
                 <h3 className="text-xl font-extrabold text-slate-900 mt-1">
                   Auto-Generated Gantt &amp; Task Breakdown
                 </h3>
@@ -1365,11 +1545,6 @@ export default function LandingPage() {
             custom={0}
             className="lg:col-span-5 space-y-6"
           >
-            <div className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-[#254BE3]">
-              <GraduationCap className="h-4 w-4" />
-              SOLUSI 0-TO-1 PORTOFOLIO
-            </div>
-
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
               Dummy Projects untuk Pemula &amp; Talenta Real untuk UMKM
             </h2>
@@ -1398,10 +1573,7 @@ export default function LandingPage() {
             className="lg:col-span-7"
           >
             <div className="rounded-3xl border border-slate-200 bg-white p-7 sm:p-8 shadow-xl">
-              <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
-                <span className="text-xs font-extrabold text-slate-500 uppercase tracking-widest">
-                  SIMULATOR BRIEF DUMMY PROJECT
-                </span>
+              <div className="flex items-center justify-end pb-4 border-b border-slate-100 mb-6">
                 <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">
                   100% Free Portfolio Builder
                 </span>
@@ -1490,10 +1662,6 @@ export default function LandingPage() {
             custom={0}
             className="text-center max-w-3xl mx-auto mb-16"
           >
-            <div className="inline-flex items-center gap-2 rounded-full bg-blue-500/20 px-3.5 py-1 text-xs font-bold text-blue-400 mb-3 border border-blue-500/30">
-              <Globe className="h-3.5 w-3.5" />
-              SUSTAINABLE DEVELOPMENT GOALS
-            </div>
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
               Mendukung SDG 8 &amp; SDG 9 untuk Indonesia
             </h2>
@@ -1514,8 +1682,8 @@ export default function LandingPage() {
             >
               <div>
                 <div className="flex items-center justify-between gap-3 mb-5">
-                  <div className="h-11 w-11 rounded-xl bg-rose-500/20 border border-rose-500/30 text-rose-400 flex items-center justify-center font-black text-sm shrink-0 shadow-inner">
-                    SDG <CountUp from={1} to={8} duration={1} />
+                  <div className="h-11 px-3.5 w-auto whitespace-nowrap rounded-xl bg-rose-500/20 border border-rose-500/30 text-rose-400 flex items-center justify-center font-black text-sm shrink-0 shadow-inner">
+                    SDG 8
                   </div>
                   <span className="text-[11px] font-bold text-rose-400/90 uppercase tracking-wider bg-rose-500/10 px-2.5 py-1 rounded-lg border border-rose-500/20 text-right">
                     DECENT WORK &amp; ECONOMIC GROWTH
@@ -1541,8 +1709,8 @@ export default function LandingPage() {
             >
               <div>
                 <div className="flex items-center justify-between gap-3 mb-5">
-                  <div className="h-11 w-11 rounded-xl bg-amber-500/20 border border-amber-500/30 text-amber-400 flex items-center justify-center font-black text-sm shrink-0 shadow-inner">
-                    SDG <CountUp from={1} to={9} duration={1} />
+                  <div className="h-11 px-3.5 w-auto whitespace-nowrap rounded-xl bg-amber-500/20 border border-amber-500/30 text-amber-400 flex items-center justify-center font-black text-sm shrink-0 shadow-inner">
+                    SDG 9
                   </div>
                   <span className="text-[11px] font-bold text-amber-400/90 uppercase tracking-wider bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20 text-right">
                     INDUSTRY, INNOVATION &amp; INFRASTRUCTURE
@@ -1593,7 +1761,14 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
           {/* Left Brand & Mission Copy */}
           <div className="max-w-md space-y-3">
-            <BrandLogo height={36} />
+            <Image
+              src={logoWithText}
+              alt="Doable! Logo"
+              height={42}
+              width={Math.round(42 * (1650 / 580))}
+              style={{ height: "42px", width: "auto" }}
+              className="object-contain block select-none"
+            />
             <p className="text-xs text-slate-500 leading-relaxed font-normal">
               &copy; {new Date().getFullYear()} Doable! Indonesia. Bridging skills &amp; opportunities through integrated digital workspace.
             </p>
@@ -1603,6 +1778,9 @@ export default function LandingPage() {
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-semibold text-slate-600">
             <a href="#our-story" className="hover:text-blue-600 transition-colors">
               Our Story
+            </a>
+            <a href="#kenalan" className="hover:text-blue-600 transition-colors">
+              Our Brand
             </a>
             <a href="#realitas-data" className="hover:text-blue-600 transition-colors">
               BPS Data 2026
