@@ -54,6 +54,8 @@ function ClientProjectsContent() {
           difficulty: p.difficulty,
         }));
         setProjects(mapped);
+      } else {
+        setProjects([]);
       }
     }
     loadClientProjects();

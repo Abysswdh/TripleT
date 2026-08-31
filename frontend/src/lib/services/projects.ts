@@ -74,7 +74,20 @@ export async function getOpenProjects(): Promise<ProjectRecord[]> {
  */
 export async function getClientProjects(userId?: string): Promise<ProjectRecord[]> {
   const supabase = createClient();
-  let query = supabase
+  let targetUserId = userId;
+
+  if (!targetUserId) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      // User is not logged in, no personal projects to show
+      return [];
+    }
+    targetUserId = user.id;
+  }
+
+  const { data, error } = await supabase
     .from("projects")
     .select(`
       *,
@@ -83,13 +96,9 @@ export async function getClientProjects(userId?: string): Promise<ProjectRecord[
       project_tasks(*),
       proposals(id, bid_amount, bid_display, status, freelancer:users!freelancer_id(id, full_name, avatar_url))
     `)
+    .eq("owner_id", targetUserId)
     .order("created_at", { ascending: false });
 
-  if (userId) {
-    query = query.eq("owner_id", userId);
-  }
-
-  const { data, error } = await query;
   if (error || !data) {
     console.error("Error fetching client projects:", error);
     return [];
