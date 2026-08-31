@@ -11,7 +11,6 @@ import {
   ArrowRight,
   Users,
   GraduationCap,
-  Sparkles,
   CheckCircle2,
   BarChart2,
   ShieldCheck,
