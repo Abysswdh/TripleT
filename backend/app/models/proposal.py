@@ -6,8 +6,8 @@ Freelancer bids/proposals on projects.
 import uuid
 from typing import Optional
 
-from sqlalchemy import String, Text, Integer, ForeignKey, UniqueConstraint
-from sqlalchemy.dialects.postgresql import UUID, ARRAY
+from sqlalchemy import ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin
@@ -50,4 +50,7 @@ class Proposal(Base, TimestampMixin):
     freelancer = relationship("User", back_populates="proposals")
 
     def __repr__(self) -> str:
-        return f"<Proposal project={self.project_id} freelancer={self.freelancer_id} ({self.status})>"
+        return (
+            f"<Proposal project={self.project_id} "
+            f"freelancer={self.freelancer_id} ({self.status})>"
+        )

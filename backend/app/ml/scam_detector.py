@@ -113,11 +113,16 @@ class ScamDetector:
         confidence = min(len(flags) * 0.2, 1.0)
         is_suspicious = confidence >= 0.3
 
+        details_text = (
+            f"Found {len(flags)} suspicious indicator(s)"
+            if flags
+            else "No issues detected"
+        )
         return ScamAnalysis(
             is_suspicious=is_suspicious,
             confidence=round(confidence, 2),
             flags=flags,
-            details=f"Found {len(flags)} suspicious indicator(s)" if flags else "No issues detected",
+            details=details_text,
         )
 
 

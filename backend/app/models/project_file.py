@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import String, Text, Integer, ForeignKey, DateTime, func
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -35,8 +35,8 @@ class ProjectFile(Base):
     file_name: Mapped[str] = mapped_column(String(255), nullable=False)
     file_url: Mapped[str] = mapped_column(Text, nullable=False)
     file_size: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    file_type: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    category: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # deliverable, brief, reference, revision, other
+    # deliverable, brief, reference, revision, other
+    category: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     milestone_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("milestones.id"), nullable=True
     )

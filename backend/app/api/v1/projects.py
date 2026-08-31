@@ -2,15 +2,15 @@
 Doable! Backend — Projects API Endpoints
 """
 from fastapi import APIRouter, HTTPException, Query, status
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 
-from app.api.deps import DbSession, CurrentUserId
+from app.api.deps import CurrentUserId, DbSession
 from app.models.project import Project, ProjectStatus
 from app.schemas.project import (
     ProjectCreate,
-    ProjectUpdate,
-    ProjectResponse,
     ProjectListResponse,
+    ProjectResponse,
+    ProjectUpdate,
 )
 
 router = APIRouter(prefix="/projects", tags=["Projects"])

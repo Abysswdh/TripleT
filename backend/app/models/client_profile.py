@@ -4,7 +4,7 @@ Doable! Backend — Client Profile Model
 import uuid
 from typing import Optional
 
-from sqlalchemy import String, Text, Boolean, ForeignKey
+from sqlalchemy import Boolean, ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 

@@ -1,12 +1,12 @@
 """
 Doable! Backend — Users API Endpoints
 """
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException
 from sqlalchemy import select
 
-from app.api.deps import DbSession, CurrentUserId
+from app.api.deps import CurrentUserId, DbSession
 from app.models.user import User
-from app.schemas.user import UserUpdate, UserResponse, UserProfile
+from app.schemas.user import UserProfile, UserResponse, UserUpdate
 
 router = APIRouter(prefix="/users", tags=["Users"])
 

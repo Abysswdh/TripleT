@@ -8,7 +8,7 @@ These endpoints handle the backend side: profile sync and token verification.
 from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import select
 
-from app.api.deps import DbSession, CurrentUserId
+from app.api.deps import CurrentUserId, DbSession
 from app.models.user import User
 from app.schemas.user import UserCreate, UserResponse
 

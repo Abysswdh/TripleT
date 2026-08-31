@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import String, Text, Integer, Boolean, ForeignKey, DateTime, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -33,7 +33,9 @@ class Message(Base):
 
     # Content
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    type: Mapped[str] = mapped_column(String(30), default="text")  # text, file, system, milestone_update
+    type: Mapped[str] = mapped_column(
+        String(30), default="text"
+    )  # text, file, system, milestone_update
 
     # File attachment (optional)
     file_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)

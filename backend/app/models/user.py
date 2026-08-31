@@ -4,10 +4,9 @@ Doable! Backend — User Model
 Synced from Supabase Auth. The `id` field matches the Supabase Auth user ID.
 """
 import uuid
-from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import String, Text, Boolean, DateTime, func
+from sqlalchemy import Boolean, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -45,10 +44,18 @@ class User(Base, TimestampMixin):
     onboarding_completed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     # Relationships
-    projects = relationship("Project", back_populates="owner", foreign_keys="[Project.owner_id]", lazy="selectin")
-    freelancer_profile = relationship("FreelancerProfile", back_populates="user", uselist=False, lazy="selectin")
-    client_profile = relationship("ClientProfile", back_populates="user", uselist=False, lazy="selectin")
-    identity_verification = relationship("IdentityVerification", back_populates="user", uselist=False, lazy="selectin")
+    projects = relationship(
+        "Project", back_populates="owner", foreign_keys="[Project.owner_id]", lazy="selectin"
+    )
+    freelancer_profile = relationship(
+        "FreelancerProfile", back_populates="user", uselist=False, lazy="selectin"
+    )
+    client_profile = relationship(
+        "ClientProfile", back_populates="user", uselist=False, lazy="selectin"
+    )
+    identity_verification = relationship(
+        "IdentityVerification", back_populates="user", uselist=False, lazy="selectin"
+    )
     proposals = relationship("Proposal", back_populates="freelancer", lazy="selectin")
     portfolio_projects = relationship("PortfolioProject", back_populates="user", lazy="selectin")
     notifications = relationship("Notification", back_populates="user", lazy="selectin")
