@@ -28,7 +28,7 @@ export async function submitProposal(params: {
   deliveryDays: number;
   coverLetter: string;
   skills?: string[];
-}): Promise<{ success: boolean; data?: any; error?: string }> {
+}): Promise<{ success: boolean; data?: Record<string, unknown>; error?: string }> {
   const supabase = createClient();
   let targetFreelancerId = params.freelancerId;
 

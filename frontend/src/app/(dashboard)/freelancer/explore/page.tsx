@@ -7,7 +7,6 @@ import {
   Sparkles,
   ArrowUpRight,
   CheckCircle2,
-  X,
 } from "lucide-react";
 import Link from "next/link";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";

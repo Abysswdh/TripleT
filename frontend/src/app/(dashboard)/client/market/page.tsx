@@ -12,8 +12,7 @@ import {
   Plus,
   Eye,
   Copy,
-  Check,
-  X
+  Check
 } from "lucide-react";
 import Link from "next/link";
 import { getOpenProjects } from "@/lib/services/projects";

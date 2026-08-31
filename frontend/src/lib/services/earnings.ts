@@ -53,7 +53,9 @@ export async function getFreelancerEarnings(userId?: string): Promise<EarningsSu
 
   if (contracts && contracts.length > 0) {
     for (const c of contracts) {
-      const projTitle = (c.project as any)?.title || "Project Milestone";
+      const proj = c.project as unknown as { title?: string } | undefined;
+      const projTitle = proj?.title || "Project Milestone";
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const txs = (c.escrow_transactions as any[]) || [];
 
       for (const tx of txs) {
@@ -148,7 +150,6 @@ export async function requestPayout(params: {
 }): Promise<{ success: boolean; error?: string }> {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const userId = user?.id || "fa000000-0000-0000-0000-000000000001";
 
   // Record payout in escrow_transactions
   const { error } = await supabase.from("escrow_transactions").insert({

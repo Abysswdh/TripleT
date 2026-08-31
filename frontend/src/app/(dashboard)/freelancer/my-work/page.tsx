@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Briefcase, Clock, CheckCircle2, FileCode, UploadCloud, X } from "lucide-react";
+import { Briefcase, CheckCircle2, FileCode, UploadCloud } from "lucide-react";
 import Link from "next/link";
 import { getFreelancerContracts, submitMilestoneDeliverable, type ContractItem } from "@/lib/services/contracts";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";

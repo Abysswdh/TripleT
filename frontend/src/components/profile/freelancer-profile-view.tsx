@@ -12,18 +12,14 @@ import {
   ShieldCheck,
   Star,
   Clock,
-  Banknote,
   Award,
   Flame,
   ArrowRight,
   Heart,
   MapPin,
   Check,
-  X,
   Edit3,
   Share2,
-  ExternalLink,
-  Sparkles,
   Zap
 } from "lucide-react";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
@@ -433,13 +429,13 @@ export function FreelancerProfileView({ talentId = "tal-1", isOwner = false }: F
 
         if (data && !error) {
           const u = data.user || user?.user_metadata || {};
-          const mappedPortfolio = (portData || []).map((p: any) => ({
-            id: p.id,
-            title: p.title || "Proyek Portofolio",
-            category: p.category || "PROJECT",
-            description: p.description || "",
-            image: p.image_url || "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop&q=80",
-            tags: p.technologies || ["TECH"]
+          const mappedPortfolio = ((portData as Array<Record<string, unknown>>) || []).map((p) => ({
+            id: String(p.id || ""),
+            title: String(p.title || "Proyek Portofolio"),
+            category: String(p.category || "PROJECT"),
+            description: String(p.description || ""),
+            image: String(p.image_url || "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop&q=80"),
+            tags: (p.technologies as string[]) || ["TECH"]
           }));
 
           setLiveProfile({

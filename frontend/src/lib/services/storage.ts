@@ -42,22 +42,31 @@ export async function uploadProfileMedia(
 
     const publicUrl = publicUrlData.publicUrl;
 
-    // 3. Automatically sync to database
+    // 3. Automatically sync to database and auth user_metadata
     if (type === "avatar") {
       await supabase
         .from("users")
         .update({ avatar_url: publicUrl })
         .eq("id", userId);
+
+      await supabase.auth.updateUser({
+        data: { avatar_url: publicUrl },
+      });
     } else {
       await supabase
         .from("freelancer_profiles")
         .update({ cover_image: publicUrl })
         .eq("user_id", userId);
+
+      await supabase.auth.updateUser({
+        data: { cover_image: publicUrl },
+      });
     }
 
     return { publicUrl, error: null };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error(`Unexpected upload error for ${type}:`, err);
-    return { publicUrl: null, error: err.message || "Gagal mengunggah gambar" };
+    const msg = err instanceof Error ? err.message : "Gagal mengunggah gambar";
+    return { publicUrl: null, error: msg };
   }
 }

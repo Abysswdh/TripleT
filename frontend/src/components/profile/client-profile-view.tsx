@@ -3,11 +3,9 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { createClient } from "@/lib/supabase/client";
 import {
-  ArrowLeft,
   Building2,
   Globe,
   MapPin,
@@ -18,7 +16,6 @@ import {
   Banknote,
   Briefcase,
   Award,
-  Sparkles,
   ArrowRight,
   Edit3,
   Share2,
@@ -26,8 +23,7 @@ import {
   ExternalLink,
   Check,
   Clock,
-  FileText,
-  AlertCircle
+  FileText
 } from "lucide-react";
 
 export interface ClientProjectItem {
@@ -81,10 +77,8 @@ interface ClientProfileViewProps {
 }
 
 export function ClientProfileView({ clientId, isOwner = true }: ClientProfileViewProps) {
-  const router = useRouter();
   const { user } = useAuth();
   const [copiedLink, setCopiedLink] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
 
   // Check if current authenticated user is the owner
   const targetId = clientId || user?.id;
@@ -120,7 +114,6 @@ export function ClientProfileView({ clientId, isOwner = true }: ClientProfileVie
   useEffect(() => {
     async function loadClientData() {
       if (!targetId) {
-        setIsLoading(false);
         return;
       }
 
@@ -156,26 +149,23 @@ export function ClientProfileView({ clientId, isOwner = true }: ClientProfileVie
           .eq("reviewee_id", actualOwnerId);
 
         const u = cData?.user || (isActualOwner ? user?.user_metadata : {}) || {};
-        const joinedYear = cData?.user?.created_at
-          ? new Date(cData.user.created_at).getFullYear().toString()
-          : "2025";
 
         // Hitung statistik riil dari database
-        const projectsList: ClientProjectItem[] = (pData || []).map((p: any) => ({
-          id: p.id,
-          title: p.title || "Proyek Tanpa Judul",
-          category: (p.category || "General").toUpperCase(),
-          budget: p.budget || (p.budget_min ? `Rp ${p.budget_min.toLocaleString("id-ID")}` : "Rp 0"),
-          proposalsCount: p.proposals_count || 0,
+        const projectsList: ClientProjectItem[] = ((pData as Array<Record<string, unknown>>) || []).map((p) => ({
+          id: String(p.id || ""),
+          title: String(p.title || "Proyek Tanpa Judul"),
+          category: String(p.category || "General").toUpperCase(),
+          budget: String(p.budget || (p.budget_min ? `Rp ${(Number(p.budget_min)).toLocaleString("id-ID")}` : "Rp 0")),
+          proposalsCount: Number(p.proposals_count) || 0,
           status: (p.status as "Hiring" | "In Progress" | "Completed" | "Open" | "Draft") || "Hiring",
           dueDate: p.due_date
-            ? new Date(p.due_date).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })
+            ? new Date(String(p.due_date)).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })
             : "Fleksibel",
-          skills: p.skills && p.skills.length > 0 ? p.skills : ["Digital Specialist"]
+          skills: Array.isArray(p.skills) && p.skills.length > 0 ? (p.skills as string[]) : ["Digital Specialist"]
         }));
 
         // Hitung total dana proyek dari semua proyek
-        const totalBudgetCalc = (pData || []).reduce((acc: number, cur: any) => {
+        const totalBudgetCalc = ((pData as Array<Record<string, unknown>>) || []).reduce((acc: number, cur) => {
           return acc + (Number(cur.budget_numeric) || Number(cur.budget_min) || 0);
         }, 0);
 
@@ -197,16 +187,24 @@ export function ClientProfileView({ clientId, isOwner = true }: ClientProfileVie
           ? extractedSkills
           : (cData?.hiring_needs && cData.hiring_needs.length > 0 ? cData.hiring_needs : ["Web Development", "UI/UX Design", "Mobile App"]);
 
-        const reviewsList: ClientReviewItem[] = (rData || []).map((r: any) => ({
-          id: r.id,
-          freelancerName: r.reviewer?.full_name || "Freelancer Terverifikasi",
-          freelancerRole: r.reviewer?.role || "Talenta Spesialis",
-          freelancerAvatar: r.reviewer?.avatar_url || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-          rating: r.rating || 5,
-          date: r.created_at ? new Date(r.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "Baru saja",
-          comment: r.comment || "Kerjasama yang sangat baik dan pembayaran milestone tepat waktu.",
-          projectTitle: r.project?.title || "Proyek Selesai"
-        }));
+        const reviewsList: ClientReviewItem[] = ((rData as Array<Record<string, unknown>>) || []).map((r) => {
+          const rev = r.reviewer as Record<string, unknown> | undefined;
+          const proj = r.project as Record<string, unknown> | undefined;
+          return {
+            id: String(r.id || ""),
+            freelancerName: String(rev?.full_name || "Freelancer Terverifikasi"),
+            freelancerRole: String(rev?.role || "Talenta Spesialis"),
+            freelancerAvatar: String(rev?.avatar_url || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"),
+            rating: Number(r.rating) || 5,
+            date: r.created_at ? new Date(String(r.created_at)).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "Baru saja",
+            comment: String(r.comment || "Kerjasama yang sangat baik dan pembayaran milestone tepat waktu."),
+            projectTitle: String(proj?.title || "Proyek Selesai")
+          };
+        });
+
+        const joinedYear = cData?.user?.created_at
+          ? new Date(cData.user.created_at).getFullYear().toString()
+          : "2025";
 
         setProfile({
           id: targetId,
@@ -236,8 +234,6 @@ export function ClientProfileView({ clientId, isOwner = true }: ClientProfileVie
         });
       } catch (err) {
         console.error("Gagal membaca profil dari database Supabase:", err);
-      } finally {
-        setIsLoading(false);
       }
     }
 

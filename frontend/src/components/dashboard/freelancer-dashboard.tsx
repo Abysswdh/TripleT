@@ -13,7 +13,6 @@ import {
   Target,
   ShieldCheck,
   Compass,
-  X,
   CheckCircle2,
   FileText,
   Award,

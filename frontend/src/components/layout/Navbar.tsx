@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { useDashboardRole, type DashboardRole } from "@/context/role-context";
 import { useTranslation } from "@/context/language-context";
+import { createClient } from "@/lib/supabase/client";
 import { BrandLogo } from "@/components/branding/BrandLogo";
 import { Container } from "@/components/layout/Container";
 import {
@@ -89,6 +90,47 @@ export function Navbar() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [userDropdownOpen]);
+
+  // Live avatar state synced from database and custom update events
+  const [dbAvatarUrl, setDbAvatarUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) {
+      setDbAvatarUrl(null);
+      return;
+    }
+
+    if (user.user_metadata?.avatar_url) {
+      setDbAvatarUrl(user.user_metadata.avatar_url);
+    }
+
+    const supabase = createClient();
+    const fetchAvatar = async () => {
+      try {
+        const { data } = await supabase
+          .from("users")
+          .select("avatar_url")
+          .eq("id", user.id)
+          .single();
+        if (data?.avatar_url !== undefined) {
+          setDbAvatarUrl(data.avatar_url);
+        }
+      } catch (err) {
+        console.warn("Could not fetch navbar avatar:", err);
+      }
+    };
+
+    fetchAvatar();
+
+    const handleProfileUpdate = () => {
+      fetchAvatar();
+    };
+
+    window.addEventListener("profile-updated", handleProfileUpdate);
+    return () => {
+      window.removeEventListener("profile-updated", handleProfileUpdate);
+    };
+  }, [user]);
 
   // Seamless 1-click role switcher
   const handleSwitchRole = () => {
@@ -239,20 +281,43 @@ export function Navbar() {
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
                   className="flex items-center gap-2 rounded-xl p-1 hover:bg-muted/60 transition-colors"
                 >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-xs font-bold text-white shadow-sm">
-                    {user?.email?.charAt(0).toUpperCase() || "U"}
+                  <div className="relative flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-xs font-bold text-white shadow-sm overflow-hidden border border-border/40">
+                    {dbAvatarUrl ? (
+                      <img src={dbAvatarUrl} alt="Avatar" className="h-full w-full object-cover" />
+                    ) : (
+                      <span>
+                        {user?.user_metadata?.full_name?.charAt(0).toUpperCase() ||
+                          user?.email?.charAt(0).toUpperCase() ||
+                          "U"}
+                      </span>
+                    )}
                   </div>
                   <ChevronDown className="h-3.5 w-3.5 text-muted-foreground hidden sm:block" />
                 </button>
 
                 {userDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-60 rounded-2xl border border-border/80 bg-card p-2 shadow-xl z-50 animate-in fade-in zoom-in-95">
+                  <div className="absolute right-0 mt-2 w-64 rounded-2xl border border-border/80 bg-card p-2.5 shadow-xl z-50 animate-in fade-in zoom-in-95">
                     {/* Profile Header & Role Switcher */}
                     <div className="px-3 py-2.5 border-b border-border/40 mb-1.5">
-                      <p className="text-xs font-bold text-foreground truncate">
-                        {user?.user_metadata?.full_name || "User Name"}
-                      </p>
-                      <p className="text-[11px] text-muted-foreground truncate">{user?.email || "user@doable.id"}</p>
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 shrink-0 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-sm font-bold text-white shadow-xs overflow-hidden border border-border/40">
+                          {dbAvatarUrl ? (
+                            <img src={dbAvatarUrl} alt="Avatar" className="h-full w-full object-cover" />
+                          ) : (
+                            <span>
+                              {user?.user_metadata?.full_name?.charAt(0).toUpperCase() ||
+                                user?.email?.charAt(0).toUpperCase() ||
+                                "U"}
+                            </span>
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold text-foreground truncate">
+                            {user?.user_metadata?.full_name || "User Name"}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground truncate">{user?.email || "user@doable.id"}</p>
+                        </div>
+                      </div>
 
                       {isDashboard && (
                         <button

@@ -40,8 +40,7 @@ import {
   Mail,
   Phone,
   Link as LinkIcon,
-  ChevronRight,
-  SlidersHorizontal
+  ChevronRight
 } from "lucide-react";
 
 type SettingsTab = "profile" | "work" | "security" | "notifications" | "billing" | "preferences";
@@ -117,22 +116,53 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
   const [timezone, setTimezone] = useState("Asia/Jakarta (UTC+7)");
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState("");
+  const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
-  const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && user?.id) {
-      setIsUploadingAvatar(true);
-      const res = await uploadProfileMedia(file, user.id, "avatar");
-      setIsUploadingAvatar(false);
-      if (res.publicUrl) {
-        setAvatarUrl(res.publicUrl);
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        setErrorMessage("Ukuran gambar maksimal 5MB");
+        return;
+      }
+      setPendingAvatarFile(file);
+      const preview = URL.createObjectURL(file);
+      setAvatarPreviewUrl(preview);
+      setErrorMessage("");
+    }
+  };
+
+  const handleResetAvatar = async () => {
+    // 1. Reset local state
+    setAvatarUrl("");
+    setAvatarPreviewUrl("");
+    setPendingAvatarFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+
+    // 2. Erase from database & auth if user is authenticated
+    if (user?.id) {
+      try {
+        const supabase = createClient();
+        await supabase
+          .from("users")
+          .update({ avatar_url: null })
+          .eq("id", user.id);
+
+        await supabase.auth.updateUser({
+          data: { avatar_url: null },
+        });
+
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("profile-updated"));
+        }
+
         setSaveSuccess(true);
-        setSaveMessage("Foto profil berhasil diperbarui!");
+        setSaveMessage("Foto profil berhasil dihapus!");
         setTimeout(() => setSaveSuccess(false), 3000);
-      } else if (res.error) {
-        setErrorMessage(res.error);
+      } catch (err: unknown) {
+        console.error("Error deleting avatar from db:", err);
       }
     }
   };
@@ -199,14 +229,39 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
 
   // Load user data on mount
   useEffect(() => {
-    if (user) {
+    async function loadUserData() {
+      if (!user) return;
       setEmail(user.email || "");
       const meta = user.user_metadata || {};
+      
+      // Initialize with metadata
       setFullName(meta.full_name || meta.name || "");
-      setDisplayName(meta.display_name || meta.user_name || (user.email ? user.email.split("@")[0] : ""));
+      setDisplayName(meta.display_name || meta.user_name || meta.username || (user.email ? user.email.split("@")[0] : ""));
       setPhone(meta.phone || "");
       setBio(meta.bio || "");
       setAvatarUrl(meta.avatar_url || "");
+
+      // Query database table for the latest source-of-truth
+      try {
+        const supabase = createClient();
+        const { data: dbUser } = await supabase
+          .from("users")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+
+        if (dbUser) {
+          if (dbUser.avatar_url) setAvatarUrl(dbUser.avatar_url);
+          if (dbUser.full_name) setFullName(dbUser.full_name);
+          if (dbUser.bio) setBio(dbUser.bio);
+          if (dbUser.phone) setPhone(dbUser.phone);
+          if (dbUser.location) setLocation(dbUser.location);
+          if (dbUser.username) setDisplayName(dbUser.username);
+        }
+      } catch (err) {
+        console.warn("Could not fetch profile from public.users:", err);
+      }
+
       if (meta.company_name) setCompanyName(meta.company_name);
       if (meta.hourly_rate) setHourlyRate(String(meta.hourly_rate));
       if (meta.preferred_language && (meta.preferred_language === "id" || meta.preferred_language === "en")) {
@@ -218,6 +273,8 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
         setCurrency(meta.preferred_currency as Currency);
       }
     }
+
+    loadUserData();
   }, [user, currentRole, setLocale, setGlobalCurrency]);
 
   const handleToggleSkill = (skill: string) => {
@@ -255,6 +312,22 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
       }
 
       const supabase = createClient();
+      let finalAvatarUrl = avatarUrl;
+
+      // If user selected a new avatar file, upload it now to Supabase Storage
+      if (pendingAvatarFile && user?.id) {
+        const res = await uploadProfileMedia(pendingAvatarFile, user.id, "avatar");
+        if (res.publicUrl) {
+          finalAvatarUrl = res.publicUrl;
+          setAvatarUrl(res.publicUrl);
+          setAvatarPreviewUrl("");
+          setPendingAvatarFile(null);
+        } else if (res.error) {
+          setErrorMessage(res.error);
+          setIsSaving(false);
+          return;
+        }
+      }
       
       // Update Supabase Auth User Metadata
       const updateData: Record<string, unknown> = {
@@ -264,7 +337,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
         bio: bio,
         location: location,
         timezone: timezone,
-        avatar_url: avatarUrl,
+        avatar_url: finalAvatarUrl,
         preferred_language: language,
         preferred_currency: currency,
       };
@@ -303,7 +376,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
               id: user.id,
               email: user.email || email,
               full_name: fullName,
-              avatar_url: avatarUrl || undefined,
+              avatar_url: finalAvatarUrl || undefined,
               bio: bio,
               phone: phone,
               location: location,
@@ -357,6 +430,10 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
       } catch (backendErr) {
         // Backend API might not be running in purely local/mock mode, so continue gracefully
         console.info("Backend profile sync notice:", backendErr);
+      }
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("profile-updated"));
       }
 
       setSaveSuccess(true);
@@ -594,8 +671,8 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                   title={t("settings.profile.changeAvatar", "Klik untuk ubah foto")}
                 >
                   <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-2xl font-bold text-white shadow-md overflow-hidden">
-                    {avatarUrl ? (
-                      <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
+                    {(avatarPreviewUrl || avatarUrl) ? (
+                      <img src={avatarPreviewUrl || avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
                     ) : (
                       <span>{fullName ? fullName.charAt(0).toUpperCase() : email ? email.charAt(0).toUpperCase() : "U"}</span>
                     )}
@@ -605,19 +682,25 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                   </div>
                 </div>
                 <div className="space-y-1.5 text-center sm:text-left flex-1">
-                  <div className="flex flex-wrap items-center gap-3 justify-center sm:justify-start">
+                  <div className="flex flex-wrap items-center gap-2.5 justify-center sm:justify-start">
                     <h4 className="text-sm font-bold text-foreground">{fullName || "Your Full Name"}</h4>
-                    {avatarUrl && (
+                    {pendingAvatarFile && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300">
+                        <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                        Pratinjau (Klik Simpan untuk Menyimpan)
+                      </span>
+                    )}
+                    {(avatarPreviewUrl || avatarUrl) && (
                       <button
                         type="button"
-                        onClick={() => setAvatarUrl("")}
+                        onClick={handleResetAvatar}
                         className="px-2 py-0.5 text-[11px] text-destructive hover:bg-destructive/10 rounded-lg transition-colors font-medium"
                       >
                         {t("settings.profile.reset", "Reset")}
                       </button>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground">{t("settings.profile.avatarHelp", "PNG, JPG, atau SVG. Ukuran maksimum 2MB.")}</p>
+                  <p className="text-xs text-muted-foreground">{t("settings.profile.avatarHelp", "PNG, JPG, atau SVG. Ukuran maksimum 5MB.")}</p>
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}

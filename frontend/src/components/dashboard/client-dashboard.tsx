@@ -13,7 +13,6 @@ import {
   CheckCircle2,
   Clock,
   Users,
-  X,
   ChevronDown,
   Heart,
   Building2,

@@ -180,10 +180,12 @@ export async function approveMilestone(params: {
   return { success: true };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function formatContract(raw: any): ContractItem {
   const proj = raw.project || {};
   const cl = raw.client || {};
   const fl = raw.freelancer || {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const msList = (raw.contract_milestones || []).map((m: any) => ({
     id: m.id,
     contractId: m.contract_id,

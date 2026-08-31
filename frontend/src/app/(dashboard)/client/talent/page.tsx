@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { Search, Star, ShieldCheck, X, CheckCircle2, SlidersHorizontal, ArrowRight, Award } from "lucide-react";
+import { Search, Star, ShieldCheck, CheckCircle2, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
 import { getTalents, inviteTalentToProject, type TalentRecord } from "@/lib/services/talents";
 import { getClientProjects, type ProjectRecord } from "@/lib/services/projects";
