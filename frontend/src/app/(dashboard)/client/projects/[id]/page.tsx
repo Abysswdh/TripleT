@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { getProjectById } from "@/lib/services/projects";
 import {
   ArrowLeft,
   Clock,
@@ -215,6 +216,44 @@ export default function ClientProjectDetailPage() {
 
   const [milestones, setMilestones] = useState<Milestone[]>(project.milestones);
   const [features, setFeatures] = useState<GanttFeature[]>(project.initialFeatures);
+
+  useEffect(() => {
+    async function loadLiveProject() {
+      if (!projectId || projectId === "proj-1") return;
+      const liveData = await getProjectById(projectId);
+      if (liveData) {
+        if (liveData.milestones && liveData.milestones.length > 0) {
+          const mappedMs: Milestone[] = liveData.milestones.map((m, idx) => ({
+            id: m.id,
+            title: m.title,
+            amount: m.amount,
+            percentage: idx === 0 ? 40 : 60,
+            status: idx === 0 ? "In Progress" : "Locked",
+            dueDate: m.dueDate,
+            deliverableHint: (m.deliverables && m.deliverables.join(", ")) || "Deliverable sesuai kesepakatan sprint",
+            tasks: [
+              { id: `t-${idx}-1`, name: `Sprint Deliverables: ${m.title}`, done: false },
+            ],
+            comments: [],
+          }));
+          setMilestones(mappedMs);
+        }
+
+        if (liveData.tasks && liveData.tasks.length > 0) {
+          const mappedFeatures: GanttFeature[] = liveData.tasks.map((t, idx) => ({
+            id: t.id,
+            name: t.name,
+            startAt: t.startDate ? new Date(t.startDate) : new Date(),
+            endAt: t.endDate ? new Date(t.endDate) : new Date(Date.now() + 5 * 86400000),
+            status: idx === 0 ? STATUS_ACTIVE : STATUS_PLANNED,
+          }));
+          setFeatures(mappedFeatures);
+        }
+      }
+    }
+    loadLiveProject();
+  }, [projectId]);
+
   const [ganttRange, setGanttRange] = useState<"daily" | "weekly">("daily");
   const [activeTab, setActiveTab] = useState<TabId>("overview");
   const [expandedMilestoneId, setExpandedMilestoneId] = useState<string>("ms-2");

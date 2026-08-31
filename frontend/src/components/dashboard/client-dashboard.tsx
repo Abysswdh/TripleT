@@ -141,41 +141,42 @@ export function ClientDashboard() {
           data: { user },
         } = await supabase.auth.getUser();
 
-        // 1. Load Projects
-        let projectQuery = supabase
-          .from("projects")
-          .select("*, milestones(*)")
-          .order("created_at", { ascending: false });
+        // 1. Load Projects (Only for the logged in client)
+        if (!user) {
+          setProjects([]);
+        } else {
+          const { data: dbProjects } = await supabase
+            .from("projects")
+            .select("*, milestones(*)")
+            .eq("owner_id", user.id)
+            .order("created_at", { ascending: false });
 
-        if (user) {
-          projectQuery = projectQuery.eq("owner_id", user.id);
-        }
-
-        const { data: dbProjects } = await projectQuery;
-
-        if (dbProjects && dbProjects.length > 0) {
-          const mapped: ClientProject[] = dbProjects.map((p) => ({
-            id: p.id,
-            title: p.title,
-            category: p.category || "Web Development",
-            budget: p.budget_display || `Rp ${(p.budget_min || 0).toLocaleString("id-ID")}`,
-            budgetNumeric: p.budget_min || 0,
-            status: p.status === "hiring" ? "Hiring" : p.status === "in_progress" ? "In Progress" : "Completed",
-            proposalsCount: p.proposals_count || 0,
-            dueDate: `${p.timeline_days || 14} hari lagi`,
-            postedDate: "Baru saja",
-            description: p.description,
-            skills: p.required_skills || [],
-            milestones: (p.milestones || []).map((m: { id: string; title: string; amount_display?: string; amount?: number; status?: string; percentage?: number }) => ({
-              id: m.id,
-              title: m.title,
-              amount: m.amount_display || `Rp ${(m.amount || 0).toLocaleString("id-ID")}`,
-              status: (m.status as "completed" | "in_progress" | "pending") || "pending",
-              dueDate: `${m.percentage || 50}% phase`,
-            })),
-            applicants: [],
-          }));
-          setProjects(mapped);
+          if (dbProjects && dbProjects.length > 0) {
+            const mapped: ClientProject[] = dbProjects.map((p) => ({
+              id: p.id,
+              title: p.title,
+              category: p.category || "Web Development",
+              budget: p.budget_display || `Rp ${(p.budget_min || 0).toLocaleString("id-ID")}`,
+              budgetNumeric: p.budget_min || 0,
+              status: p.status === "hiring" ? "Hiring" : p.status === "in_progress" ? "In Progress" : "Completed",
+              proposalsCount: p.proposals_count || 0,
+              dueDate: `${p.timeline_days || 14} hari lagi`,
+              postedDate: "Baru saja",
+              description: p.description,
+              skills: p.required_skills || [],
+              milestones: (p.milestones || []).map((m: { id: string; title: string; amount_display?: string; amount?: number; status?: string; percentage?: number }) => ({
+                id: m.id,
+                title: m.title,
+                amount: m.amount_display || `Rp ${(m.amount || 0).toLocaleString("id-ID")}`,
+                status: (m.status as "completed" | "in_progress" | "pending") || "pending",
+                dueDate: `${m.percentage || 50}% phase`,
+              })),
+              applicants: [],
+            }));
+            setProjects(mapped);
+          } else {
+            setProjects([]);
+          }
         }
 
         // 2. Load Talents

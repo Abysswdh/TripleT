@@ -26,8 +26,19 @@ export interface ContractRecord {
  */
 export async function getUserContracts(userId?: string): Promise<ContractRecord[]> {
   const supabase = createClient();
+  let targetUserId = userId;
 
-  let query = supabase
+  if (!targetUserId) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return [];
+    }
+    targetUserId = user.id;
+  }
+
+  const query = supabase
     .from("contracts")
     .select(`
       *,
@@ -36,11 +47,8 @@ export async function getUserContracts(userId?: string): Promise<ContractRecord[
       freelancer:users!freelancer_id(id, full_name),
       contract_milestones(*)
     `)
+    .or(`client_id.eq.${targetUserId},freelancer_id.eq.${targetUserId}`)
     .order("created_at", { ascending: false });
-
-  if (userId) {
-    query = query.or(`client_id.eq.${userId},freelancer_id.eq.${userId}`);
-  }
 
   const { data, error } = await query;
   if (error || !data) {
