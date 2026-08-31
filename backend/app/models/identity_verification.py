@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import String, Text, ForeignKey, DateTime
+from sqlalchemy import DateTime, ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -36,7 +36,9 @@ class IdentityVerification(Base, TimestampMixin):
     selfie_image_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Review
-    status: Mapped[str] = mapped_column(String(30), default="pending")  # pending, approved, rejected
+    status: Mapped[str] = mapped_column(
+        String(30), default="pending"
+    )  # pending, approved, rejected
     rejection_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     verified_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     reviewed_by: Mapped[Optional[uuid.UUID]] = mapped_column(
@@ -44,7 +46,9 @@ class IdentityVerification(Base, TimestampMixin):
     )
 
     # Relationships
-    user = relationship("User", back_populates="identity_verification", foreign_keys=[user_id])
+    user = relationship(
+        "User", back_populates="identity_verification", foreign_keys=[user_id]
+    )
 
     def __repr__(self) -> str:
         return f"<IdentityVerification user_id={self.user_id} ({self.status})>"

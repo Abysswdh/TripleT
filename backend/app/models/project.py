@@ -3,17 +3,16 @@ Doable! Backend — Project Model
 
 Represents a gig/project posted by a customer for freelancers to work on.
 """
+import enum
 import uuid
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import String, Text, Integer, Boolean, ForeignKey, DateTime
-from sqlalchemy.dialects.postgresql import UUID, ARRAY
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin
-
-import enum
 
 
 class ProjectStatus(str, enum.Enum):

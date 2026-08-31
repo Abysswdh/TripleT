@@ -10,7 +10,6 @@ Usage:
     matcher.fit(freelancer_skills_data)
     matches = matcher.find_matches(project_required_skills, top_k=5)
 """
-from typing import Optional
 
 import numpy as np
 

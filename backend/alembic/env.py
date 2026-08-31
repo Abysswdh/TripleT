@@ -15,11 +15,28 @@ from alembic import context
 from app.config import get_settings
 from app.db.base import Base
 from app.models import (  # noqa: F401 — registers models with Base
-    User, Project, FreelancerProfile, ClientProfile, IdentityVerification,
-    Milestone, ProjectTask, Proposal, TalentInvitation, Contract,
-    ContractMilestone, EscrowTransaction, Conversation, Message,
-    ConversationParticipant, Review, PortfolioProject, ProjectFile,
-    SavedTalent, BookmarkedProject, Notification, UserNotificationSettings,
+    BookmarkedProject,
+    ClientProfile,
+    Contract,
+    ContractMilestone,
+    Conversation,
+    ConversationParticipant,
+    EscrowTransaction,
+    FreelancerProfile,
+    IdentityVerification,
+    Message,
+    Milestone,
+    Notification,
+    PortfolioProject,
+    Project,
+    ProjectFile,
+    ProjectTask,
+    Proposal,
+    Review,
+    SavedTalent,
+    TalentInvitation,
+    User,
+    UserNotificationSettings,
 )
 
 # Alembic Config object

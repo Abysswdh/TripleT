@@ -1,11 +1,11 @@
 # Doable! Backend — Schemas Package
-from app.schemas.user import UserCreate, UserUpdate, UserResponse, UserProfile
 from app.schemas.project import (
     ProjectCreate,
-    ProjectUpdate,
-    ProjectResponse,
     ProjectListResponse,
+    ProjectResponse,
+    ProjectUpdate,
 )
+from app.schemas.user import UserCreate, UserProfile, UserResponse, UserUpdate
 
 __all__ = [
     "UserCreate",

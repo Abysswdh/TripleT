@@ -4,16 +4,14 @@ Doable! Backend — Milestone Model
 Escrow milestone phases within a project listing.
 """
 import uuid
+from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import String, Text, Integer, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID, ARRAY
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
-
-from datetime import datetime
-from sqlalchemy import DateTime, func
 
 
 class Milestone(Base):

@@ -6,8 +6,8 @@ Verifies JWT tokens issued by Supabase Auth.
 import uuid
 from typing import Optional
 
-from jose import JWTError, jwt
 from fastapi import HTTPException, status
+from jose import JWTError, jwt
 
 from app.config import get_settings
 

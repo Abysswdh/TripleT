@@ -7,8 +7,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from app.models.project import ProjectStatus, BudgetType
-
+from app.models.project import BudgetType, ProjectStatus
 
 # --- Base ---
 

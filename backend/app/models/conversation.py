@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import String, Boolean, ForeignKey, DateTime, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, String, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -33,7 +33,9 @@ class Conversation(Base):
     title: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     type: Mapped[str] = mapped_column(String(30), default="project")  # project, direct, support
     is_archived: Mapped[bool] = mapped_column(Boolean, default=False)
-    last_message_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_message_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     # Timestamp
     created_at: Mapped[datetime] = mapped_column(
@@ -44,7 +46,9 @@ class Conversation(Base):
     contract = relationship("Contract", back_populates="conversations")
     project = relationship("Project")
     messages = relationship("Message", back_populates="conversation", lazy="selectin")
-    participants = relationship("ConversationParticipant", back_populates="conversation", lazy="selectin")
+    participants = relationship(
+        "ConversationParticipant", back_populates="conversation", lazy="selectin"
+    )
 
     def __repr__(self) -> str:
         return f"<Conversation '{self.title}' ({self.type})>"

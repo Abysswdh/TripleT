@@ -4,8 +4,8 @@ Doable! Backend — Freelancer Profile Model
 import uuid
 from typing import Optional
 
-from sqlalchemy import String, Text, Integer, Numeric, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID, ARRAY
+from sqlalchemy import ForeignKey, Integer, Numeric, String, Text
+from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin

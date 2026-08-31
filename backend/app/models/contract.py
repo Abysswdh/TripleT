@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import String, Integer, ForeignKey, DateTime
+from sqlalchemy import DateTime, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -53,8 +53,12 @@ class Contract(Base, TimestampMixin):
     proposal = relationship("Proposal")
     client = relationship("User", foreign_keys=[client_id])
     freelancer = relationship("User", foreign_keys=[freelancer_id])
-    contract_milestones = relationship("ContractMilestone", back_populates="contract", lazy="selectin")
-    escrow_transactions = relationship("EscrowTransaction", back_populates="contract", lazy="selectin")
+    contract_milestones = relationship(
+        "ContractMilestone", back_populates="contract", lazy="selectin"
+    )
+    escrow_transactions = relationship(
+        "EscrowTransaction", back_populates="contract", lazy="selectin"
+    )
     reviews = relationship("Review", back_populates="contract", lazy="selectin")
     conversations = relationship("Conversation", back_populates="contract", lazy="selectin")
 

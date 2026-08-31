@@ -1,7 +1,6 @@
 """
 Doable! Backend — Basic Tests
 """
-import pytest
 from app.ml.scam_detector import ScamDetector
 
 
