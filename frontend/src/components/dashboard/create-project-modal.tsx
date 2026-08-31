@@ -198,14 +198,19 @@ function computeSprintTasks(category: string, durationDays: number): GanttTaskDr
   const now = new Date();
   const dayMs = 24 * 60 * 60 * 1000;
 
-  const p1Days = Math.max(1, Math.round(parsedDays * 0.4));
+  const p1Days = Math.max(1, Math.floor(parsedDays * 0.4));
   const p2Days = Math.max(1, parsedDays - p1Days);
 
   const d1Start = new Date(now);
   const d1End = new Date(d1Start.getTime() + (p1Days - 1) * dayMs);
 
   const d2Start = new Date(d1End.getTime() + dayMs);
-  const d2End = new Date(now.getTime() + (parsedDays - 1) * dayMs);
+  const d2End = new Date(d1Start.getTime() + (parsedDays - 1) * dayMs);
+
+  // Divide milestone 2 into 2 sequential sub-tasks safely without exceeding d2End
+  const p2HalfDays = Math.max(0, Math.floor((p2Days - 1) / 2));
+  const d2MidEnd = new Date(Math.min(d2Start.getTime() + p2HalfDays * dayMs, d2End.getTime()));
+  const d3Start = new Date(Math.min(d2MidEnd.getTime() + dayMs, d2End.getTime()));
 
   const fmt = (d: Date) => d.toISOString().split("T")[0];
 
@@ -222,13 +227,13 @@ function computeSprintTasks(category: string, durationDays: number): GanttTaskDr
         id: "task-2",
         name: "Produksi Visual Utama & Penyesuaian Detail",
         startDate: fmt(d2Start),
-        endDate: fmt(new Date(d2Start.getTime() + Math.round(p2Days * 0.5) * dayMs)),
+        endDate: fmt(d2MidEnd),
         milestonePhase: "Milestone 2",
       },
       {
         id: "task-3",
         name: "Ekspor File High-Res & Serah Terima File Master",
-        startDate: fmt(new Date(d2Start.getTime() + Math.round(p2Days * 0.5) * dayMs)),
+        startDate: fmt(d3Start),
         endDate: fmt(d2End),
         milestonePhase: "Milestone 2",
       },
@@ -248,13 +253,13 @@ function computeSprintTasks(category: string, durationDays: number): GanttTaskDr
         id: "task-2",
         name: "Eksekusi Lapangan & Pengambilan Foto/Data",
         startDate: fmt(d2Start),
-        endDate: fmt(new Date(d2Start.getTime() + Math.round(p2Days * 0.5) * dayMs)),
+        endDate: fmt(d2MidEnd),
         milestonePhase: "Milestone 2",
       },
       {
         id: "task-3",
         name: "Kurasi Hasil & Upload ke Cloud Storage Klien",
-        startDate: fmt(new Date(d2Start.getTime() + Math.round(p2Days * 0.5) * dayMs)),
+        startDate: fmt(d3Start),
         endDate: fmt(d2End),
         milestonePhase: "Milestone 2",
       },
@@ -274,13 +279,13 @@ function computeSprintTasks(category: string, durationDays: number): GanttTaskDr
       id: "task-2",
       name: "Pengerjaan Deliverables Utama Sesuai Target",
       startDate: fmt(d2Start),
-      endDate: fmt(new Date(d2Start.getTime() + Math.round(p2Days * 0.6) * dayMs)),
+      endDate: fmt(d2MidEnd),
       milestonePhase: "Milestone 2",
     },
     {
       id: "task-3",
       name: "Review Bersama, Penyesuaian & Serah Terima Final",
-      startDate: fmt(new Date(d2Start.getTime() + Math.round(p2Days * 0.6) * dayMs)),
+      startDate: fmt(d3Start),
       endDate: fmt(d2End),
       milestonePhase: "Milestone 2",
     },
@@ -307,8 +312,8 @@ export function CreateProjectModal({
 
   // AI Typing Debounce & State Tracking
   const [isAnalyzingAI, setIsAnalyzingAI] = useState(false);
-  const [aiTunedReason, setAiTunedReason] = useState<string | null>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const latestTitleRef = useRef("");
 
   // Form State - Step 2: Scope & Deliverables
   const [description, setDescription] = useState("");
@@ -360,6 +365,9 @@ export function CreateProjectModal({
     try {
       const analysis = await analyzeProjectBrief(rawTitle, description);
 
+      // Guard: Ignore stale async responses if user has typed a newer title
+      if (rawTitle !== latestTitleRef.current) return;
+
       if (analysis) {
         // Step 1 Updates
         setCategory(analysis.category);
@@ -391,8 +399,6 @@ export function CreateProjectModal({
         if (analysis.suggestedBudget) {
           setBudget(analysis.suggestedBudget.toString());
         }
-
-        setAiTunedReason(analysis.reasoning);
       }
     } catch (err) {
       console.warn("AI parse error:", err);
@@ -403,6 +409,7 @@ export function CreateProjectModal({
 
   const handleTitleChange = (val: string) => {
     setTitle(val);
+    latestTitleRef.current = val;
 
     // Clear previous timer if user continues typing
     if (debounceTimerRef.current) {
@@ -786,8 +793,8 @@ export function CreateProjectModal({
           };
           localStorage.setItem(`doable_project_${createdProjectId}`, JSON.stringify(fullCached));
           const rawExisting = localStorage.getItem("doable_custom_projects");
-          const existingList = rawExisting ? JSON.parse(rawExisting) : [];
-          localStorage.setItem("doable_custom_projects", JSON.stringify([fullCached, ...existingList.filter((x: any) => x.id !== createdProjectId)]));
+          const existingList: Array<{ id: string }> = rawExisting ? JSON.parse(rawExisting) : [];
+          localStorage.setItem("doable_custom_projects", JSON.stringify([fullCached, ...existingList.filter((x) => x.id !== createdProjectId)]));
         } catch (storageErr) {
           console.warn("Storage caching error:", storageErr);
         }

@@ -37,7 +37,7 @@ export function ModalCloseButton({
       corner: "h-9 w-14 text-base",
       pill: "h-9 w-9",
       inline: "h-9 w-9",
-      icon: "h-4.5 w-4.5",
+      icon: "h-5 w-5",
     },
   };
 

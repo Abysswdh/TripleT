@@ -61,10 +61,10 @@ function ClientProjectsContent() {
         try {
           const rawLocal = localStorage.getItem("doable_custom_projects");
           if (rawLocal) {
-            const localItems = JSON.parse(rawLocal);
+            const localItems = JSON.parse(rawLocal) as ProjectItem[];
             const uniqueLocal: ProjectItem[] = localItems
-              .filter((loc: any) => !merged.some((m) => m.id === loc.id))
-              .map((loc: any) => ({
+              .filter((loc) => !merged.some((m) => m.id === loc.id))
+              .map((loc) => ({
                 id: loc.id,
                 title: loc.title,
                 category: loc.category,
