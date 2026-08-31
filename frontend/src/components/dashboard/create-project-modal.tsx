@@ -908,7 +908,7 @@ export function CreateProjectModal({
               <div className="space-y-1.5">
                 <label className="text-sm font-bold text-foreground flex items-center justify-between pr-8">
                   <div className="flex items-center gap-2">
-                    <span>Judul Pekerjaan / Quest <span className="text-rose-500">*</span></span>
+                    <span>Judul Proyek / Pekerjaan <span className="text-rose-500">*</span></span>
                     {isAnalyzingAI && (
                       <span className="text-[11px] font-semibold text-primary animate-pulse flex items-center gap-1">
                         <Bot className="h-3 w-3" />

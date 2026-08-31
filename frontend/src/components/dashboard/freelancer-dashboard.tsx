@@ -321,7 +321,7 @@ export function FreelancerDashboard() {
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center gap-1 text-[10px] font-bold text-violet-600 dark:text-violet-400 bg-violet-500/10 border border-violet-500/20 rounded-full px-2.5 py-1">
             <Zap className="h-2.5 w-2.5" />
-            Portfolio Quest Mode
+            Mode Portofolio Proyek
           </span>
         </div>
       </div>
@@ -981,7 +981,7 @@ export function FreelancerDashboard() {
             <div className="flex items-center justify-between border-b border-border/40 pb-3">
               <div>
                 <span className="text-[10px] font-bold text-primary uppercase tracking-wider">
-                  Ajukan Proposal Quest
+                  Ajukan Proposal Proyek
                 </span>
                 <h3 className="text-base font-bold text-foreground font-heading">
                   {selectedQuest.title}

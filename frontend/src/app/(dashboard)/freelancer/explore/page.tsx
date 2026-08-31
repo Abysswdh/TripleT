@@ -118,13 +118,13 @@ export default function FreelancerExploreQuestsPage() {
         <div>
           <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary mb-2">
             <Compass className="h-3.5 w-3.5" />
-            <span>Quest Board</span>
+            <span>Papan Proyek</span>
           </div>
           <h1 className="text-2xl font-bold tracking-tight md:text-3xl text-foreground">
-            Jelajahi Quest Proyek
+            Jelajahi Proyek
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Temukan proyek terverifikasi dengan sistem pembayaran escrow yang aman
+            Temukan proyek terverifikasi dengan sistem garansi pembayaran yang aman
           </p>
         </div>
 
@@ -171,7 +171,7 @@ export default function FreelancerExploreQuestsPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filteredQuests.length === 0 ? (
           <div className="col-span-full rounded-3xl border border-dashed border-border/80 p-12 text-center bg-card/50 space-y-2">
-            <p className="text-base font-bold text-foreground">Tidak ada quest yang ditemukan</p>
+            <p className="text-base font-bold text-foreground">Tidak ada proyek yang ditemukan</p>
             <p className="text-xs text-muted-foreground">Belum ada proyek yang sesuai dengan kriteria pencarian atau kategori ini.</p>
           </div>
         ) : (

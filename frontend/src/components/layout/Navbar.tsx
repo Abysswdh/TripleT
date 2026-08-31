@@ -99,7 +99,7 @@ export function Navbar() {
 
   const freelancerLinks: NavLink[] = [
     { href: "/freelancer/dashboard", label: t("nav.overview", "Overview"), icon: LayoutDashboard },
-    { href: "/freelancer/explore", label: t("nav.exploreQuests", "Explore Quests"), icon: Compass },
+    { href: "/freelancer/explore", label: t("nav.exploreQuests", "Explore Projects"), icon: Compass },
     { href: "/freelancer/my-work", label: t("nav.myWork", "My Work"), icon: Briefcase },
     { href: "/freelancer/skills", label: t("nav.skills", "Skills"), icon: Award },
     { href: "/freelancer/earnings", label: t("nav.earnings", "Earnings"), icon: CreditCard },

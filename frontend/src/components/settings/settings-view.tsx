@@ -1176,8 +1176,8 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                 <div className="space-y-3">
                   <div className="flex items-center justify-between p-3.5 rounded-2xl border border-border/50 hover:bg-muted/20 transition-colors">
                     <div>
-                      <p className="text-xs font-bold text-foreground">New Proposals & Quest Bids</p>
-                      <p className="text-[11px] text-muted-foreground">Get notified when someone bids on your project or invites you to a quest.</p>
+                      <p className="text-xs font-bold text-foreground">New Proposals & Project Bids</p>
+                      <p className="text-[11px] text-muted-foreground">Get notified when someone bids on your project or invites you to a project.</p>
                     </div>
                     <input
                       type="checkbox"
@@ -1238,7 +1238,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                   <div className="flex items-center justify-between p-3.5 rounded-2xl border border-border/50 hover:bg-muted/20 transition-colors">
                     <div>
                       <p className="text-xs font-bold text-foreground">XP, Level Ups & Daily Streaks</p>
-                      <p className="text-[11px] text-muted-foreground">Celebratory animations and reminders to maintain your quest streak.</p>
+                      <p className="text-[11px] text-muted-foreground">Celebratory animations and reminders to maintain your project streak.</p>
                     </div>
                     <input
                       type="checkbox"
@@ -1251,7 +1251,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                   <div className="flex items-center justify-between p-3.5 rounded-2xl border border-border/50 hover:bg-muted/20 transition-colors">
                     <div>
                       <p className="text-xs font-bold text-foreground">Interactive Audio Effects</p>
-                      <p className="text-[11px] text-muted-foreground">Play subtle chime sounds upon quest submission or milestone release.</p>
+                      <p className="text-[11px] text-muted-foreground">Play subtle chime sounds upon project submission or milestone release.</p>
                     </div>
                     <input
                       type="checkbox"

@@ -151,13 +151,13 @@ export default function ExploreQuestsPage() {
         <div>
           <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary mb-2">
             <Compass className="h-3.5 w-3.5" />
-            <span>Quest Board</span>
+            <span>Papan Proyek</span>
           </div>
           <h1 className="text-2xl font-bold tracking-tight md:text-3xl text-foreground">
-            Jelajahi Quest Proyek
+            Jelajahi Proyek
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Temukan proyek terverifikasi dengan sistem pembayaran escrow yang aman
+            Temukan proyek terverifikasi dengan garansi pembayaran aman
           </p>
         </div>
 
