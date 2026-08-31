@@ -39,9 +39,10 @@ function ClientProjectsContent() {
 
   useEffect(() => {
     async function loadClientProjects() {
+      let merged: ProjectItem[] = [];
       const data = await getClientProjects();
       if (data && data.length > 0) {
-        const mapped: ProjectItem[] = data.map((p) => ({
+        merged = data.map((p) => ({
           id: p.id,
           title: p.title,
           category: p.category,
@@ -53,10 +54,36 @@ function ClientProjectsContent() {
           skills: p.skills,
           difficulty: p.difficulty,
         }));
-        setProjects(mapped);
-      } else {
-        setProjects([]);
       }
+
+      // Merge with locally created projects from localStorage (so guest/demo mode projects always show)
+      if (typeof window !== "undefined") {
+        try {
+          const rawLocal = localStorage.getItem("doable_custom_projects");
+          if (rawLocal) {
+            const localItems = JSON.parse(rawLocal);
+            const uniqueLocal: ProjectItem[] = localItems
+              .filter((loc: any) => !merged.some((m) => m.id === loc.id))
+              .map((loc: any) => ({
+                id: loc.id,
+                title: loc.title,
+                category: loc.category,
+                budget: loc.budget,
+                proposalsCount: loc.proposalsCount || 0,
+                status: loc.status || "Hiring",
+                dueDate: loc.dueDate || "3 hari",
+                description: loc.description,
+                skills: loc.skills || [],
+                difficulty: loc.difficulty || "Starter",
+              }));
+            merged = [...uniqueLocal, ...merged];
+          }
+        } catch (e) {
+          console.warn("Failed to load local projects:", e);
+        }
+      }
+
+      setProjects(merged);
     }
     loadClientProjects();
   }, []);
@@ -79,12 +106,6 @@ function ClientProjectsContent() {
         </div>
 
         <div className="flex items-center gap-3">
-          <Link
-            href="/client/dashboard"
-            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors"
-          >
-            ← Kembali ke Hub
-          </Link>
           <button
             type="button"
             onClick={() => setIsCreateModalOpen(true)}

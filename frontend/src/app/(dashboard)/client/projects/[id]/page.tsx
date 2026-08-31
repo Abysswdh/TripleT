@@ -212,17 +212,84 @@ function MilestoneStatusPill({ status }: { status: Milestone["status"] }) {
 export default function ClientProjectDetailPage() {
   const params = useParams();
   const projectId = (params?.id as string) || "proj-1";
-  const project = useMemo(() => PROJECTS_DATA[projectId] || { ...PROJECTS_DATA["proj-1"], id: projectId }, [projectId]);
 
-  const [milestones, setMilestones] = useState<Milestone[]>(project.milestones);
-  const [features, setFeatures] = useState<GanttFeature[]>(project.initialFeatures);
+  const defaultStatic = useMemo(
+    () => PROJECTS_DATA[projectId] || { ...PROJECTS_DATA["proj-1"], id: projectId },
+    [projectId]
+  );
+
+  const [project, setProject] = useState<ProjectDetailData>(defaultStatic);
+  const [milestones, setMilestones] = useState<Milestone[]>(defaultStatic.milestones);
+  const [features, setFeatures] = useState<GanttFeature[]>(defaultStatic.initialFeatures);
 
   useEffect(() => {
     async function loadLiveProject() {
-      if (!projectId || projectId === "proj-1") return;
-      const liveData = await getProjectById(projectId);
-      if (liveData) {
-        if (liveData.milestones && liveData.milestones.length > 0) {
+      if (!projectId) return;
+
+      // 1. Check local storage first (instant responsiveness for guest / local tests)
+      if (typeof window !== "undefined") {
+        const cachedRaw = localStorage.getItem(`doable_project_${projectId}`);
+        if (cachedRaw) {
+          try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const cached: any = JSON.parse(cachedRaw);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const mappedMs: Milestone[] = (cached.milestones || []).map((m: any, idx: number) => ({
+              id: m.id || `ms-${idx}`,
+              title: m.title || `Milestone ${idx + 1}`,
+              amount: m.amount || "Rp 0",
+              percentage: idx === 0 ? 40 : 60,
+              status: idx === 0 ? "In Progress" : "Locked",
+              dueDate: m.dueDate || "3 hari",
+              deliverableHint: (cached.deliverables && cached.deliverables.join(", ")) || "Format serah terima deliverable",
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              tasks: (cached.tasks || []).map((t: any, tIdx: number) => ({
+                id: t.id || `t-${idx}-${tIdx}`,
+                name: t.name || "Tahapan Pengerjaan",
+                done: tIdx === 0,
+              })),
+              comments: [],
+            }));
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const mappedFeatures: GanttFeature[] = (cached.tasks || []).map((t: any, idx: number) => ({
+              id: t.id || `feat-${idx}`,
+              name: t.name || `Tahapan ${idx + 1}`,
+              startAt: t.startDate ? new Date(t.startDate) : new Date(),
+              endAt: t.endDate ? new Date(t.endDate) : new Date(Date.now() + 3 * 86400000),
+              status: idx === 0 ? STATUS_ACTIVE : STATUS_PLANNED,
+            }));
+
+            setProject({
+              id: cached.id,
+              title: cached.title,
+              category: cached.category,
+              budget: cached.budget,
+              status: cached.status || "Hiring",
+              dueDate: cached.dueDate || "3 hari",
+              description: cached.description || "Deskripsi kebutuhan proyek.",
+              deliverables: cached.deliverables || ["File Final High-Res", "Link Cloud Storage"],
+              skills: cached.skills || ["Canva", "Kreatif"],
+              difficulty: cached.difficulty || "Starter",
+              clientName: "Saya (Klien)",
+              clientAvatar: "ME",
+              xpReward: cached.difficulty === "Enterprise" ? 650 : cached.difficulty === "Standard" ? 350 : 150,
+              milestones: mappedMs,
+              initialFeatures: mappedFeatures,
+            });
+
+            if (mappedMs.length > 0) setMilestones(mappedMs);
+            if (mappedFeatures.length > 0) setFeatures(mappedFeatures);
+          } catch (e) {
+            console.warn("Error reading local project cache:", e);
+          }
+        }
+      }
+
+      // 2. Fetch from Supabase PostgreSQL (if saved to database)
+      if (projectId !== "proj-1") {
+        const liveData = await getProjectById(projectId);
+        if (liveData) {
           const mappedMs: Milestone[] = liveData.milestones.map((m, idx) => ({
             id: m.id,
             title: m.title,
@@ -230,16 +297,13 @@ export default function ClientProjectDetailPage() {
             percentage: idx === 0 ? 40 : 60,
             status: idx === 0 ? "In Progress" : "Locked",
             dueDate: m.dueDate,
-            deliverableHint: (m.deliverables && m.deliverables.join(", ")) || "Deliverable sesuai kesepakatan sprint",
+            deliverableHint: (m.deliverables && m.deliverables.join(", ")) || "Deliverable sprint",
             tasks: [
               { id: `t-${idx}-1`, name: `Sprint Deliverables: ${m.title}`, done: false },
             ],
             comments: [],
           }));
-          setMilestones(mappedMs);
-        }
 
-        if (liveData.tasks && liveData.tasks.length > 0) {
           const mappedFeatures: GanttFeature[] = liveData.tasks.map((t, idx) => ({
             id: t.id,
             name: t.name,
@@ -247,7 +311,27 @@ export default function ClientProjectDetailPage() {
             endAt: t.endDate ? new Date(t.endDate) : new Date(Date.now() + 5 * 86400000),
             status: idx === 0 ? STATUS_ACTIVE : STATUS_PLANNED,
           }));
-          setFeatures(mappedFeatures);
+
+          setProject({
+            id: liveData.id,
+            title: liveData.title,
+            category: liveData.category,
+            budget: liveData.budget,
+            status: liveData.status === "In Progress" ? "In Progress" : liveData.status === "Completed" ? "Completed" : "Hiring",
+            dueDate: liveData.dueDate,
+            description: liveData.description,
+            deliverables: liveData.milestones.flatMap((m) => m.deliverables || []),
+            skills: liveData.skills,
+            difficulty: liveData.difficulty,
+            clientName: liveData.owner?.fullName || "Klien Doable!",
+            clientAvatar: (liveData.owner?.fullName || "KL").slice(0, 2).toUpperCase(),
+            xpReward: liveData.difficulty === "Enterprise" ? 650 : liveData.difficulty === "Standard" ? 350 : 150,
+            milestones: mappedMs,
+            initialFeatures: mappedFeatures,
+          });
+
+          if (mappedMs.length > 0) setMilestones(mappedMs);
+          if (mappedFeatures.length > 0) setFeatures(mappedFeatures);
         }
       }
     }
@@ -396,7 +480,7 @@ export default function ClientProjectDetailPage() {
                   <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">Total Anggaran</p>
                   <p className="text-lg font-bold text-foreground">{project.budget}</p>
                   <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1 mt-1">
-                    <ShieldCheck className="h-3 w-3" />Escrow Aman
+                    <ShieldCheck className="h-3 w-3" />Garansi Pembayaran Aman
                   </span>
                 </div>
 
@@ -514,7 +598,7 @@ export default function ClientProjectDetailPage() {
             {/* Left: Milestone List */}
             <div className="space-y-3">
               <div className="flex items-center justify-between mb-1">
-                <h2 className="text-sm font-bold text-foreground">Milestone & Escrow ({milestones.length})</h2>
+                <h2 className="text-sm font-bold text-foreground">Tahapan Pengerjaan & Pembayaran ({milestones.length})</h2>
                 <span className="text-xs text-muted-foreground">{completedCount} selesai</span>
               </div>
 

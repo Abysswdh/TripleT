@@ -347,7 +347,7 @@ export function ClientDashboard() {
             </h1>
 
             <p className="text-base md:text-lg text-slate-200 leading-relaxed font-normal max-w-2xl mx-auto text-center">
-              Pasang proyek dalam hitungan menit, tentukan milestone pengerjaan, dan dapatkan proposal terbaik dari developer & desainer terverifikasi dengan proteksi escrow 100%.
+              Pasang proyek dalam hitungan menit, tentukan milestone pengerjaan, dan dapatkan proposal terbaik dari talenta terverifikasi dengan garansi pembayaran aman 100%.
             </p>
 
             {/* Quick Project Scoper & Market Search Bar */}
@@ -400,8 +400,8 @@ export function ClientDashboard() {
                 <div className="text-xs text-slate-300">Total Bids Masuk</div>
               </div>
               <div className="space-y-0.5 text-center">
-                <div className="text-xl font-bold text-emerald-400">100% Escrow</div>
-                <div className="text-xs text-slate-300">Dana Terproteksi</div>
+                <div className="text-xl font-bold text-emerald-400">100% Aman</div>
+                <div className="text-xs text-slate-300">Garansi Rekber</div>
               </div>
               <div className="space-y-0.5 text-center">
                 <div className="text-xl font-bold text-amber-300">&lt; 15 Menit</div>
@@ -543,7 +543,7 @@ export function ClientDashboard() {
                     {/* Budget & Timeline Pill Strip */}
                     <div className="flex items-center justify-between text-xs py-1.5 border-y border-border/40">
                       <div>
-                        <span className="text-xs text-muted-foreground block font-medium">Anggaran Escrow</span>
+                        <span className="text-xs text-muted-foreground block font-medium">Anggaran Proyek</span>
                         <span className="font-bold text-foreground text-sm">{proj.budget}</span>
                       </div>
                       <div className="text-right">
@@ -1018,9 +1018,9 @@ export function ClientDashboard() {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <ShieldCheck className="h-5 w-5" />
               </div>
-              <h3 className="text-lg font-bold text-foreground">Proteksi Escrow 100% Aman</h3>
+              <h3 className="text-lg font-bold text-foreground">Garansi Pembayaran 100% Aman (Rekber)</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Dana proyekmu tersimpan aman di rekening escrow terproteksi dan hanya akan dicairkan ke freelancer setelah kamu menyetujui milestone.
+                Dana proyekmu tersimpan aman di rekening bersama terproteksi dan hanya akan dicairkan ke freelancer setelah kamu menyetujui hasil kerja.
               </p>
             </div>
 
@@ -1249,7 +1249,7 @@ export function ClientDashboard() {
                           {isAccepted ? (
                             <span className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 px-3.5 py-1.5 text-xs font-bold">
                               <CheckCircle2 className="h-4 w-4" />
-                              <span>Telah Diterima & Escrow Terkunci</span>
+                              <span>Telah Diterima & Dana Diamankan</span>
                             </span>
                           ) : (
                             <>
@@ -1283,7 +1283,7 @@ export function ClientDashboard() {
                                 }}
                                 className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-primary-600 transition-colors"
                               >
-                                Terima Proposal & Danai Escrow
+                                Terima Proposal & Amankan Dana
                               </button>
                             </>
                           )}
