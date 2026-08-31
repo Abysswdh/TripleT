@@ -26,11 +26,10 @@ export function StepRole({ selectedRole, onSelectRole, onNext }: StepRoleProps) 
         {/* Freelancer Card */}
         <div
           onClick={() => onSelectRole("freelancer")}
-          className={`group relative flex flex-col justify-between cursor-pointer rounded-2xl border p-5 transition-all duration-300 hover:shadow-md ${
-            selectedRole === "freelancer"
+          className={`group relative flex flex-col justify-between cursor-pointer rounded-2xl border p-5 transition-all duration-300 hover:shadow-md ${selectedRole === "freelancer"
               ? "border-primary bg-primary/[0.04] shadow-md shadow-primary/10 ring-2 ring-primary"
               : "border-border/60 bg-card hover:border-border hover:bg-muted/30"
-          }`}
+            }`}
         >
           {selectedRole === "freelancer" && (
             <div className="absolute right-3.5 top-3.5 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white">
@@ -40,11 +39,10 @@ export function StepRole({ selectedRole, onSelectRole, onNext }: StepRoleProps) 
 
           <div>
             <div
-              className={`flex h-12 w-12 items-center justify-center rounded-xl transition-all ${
-                selectedRole === "freelancer"
+              className={`flex h-12 w-12 items-center justify-center rounded-xl transition-all ${selectedRole === "freelancer"
                   ? "bg-primary text-white shadow-lg shadow-primary/30 scale-105"
                   : "bg-primary/10 text-primary group-hover:bg-primary/20"
-              }`}
+                }`}
             >
               <Code2 className="h-6 w-6" />
             </div>
@@ -66,11 +64,10 @@ export function StepRole({ selectedRole, onSelectRole, onNext }: StepRoleProps) 
         {/* Client / Customer Card */}
         <div
           onClick={() => onSelectRole("customer")}
-          className={`group relative flex flex-col justify-between cursor-pointer rounded-2xl border p-5 transition-all duration-300 hover:shadow-md ${
-            selectedRole === "customer"
+          className={`group relative flex flex-col justify-between cursor-pointer rounded-2xl border p-5 transition-all duration-300 hover:shadow-md ${selectedRole === "customer"
               ? "border-primary bg-primary/[0.04] shadow-md shadow-primary/10 ring-2 ring-primary"
               : "border-border/60 bg-card hover:border-border hover:bg-muted/30"
-          }`}
+            }`}
         >
           {selectedRole === "customer" && (
             <div className="absolute right-3.5 top-3.5 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white">
@@ -80,11 +77,10 @@ export function StepRole({ selectedRole, onSelectRole, onNext }: StepRoleProps) 
 
           <div>
             <div
-              className={`flex h-12 w-12 items-center justify-center rounded-xl transition-all ${
-                selectedRole === "customer"
+              className={`flex h-12 w-12 items-center justify-center rounded-xl transition-all ${selectedRole === "customer"
                   ? "bg-primary text-white shadow-lg shadow-primary/30 scale-105"
                   : "bg-primary/10 text-primary group-hover:bg-primary/20"
-              }`}
+                }`}
             >
               <Briefcase className="h-6 w-6" />
             </div>

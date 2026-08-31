@@ -44,11 +44,14 @@ export function Navbar() {
     // If we're not in dashboard, we can fallback gracefully
   }
 
-  // Determine context
-  const isDashboard = pathname.startsWith("/client") || pathname.startsWith("/freelancer") || pathname === "/dashboard";
-  const isClientView = pathname.startsWith("/client") || (isDashboard && role === "customer");
-  const isFreelancerView = pathname.startsWith("/freelancer") || (isDashboard && role === "freelancer");
-  const isClientDashboard = pathname === "/client/dashboard" || (pathname === "/dashboard" && role === "customer");
+  // Determine context strictly based on current URL route first, then fallback to role context
+  const isFreelancerRoute = pathname.startsWith("/freelancer");
+  const isClientRoute = pathname.startsWith("/client");
+  const isDashboard = isFreelancerRoute || isClientRoute || pathname.startsWith("/dashboard");
+
+  const isFreelancerView = isFreelancerRoute || (!isClientRoute && role === "freelancer");
+  const isClientView = isClientRoute || (!isFreelancerRoute && role === "customer");
+  const isClientDashboard = pathname === "/client/dashboard" || (pathname === "/dashboard" && isClientView);
 
   useEffect(() => {
     if (!isClientDashboard) {
@@ -70,13 +73,18 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [isClientDashboard]);
 
-  // Switching role requires going through onboarding selection page
+  // Seamless 1-click role switcher
   const handleSwitchRole = () => {
-    // Clear saved role so the /dashboard page shows the role selection screen
+    const targetRole = isClientView ? "freelancer" : "customer";
     if (typeof window !== "undefined") {
-      localStorage.removeItem("triplet_active_dashboard_role");
+      localStorage.setItem("triplet_active_dashboard_role", targetRole);
     }
-    router.push("/dashboard");
+    if (targetRole === "freelancer") {
+      router.push("/freelancer/dashboard");
+    } else {
+      router.push("/client/dashboard");
+    }
+    router.refresh();
   };
 
   // Nav Items configuration

@@ -47,32 +47,67 @@ CREATE TRIGGER users_updated_at
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Auto-create user row when Supabase Auth user signs up
-CREATE OR REPLACE FUNCTION handle_new_auth_user()
-RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION public.handle_new_auth_user()
+RETURNS TRIGGER
+SECURITY DEFINER
+SET search_path = public, auth
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_full_name TEXT;
+  v_avatar_url TEXT;
+  v_role TEXT;
 BEGIN
-  INSERT INTO public.users (id, email, full_name, avatar_url, role, created_at, updated_at)
+  v_full_name := COALESCE(NEW.raw_user_meta_data ->> 'full_name', '');
+  v_avatar_url := COALESCE(NEW.raw_user_meta_data ->> 'avatar_url', '');
+  v_role := COALESCE(NEW.raw_user_meta_data ->> 'role', 'customer');
+
+  IF NEW.email IS NOT NULL AND NEW.email != '' THEN
+    DELETE FROM public.users WHERE email = NEW.email AND id != NEW.id;
+  END IF;
+
+  INSERT INTO public.users (
+    id,
+    email,
+    full_name,
+    avatar_url,
+    role,
+    is_active,
+    is_verified,
+    onboarding_completed,
+    created_at,
+    updated_at
+  )
   VALUES (
     NEW.id,
-    NEW.email,
-    COALESCE(NEW.raw_user_meta_data ->> 'full_name', ''),
-    COALESCE(NEW.raw_user_meta_data ->> 'avatar_url', ''),
-    COALESCE(NEW.raw_user_meta_data ->> 'role', 'customer'),
+    COALESCE(NEW.email, ''),
+    v_full_name,
+    v_avatar_url,
+    v_role,
+    true,
+    false,
+    false,
     now(),
     now()
   )
   ON CONFLICT (id) DO UPDATE SET
     email = EXCLUDED.email,
-    full_name = COALESCE(EXCLUDED.full_name, users.full_name),
-    avatar_url = COALESCE(EXCLUDED.avatar_url, users.avatar_url),
+    full_name = CASE WHEN public.users.full_name IS NULL OR public.users.full_name = '' THEN EXCLUDED.full_name ELSE public.users.full_name END,
+    avatar_url = CASE WHEN public.users.avatar_url IS NULL OR public.users.avatar_url = '' THEN EXCLUDED.avatar_url ELSE public.users.avatar_url END,
     updated_at = now();
+
+  RETURN NEW;
+EXCEPTION WHEN OTHERS THEN
+  RAISE WARNING 'handle_new_auth_user notice: %', SQLERRM;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 -- Trigger on Supabase Auth
-CREATE OR REPLACE TRIGGER on_auth_user_created
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION handle_new_auth_user();
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_auth_user();
 
 
 -- 2. freelancer_profiles
