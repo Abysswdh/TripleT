@@ -10,6 +10,7 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
+import { ModalCloseButton } from "@/components/ui/modal-close-button";
 
 interface Quest {
   id: string;
@@ -241,13 +242,8 @@ export default function FreelancerExploreQuestsPage() {
       {/* Proposal Modal */}
       {selectedQuest && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="relative w-full max-w-lg rounded-3xl border border-border/80 bg-card p-6 md:p-8 shadow-2xl space-y-5">
-            <button
-              onClick={() => setSelectedQuest(null)}
-              className="absolute right-5 top-5 rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-            >
-              <X className="h-5 w-5" />
-            </button>
+          <div className="relative w-full max-w-lg rounded-3xl border border-border/80 bg-card p-6 md:p-8 shadow-2xl space-y-5 overflow-hidden">
+            <ModalCloseButton onClick={() => setSelectedQuest(null)} />
 
             {submitted ? (
               <div className="py-8 text-center space-y-3 animate-in zoom-in-95">

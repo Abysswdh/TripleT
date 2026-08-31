@@ -1,7 +1,12 @@
 "use client";
 
+import { Suspense } from "react";
 import { SettingsView } from "@/components/settings/settings-view";
 
 export default function ClientSettingsPage() {
-  return <SettingsView defaultRole="customer" />;
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-muted-foreground">Loading...</div>}>
+      <SettingsView defaultRole="customer" />
+    </Suspense>
+  );
 }

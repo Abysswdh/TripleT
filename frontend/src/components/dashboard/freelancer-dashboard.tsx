@@ -27,6 +27,7 @@ import { useEffect } from "react";
 import Grainient from "@/components/ui/Grainient";
 import { getOpenProjects } from "@/lib/services/projects";
 import { submitProposal } from "@/lib/services/proposals";
+import { ModalCloseButton } from "@/components/ui/modal-close-button";
 
 interface QuestOpportunity {
   id: string;
@@ -882,22 +883,15 @@ export function FreelancerDashboard() {
       {/* ========================================================================= */}
       {submitModalOpen && activeItemToSubmit && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
-          <div className="w-full max-w-lg rounded-3xl border border-border bg-card p-6 shadow-2xl space-y-5 animate-in zoom-in-95">
-            <div className="flex items-center justify-between border-b border-border/40 pb-3">
-              <div>
-                <span className="text-[10px] font-bold text-primary uppercase tracking-wider">
-                  Penyerahan Hasil Karya
-                </span>
-                <h3 className="text-base font-bold text-foreground font-heading">
-                  {activeItemToSubmit.milestoneTitle}
-                </h3>
-              </div>
-              <button
-                onClick={() => setSubmitModalOpen(false)}
-                className="p-1 rounded-lg text-muted-foreground hover:bg-muted"
-              >
-                <X className="h-4 w-4" />
-              </button>
+          <div className="relative w-full max-w-lg rounded-3xl border border-border bg-card p-6 shadow-2xl space-y-5 animate-in zoom-in-95 overflow-hidden">
+            <ModalCloseButton onClick={() => setSubmitModalOpen(false)} />
+            <div className="border-b border-border/40 pb-3 pr-10">
+              <span className="text-[10px] font-bold text-primary uppercase tracking-wider">
+                Penyerahan Hasil Karya
+              </span>
+              <h3 className="text-base font-bold text-foreground font-heading">
+                {activeItemToSubmit.milestoneTitle}
+              </h3>
             </div>
 
             {submissionSuccess ? (
@@ -977,22 +971,15 @@ export function FreelancerDashboard() {
       {/* ========================================================================= */}
       {selectedQuest && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
-          <div className="w-full max-w-lg rounded-3xl border border-border bg-card p-6 shadow-2xl space-y-5 animate-in zoom-in-95">
-            <div className="flex items-center justify-between border-b border-border/40 pb-3">
-              <div>
-                <span className="text-[10px] font-bold text-primary uppercase tracking-wider">
-                  Ajukan Proposal Proyek
-                </span>
-                <h3 className="text-base font-bold text-foreground font-heading">
-                  {selectedQuest.title}
-                </h3>
-              </div>
-              <button
-                onClick={() => setSelectedQuest(null)}
-                className="p-1 rounded-lg text-muted-foreground hover:bg-muted"
-              >
-                <X className="h-4 w-4" />
-              </button>
+          <div className="relative w-full max-w-lg rounded-3xl border border-border bg-card p-6 shadow-2xl space-y-5 animate-in zoom-in-95 overflow-hidden">
+            <ModalCloseButton onClick={() => setSelectedQuest(null)} />
+            <div className="border-b border-border/40 pb-3 pr-10">
+              <span className="text-[10px] font-bold text-primary uppercase tracking-wider">
+                Ajukan Proposal Proyek
+              </span>
+              <h3 className="text-base font-bold text-foreground font-heading">
+                {selectedQuest.title}
+              </h3>
             </div>
 
             {proposalSubmitted ? (

@@ -1,7 +1,8 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { useDashboardRole, DashboardRole } from "@/context/role-context";
 import { useTranslation, type Locale } from "@/context/language-context";
@@ -91,12 +92,20 @@ const COMPANY_SIZES = [
 ];
 
 export function SettingsView({ initialTab = "profile", defaultRole }: SettingsViewProps) {
+  const searchParams = useSearchParams();
   const { user } = useAuth();
   const { role: activeRole } = useDashboardRole();
   const { locale, setLocale, t } = useTranslation();
   const { currency: globalCurrency, setCurrency: setGlobalCurrency, formatMoney } = useCurrency();
   const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
   const currentRole = defaultRole || activeRole;
+
+  useEffect(() => {
+    const tabParam = searchParams?.get("tab") as SettingsTab | null;
+    if (tabParam && ["profile", "work", "security", "notifications", "billing", "preferences"].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
 
   // Form State
   const [fullName, setFullName] = useState("");
@@ -107,6 +116,18 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
   const [timezone, setTimezone] = useState("Asia/Jakarta (UTC+7)");
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   // Freelancer specific fields
   const [hourlyRate, setHourlyRate] = useState("35");
@@ -175,8 +196,8 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
       const meta = user.user_metadata || {};
       setFullName(meta.full_name || meta.name || "");
       setDisplayName(meta.display_name || meta.user_name || (user.email ? user.email.split("@")[0] : ""));
-      setPhone(meta.phone || "+62 812-3456-7890");
-      setBio(meta.bio || (currentRole === "freelancer" ? "Passionate Full-Stack Developer specializing in modern web apps and AI agents." : "Product Leader looking for top-tier developers and designers for ambitious projects."));
+      setPhone(meta.phone || "");
+      setBio(meta.bio || "");
       setAvatarUrl(meta.avatar_url || "");
       if (meta.company_name) setCompanyName(meta.company_name);
       if (meta.hourly_rate) setHourlyRate(String(meta.hourly_rate));
@@ -266,6 +287,55 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
         console.warn("Auth update warning:", authError.message);
       }
 
+      // Upsert direct database tables in Supabase
+      if (user?.id) {
+        try {
+          await supabase.from("users").upsert(
+            {
+              id: user.id,
+              email: user.email || email,
+              full_name: fullName,
+              avatar_url: avatarUrl || undefined,
+              bio: bio,
+              phone: phone,
+              location: location,
+              timezone: timezone,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "id" }
+          );
+
+          if (currentRole === "freelancer") {
+            await supabase.from("freelancer_profiles").upsert(
+              {
+                user_id: user.id,
+                headline: `${selectedSkills[0] || "Digital"} Specialist`,
+                bio: bio,
+                hourly_rate: parseInt(hourlyRate, 10) || 0,
+                skills: selectedSkills,
+                years_experience: experienceLevel.includes("Senior") ? 5 : experienceLevel.includes("Mid") ? 3 : 1,
+                github_url: githubUrl,
+                linkedin_url: linkedinUrl,
+                portfolio_url: portfolioUrl,
+              },
+              { onConflict: "user_id" }
+            );
+          } else {
+            await supabase.from("client_profiles").upsert(
+              {
+                user_id: user.id,
+                company_name: companyName,
+                company_size: companySize,
+                industry: industry,
+              },
+              { onConflict: "user_id" }
+            );
+          }
+        } catch (dbErr) {
+          console.info("Direct DB table sync notice:", dbErr);
+        }
+      }
+
       // Also try updating backend /api/v1/users/me if available
       try {
         await api.patch("/users/me", {
@@ -330,10 +400,6 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/60 pb-6">
         <div>
-          <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary mb-2">
-            <SlidersHorizontal className="h-3.5 w-3.5" />
-            <span>{t("settings.badge", "Pusat Kontrol Akun")}</span>
-          </div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-heading">
             {t("settings.title", "Pengaturan & Preferensi")}
           </h1>
@@ -507,7 +573,18 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
 
               {/* Avatar Section */}
               <div className="flex flex-col sm:flex-row items-center gap-6 p-4 rounded-2xl bg-muted/30 border border-border/50">
-                <div className="relative group">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleAvatarFileChange}
+                  accept="image/png, image/jpeg, image/webp, image/svg+xml"
+                  className="hidden"
+                />
+                <div 
+                  className="relative group cursor-pointer"
+                  onClick={() => fileInputRef.current?.click()}
+                  title={t("settings.profile.changeAvatar", "Klik untuk ubah foto")}
+                >
                   <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-2xl font-bold text-white shadow-md overflow-hidden">
                     {avatarUrl ? (
                       <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
@@ -515,30 +592,32 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                       <span>{fullName ? fullName.charAt(0).toUpperCase() : email ? email.charAt(0).toUpperCase() : "U"}</span>
                     )}
                   </div>
-                  <div className="absolute inset-0 bg-black/40 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white cursor-pointer">
+                  <div className="absolute inset-0 bg-black/40 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
                     <Camera className="h-5 w-5" />
                   </div>
                 </div>
                 <div className="space-y-1.5 text-center sm:text-left flex-1">
-                  <h4 className="text-sm font-bold text-foreground">{fullName || "Your Full Name"}</h4>
-                  <p className="text-xs text-muted-foreground">{t("settings.profile.avatarHelp", "PNG, JPG, atau SVG. Ukuran maksimum 2MB.")}</p>
-                  <div className="flex flex-wrap gap-2 pt-1 justify-center sm:justify-start">
-                    <input
-                      type="text"
-                      placeholder={t("settings.profile.avatarPlaceholder", "Tempel URL gambar di sini...")}
-                      value={avatarUrl}
-                      onChange={(e) => setAvatarUrl(e.target.value)}
-                      className="h-8 max-w-xs text-xs rounded-xl border border-border bg-background px-3 focus:outline-none focus:ring-2 focus:ring-primary/20"
-                    />
+                  <div className="flex flex-wrap items-center gap-3 justify-center sm:justify-start">
+                    <h4 className="text-sm font-bold text-foreground">{fullName || "Your Full Name"}</h4>
                     {avatarUrl && (
                       <button
+                        type="button"
                         onClick={() => setAvatarUrl("")}
-                        className="px-2.5 py-1 text-xs text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                        className="px-2 py-0.5 text-[11px] text-destructive hover:bg-destructive/10 rounded-lg transition-colors font-medium"
                       >
                         {t("settings.profile.reset", "Reset")}
                       </button>
                     )}
                   </div>
+                  <p className="text-xs text-muted-foreground">{t("settings.profile.avatarHelp", "PNG, JPG, atau SVG. Ukuran maksimum 2MB.")}</p>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline pt-1"
+                  >
+                    <Camera className="h-3.5 w-3.5" />
+                    <span>{t("settings.profile.uploadPhoto", "Ubah / Unggah Foto")}</span>
+                  </button>
                 </div>
               </div>
 
@@ -675,8 +754,12 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
               {currentRole === "freelancer" ? (
                 <>
                   <div className="border-b border-border/50 pb-4">
-                    <h2 className="text-lg font-bold text-foreground">Freelancer Skills & Pricing</h2>
-                    <p className="text-xs text-muted-foreground">Configure your hourly rate, primary skill stack, and portfolio links.</p>
+                    <h2 className="text-lg font-bold text-foreground">
+                      {t("settings.work.freelancerTitle", "Keahlian Freelancer & Tarif")}
+                    </h2>
+                    <p className="text-xs text-muted-foreground">
+                      {t("settings.work.freelancerSubtitle", "Atur tarif per jam, stack keahlian utama, dan tautan portofolio.")}
+                    </p>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -723,7 +806,9 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
 
                     {/* Availability */}
                     <div className="space-y-1.5 sm:col-span-2">
-                      <label className="text-xs font-semibold text-foreground">Current Availability Status</label>
+                      <label className="text-xs font-semibold text-foreground">
+                        {t("settings.work.availability", "Status Ketersediaan")}
+                      </label>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <label
                           className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
@@ -742,8 +827,8 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                           />
                           <div className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
                           <div className="text-xs">
-                            <p className="font-bold">Available for Work</p>
-                            <p className="text-[10px] opacity-80">Ready to take new projects</p>
+                            <p className="font-bold">{t("settings.work.availableStatus", "Tersedia untuk Kerja")}</p>
+                            <p className="text-[10px] opacity-80">{t("settings.work.availableStatusDesc", "Siap menerima proyek baru")}</p>
                           </div>
                         </label>
 
@@ -764,8 +849,8 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                           />
                           <div className="h-2.5 w-2.5 rounded-full bg-amber-500" />
                           <div className="text-xs">
-                            <p className="font-bold">Open to Offers</p>
-                            <p className="text-[10px] opacity-80">Selective on high-fit quests</p>
+                            <p className="font-bold">{t("settings.work.openStatus", "Terbuka untuk Tawaran")}</p>
+                            <p className="text-[10px] opacity-80">{t("settings.work.openStatusDesc", "Selektif untuk proyek yang cocok")}</p>
                           </div>
                         </label>
 
@@ -786,8 +871,8 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                           />
                           <div className="h-2.5 w-2.5 rounded-full bg-rose-500" />
                           <div className="text-xs">
-                            <p className="font-bold">Fully Booked</p>
-                            <p className="text-[10px] opacity-80">Not taking new gigs</p>
+                            <p className="font-bold">{t("settings.work.busyStatus", "Sedang Penuh")}</p>
+                            <p className="text-[10px] opacity-80">{t("settings.work.busyStatusDesc", "Tidak menerima proyek baru saat ini")}</p>
                           </div>
                         </label>
                       </div>
@@ -799,9 +884,11 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                     <label className="text-xs font-semibold text-foreground flex items-center justify-between">
                       <span className="flex items-center gap-1.5">
                         <Code2 className="h-3.5 w-3.5 text-primary" />
-                        Skills & Tech Stack
+                        {t("settings.work.skillsTitle", "Keahlian & Stack Teknologi")}
                       </span>
-                      <span className="text-[11px] text-muted-foreground">{selectedSkills.length} selected</span>
+                      <span className="text-[11px] text-muted-foreground">
+                        {t("settings.work.skillsSelected", { count: selectedSkills.length })}
+                      </span>
                     </label>
 
                     {/* Selected skill tags */}
@@ -822,13 +909,17 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                         </span>
                       ))}
                       {selectedSkills.length === 0 && (
-                        <span className="text-xs text-muted-foreground self-center">No skills added yet. Select below or add custom skills.</span>
+                        <span className="text-xs text-muted-foreground self-center">
+                          {t("settings.work.skillsEmpty", "Belum ada keahlian ditambahkan. Pilih dari daftar atau tambahkan keahlian kustom.")}
+                        </span>
                       )}
                     </div>
 
                     {/* Quick Add pills */}
                     <div className="space-y-1.5">
-                      <p className="text-[11px] text-muted-foreground font-medium">Quick suggestions:</p>
+                      <p className="text-[11px] text-muted-foreground font-medium">
+                        {t("settings.work.quickSuggestions", "Saran cepat:")}
+                      </p>
                       <div className="flex flex-wrap gap-1.5">
                         {AVAILABLE_SKILLS.map((skill) => {
                           const isSelected = selectedSkills.includes(skill);
@@ -855,7 +946,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                     <form onSubmit={handleAddCustomSkill} className="flex gap-2 max-w-sm pt-1">
                       <input
                         type="text"
-                        placeholder="Add other skill (e.g. WebGL)..."
+                        placeholder={t("settings.work.customSkillPlaceholder", "Tambahkan keahlian lain (contoh: Solidity, Golang...)")}
                         value={newSkillInput}
                         onChange={(e) => setNewSkillInput(e.target.value)}
                         className="h-9 w-full rounded-xl border border-border bg-background px-3 text-xs focus:outline-none focus:ring-2 focus:ring-primary/20"
@@ -864,7 +955,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                         type="submit"
                         className="rounded-xl bg-muted px-3.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted/80 shrink-0"
                       >
-                        Add
+                        {t("settings.work.add", "Tambah")}
                       </button>
                     </form>
                   </div>
@@ -872,7 +963,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                   {/* Portfolio & External Profiles */}
                   <div className="space-y-4 pt-4 border-t border-border/50">
                     <h3 className="text-xs font-bold text-foreground uppercase tracking-wider text-muted-foreground">
-                      Portfolio & Social Presence
+                      {t("settings.work.portfolioLinks", "Tautan Portofolio & Profesional")}
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div className="space-y-1.5">
@@ -920,15 +1011,19 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                 /* Client Mode Settings */
                 <>
                   <div className="border-b border-border/50 pb-4">
-                    <h2 className="text-lg font-bold text-foreground">Company & Organization Details</h2>
-                    <p className="text-xs text-muted-foreground">Manage your organization profile, hiring industry, and company scale.</p>
+                    <h2 className="text-lg font-bold text-foreground">
+                      {t("settings.work.clientTitle", "Profil Perusahaan & Perekrutan")}
+                    </h2>
+                    <p className="text-xs text-muted-foreground">
+                      {t("settings.work.clientSubtitle", "Atur nama perusahaan, industri, skala bisnis, dan alamat penagihan.")}
+                    </p>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                         <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                        Company / Brand Name
+                        {t("settings.work.companyName", "Nama Perusahaan / Organisasi")}
                       </label>
                       <input
                         type="text"
@@ -942,7 +1037,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                         <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
-                        Company Website
+                        {t("settings.work.companyWebsite", "Website Perusahaan")}
                       </label>
                       <input
                         type="url"
@@ -954,7 +1049,9 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-foreground">Industry Sector</label>
+                      <label className="text-xs font-semibold text-foreground">
+                        {t("settings.work.industry", "Industri")}
+                      </label>
                       <select
                         value={industry}
                         onChange={(e) => setIndustry(e.target.value)}
@@ -967,7 +1064,9 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-foreground">Company Size</label>
+                      <label className="text-xs font-semibold text-foreground">
+                        {t("settings.work.companySize", "Ukuran Perusahaan")}
+                      </label>
                       <select
                         value={companySize}
                         onChange={(e) => setCompanySize(e.target.value)}
@@ -982,7 +1081,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                     <div className="space-y-1.5 sm:col-span-2">
                       <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                         <FileText className="h-3.5 w-3.5 text-muted-foreground" />
-                        Billing & Tax Address
+                        {t("settings.work.billingAddress", "Alamat Penagihan Resmi")}
                       </label>
                       <textarea
                         rows={2}
@@ -994,7 +1093,9 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-foreground">Tax Identification / NPWP (Optional)</label>
+                      <label className="text-xs font-semibold text-foreground">
+                        {t("settings.work.taxId", "NPWP / ID Pajak Perusahaan")}
+                      </label>
                       <input
                         type="text"
                         value={taxId}
@@ -1016,7 +1117,11 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                   className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/90 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
                 >
                   <Save className="h-4 w-4" />
-                  <span>{isSaving ? "Saving..." : "Save Work Settings"}</span>
+                  <span>
+                    {isSaving 
+                      ? t("common.saving", "Menyimpan...") 
+                      : t("settings.work.saveBtn", "Simpan Pengaturan Kerja")}
+                  </span>
                 </button>
               </div>
             </div>
@@ -1026,20 +1131,24 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
           {activeTab === "security" && (
             <div className="bg-card border border-border/70 rounded-3xl p-6 sm:p-8 shadow-sm space-y-8">
               <div className="border-b border-border/50 pb-4">
-                <h2 className="text-lg font-bold text-foreground">Security & Password</h2>
-                <p className="text-xs text-muted-foreground">Manage your credentials, two-factor authentication, and active sessions.</p>
+                <h2 className="text-lg font-bold text-foreground">
+                  {t("settings.security.title", "Keamanan & Autentikasi")}
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  {t("settings.security.subtitle", "Kelola kata sandi, autentikasi dua faktor (2FA), dan sesi aktif.")}
+                </p>
               </div>
 
               {/* Change Password Form */}
               <form onSubmit={handleUpdatePassword} className="space-y-4 max-w-lg">
                 <h3 className="text-xs font-bold text-foreground uppercase tracking-wider text-muted-foreground">
-                  Update Password
+                  {t("settings.security.changePassword", "Ubah Kata Sandi")}
                 </h3>
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                     <Lock className="h-3.5 w-3.5 text-muted-foreground" />
-                    New Password
+                    {t("settings.security.newPassword", "Kata Sandi Baru")}
                   </label>
                   <div className="relative">
                     <input
@@ -1062,7 +1171,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                     <Lock className="h-3.5 w-3.5 text-muted-foreground" />
-                    Confirm New Password
+                    {t("settings.security.confirmPassword", "Konfirmasi Kata Sandi Baru")}
                   </label>
                   <input
                     type={showPassword ? "text" : "password"}
@@ -1078,7 +1187,9 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                   disabled={isSaving || !newPassword}
                   className="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors disabled:opacity-50"
                 >
-                  {isSaving ? "Updating..." : "Update Password"}
+                  {isSaving 
+                    ? t("common.saving", "Memperbarui...") 
+                    : t("settings.security.updatePasswordBtn", "Perbarui Kata Sandi")}
                 </button>
               </form>
 
@@ -1088,9 +1199,13 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-2">
                       <Smartphone className="h-4 w-4 text-primary" />
-                      <h4 className="text-xs font-bold text-foreground">Two-Factor Authentication (2FA)</h4>
+                      <h4 className="text-xs font-bold text-foreground">
+                        {t("settings.security.twoFactorTitle", "Autentikasi Dua Faktor (2FA)")}
+                      </h4>
                     </div>
-                    <p className="text-xs text-muted-foreground">Add an extra layer of security to your Doable! account using an authenticator app.</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("settings.security.twoFactorDesc", "Tambahkan lapisan keamanan ekstra ke akun Doable! Anda dengan aplikasi autentikator.")}
+                    </p>
                   </div>
                   <button
                     type="button"
@@ -1110,7 +1225,9 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
 
               {/* Connected Accounts */}
               <div className="pt-6 border-t border-border/50 space-y-3">
-                <h4 className="text-xs font-bold text-foreground">Connected Single Sign-On</h4>
+                <h4 className="text-xs font-bold text-foreground">
+                  {t("settings.security.connectedSso", "Single Sign-On Terhubung")}
+                </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="flex items-center justify-between p-3 rounded-xl border border-border/60 bg-muted/20">
                     <div className="flex items-center gap-2.5">
@@ -1118,11 +1235,15 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                         G
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-foreground">Google Account</p>
+                        <p className="text-xs font-semibold text-foreground">
+                          {t("settings.security.googleAccount", "Akun Google")}
+                        </p>
                         <p className="text-[10px] text-muted-foreground">{email}</p>
                       </div>
                     </div>
-                    <span className="text-[11px] font-bold text-emerald-600">Connected</span>
+                    <span className="text-[11px] font-bold text-emerald-600">
+                      {t("common.connected", "Terhubung")}
+                    </span>
                   </div>
 
                   <div className="flex items-center justify-between p-3 rounded-xl border border-border/60 bg-muted/20">
@@ -1131,28 +1252,38 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                         GH
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-foreground">GitHub</p>
-                        <p className="text-[10px] text-muted-foreground">Not linked</p>
+                        <p className="text-xs font-semibold text-foreground">
+                          {t("settings.security.githubAccount", "GitHub")}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {t("common.notLinked", "Belum terhubung")}
+                        </p>
                       </div>
                     </div>
-                    <button className="text-[11px] font-semibold text-primary hover:underline">Connect</button>
+                    <button className="text-[11px] font-semibold text-primary hover:underline">
+                      {t("common.connect", "Hubungkan")}
+                    </button>
                   </div>
                 </div>
               </div>
 
               {/* Active Sessions */}
               <div className="pt-6 border-t border-border/50 space-y-3">
-                <h4 className="text-xs font-bold text-foreground">Active Sessions</h4>
+                <h4 className="text-xs font-bold text-foreground">
+                  {t("settings.security.activeSessions", "Sesi Aktif")}
+                </h4>
                 <div className="flex items-center justify-between p-3.5 rounded-xl border border-emerald-500/30 bg-emerald-500/5">
                   <div className="flex items-center gap-3">
                     <Laptop className="h-5 w-5 text-emerald-600" />
                     <div>
-                      <p className="text-xs font-bold text-foreground">Current Browser • Windows 11 (Chrome)</p>
-                      <p className="text-[10px] text-muted-foreground">Jakarta, Indonesia • Active Now</p>
+                      <p className="text-xs font-bold text-foreground">
+                        {t("settings.security.currentSession", "Sesi browser saat ini • Windows 11 (Chrome)")}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">Jakarta, Indonesia • {t("common.activeNow", "Aktif sekarang")}</p>
                     </div>
                   </div>
                   <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-md">
-                    <Check className="h-3 w-3" /> Current
+                    <Check className="h-3 w-3" /> {t("common.current", "Saat ini")}
                   </span>
                 </div>
               </div>
@@ -1163,21 +1294,29 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
           {activeTab === "notifications" && (
             <div className="bg-card border border-border/70 rounded-3xl p-6 sm:p-8 shadow-sm space-y-8">
               <div className="border-b border-border/50 pb-4">
-                <h2 className="text-lg font-bold text-foreground">Notification Preferences</h2>
-                <p className="text-xs text-muted-foreground">Choose what alerts you want to receive across email, web, and sound alerts.</p>
+                <h2 className="text-lg font-bold text-foreground">
+                  {t("settings.notifications.title", "Preferensi Notifikasi")}
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  {t("settings.notifications.subtitle", "Pilih pemberitahuan yang ingin Anda terima di email, web, dan efek suara.")}
+                </p>
               </div>
 
               {/* Email Alerts */}
               <div className="space-y-4">
                 <h3 className="text-xs font-bold text-foreground uppercase tracking-wider text-muted-foreground">
-                  Email Notifications
+                  {t("settings.notifications.emailSection", "Notifikasi Email")}
                 </h3>
 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between p-3.5 rounded-2xl border border-border/50 hover:bg-muted/20 transition-colors">
                     <div>
-                      <p className="text-xs font-bold text-foreground">New Proposals & Project Bids</p>
-                      <p className="text-[11px] text-muted-foreground">Get notified when someone bids on your project or invites you to a project.</p>
+                      <p className="text-xs font-bold text-foreground">
+                        {t("settings.notifications.proposals", "Proposal Baru & Tawaran Proyek")}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {t("settings.notifications.proposalsDesc", "Dapatkan pemberitahuan ketika seseorang menawar proyek Anda atau mengundang ke proyek.")}
+                      </p>
                     </div>
                     <input
                       type="checkbox"
@@ -1189,8 +1328,12 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
 
                   <div className="flex items-center justify-between p-3.5 rounded-2xl border border-border/50 hover:bg-muted/20 transition-colors">
                     <div>
-                      <p className="text-xs font-bold text-foreground">Milestone Updates & Approvals</p>
-                      <p className="text-[11px] text-muted-foreground">Alerts when milestone deliverables are submitted, reviewed, or funded.</p>
+                      <p className="text-xs font-bold text-foreground">
+                        {t("settings.notifications.milestones", "Pembaruan Milestone & Persetujuan")}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {t("settings.notifications.milestonesDesc", "Pemberitahuan ketika hasil kerja milestone dikirimkan, ditinjau, atau didanai.")}
+                      </p>
                     </div>
                     <input
                       type="checkbox"
@@ -1202,8 +1345,12 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
 
                   <div className="flex items-center justify-between p-3.5 rounded-2xl border border-border/50 hover:bg-muted/20 transition-colors">
                     <div>
-                      <p className="text-xs font-bold text-foreground">Direct Chat Messages</p>
-                      <p className="text-[11px] text-muted-foreground">Receive an email recap when you have unread messages after 15 minutes.</p>
+                      <p className="text-xs font-bold text-foreground">
+                        {t("settings.notifications.messages", "Pesan Obrolan Langsung")}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {t("settings.notifications.messagesDesc", "Terima rangkuman email saat ada pesan belum dibaca setelah 15 menit.")}
+                      </p>
                     </div>
                     <input
                       type="checkbox"
@@ -1215,8 +1362,12 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
 
                   <div className="flex items-center justify-between p-3.5 rounded-2xl border border-border/50 hover:bg-muted/20 transition-colors">
                     <div>
-                      <p className="text-xs font-bold text-foreground">Product Updates & Tips</p>
-                      <p className="text-[11px] text-muted-foreground">Occasional highlights of top-paying projects, new features, and community guides.</p>
+                      <p className="text-xs font-bold text-foreground">
+                        {t("settings.notifications.marketing", "Pembaruan Produk & Tips")}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {t("settings.notifications.marketingDesc", "Sorotan berkala tentang proyek dengan bayaran tertinggi, fitur baru, dan panduan komunitas.")}
+                      </p>
                     </div>
                     <input
                       type="checkbox"
@@ -1231,14 +1382,18 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
               {/* Gamification & In-App Alerts */}
               <div className="space-y-4 pt-4 border-t border-border/50">
                 <h3 className="text-xs font-bold text-foreground uppercase tracking-wider text-muted-foreground">
-                  In-App & Gamification Sounds
+                  {t("settings.notifications.inAppSection", "Suara & Peringatan Dalam Aplikasi")}
                 </h3>
 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between p-3.5 rounded-2xl border border-border/50 hover:bg-muted/20 transition-colors">
                     <div>
-                      <p className="text-xs font-bold text-foreground">XP, Level Ups & Daily Streaks</p>
-                      <p className="text-[11px] text-muted-foreground">Celebratory animations and reminders to maintain your project streak.</p>
+                      <p className="text-xs font-bold text-foreground">
+                        {t("settings.notifications.gamification", "XP, Kenaikan Level & Streak Harian")}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {t("settings.notifications.gamificationDesc", "Animasi perayaan dan pengingat untuk menjaga streak pengerjaan Anda.")}
+                      </p>
                     </div>
                     <input
                       type="checkbox"
@@ -1250,8 +1405,12 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
 
                   <div className="flex items-center justify-between p-3.5 rounded-2xl border border-border/50 hover:bg-muted/20 transition-colors">
                     <div>
-                      <p className="text-xs font-bold text-foreground">Interactive Audio Effects</p>
-                      <p className="text-[11px] text-muted-foreground">Play subtle chime sounds upon project submission or milestone release.</p>
+                      <p className="text-xs font-bold text-foreground">
+                        {t("settings.notifications.soundEffects", "Efek Audio Interaktif")}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {t("settings.notifications.soundEffectsDesc", "Putar suara lonceng halus saat penyerahan hasil kerja atau pencairan dana milestone.")}
+                      </p>
                     </div>
                     <input
                       type="checkbox"
@@ -1272,7 +1431,11 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                   className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/90 transition-all disabled:opacity-50"
                 >
                   <Save className="h-4 w-4" />
-                  <span>{isSaving ? "Saving..." : "Save Preferences"}</span>
+                  <span>
+                    {isSaving 
+                      ? t("common.saving", "Menyimpan...") 
+                      : t("settings.notifications.saveBtn", "Simpan Preferensi Notifikasi")}
+                  </span>
                 </button>
               </div>
             </div>
@@ -1283,12 +1446,14 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
             <div className="bg-card border border-border/70 rounded-3xl p-6 sm:p-8 shadow-sm space-y-8">
               <div className="border-b border-border/50 pb-4">
                 <h2 className="text-lg font-bold text-foreground">
-                  {currentRole === "customer" ? "Billing & Payment Methods" : "Payout Accounts & Earnings"}
+                  {currentRole === "customer" 
+                    ? t("settings.billing.clientTitle", "Metode Pembayaran & Penagihan") 
+                    : t("settings.billing.freelancerTitle", "Akun Penarikan & Pendapatan")}
                 </h2>
                 <p className="text-xs text-muted-foreground">
                   {currentRole === "customer"
-                    ? "Manage your payment cards, virtual accounts, and company invoice receipts."
-                    : "Manage your Indonesian bank account or digital wallet for receiving milestone payouts."}
+                    ? t("settings.billing.clientSubtitle", "Kelola kartu pembayaran, virtual account, dan tanda terima invoice perusahaan.")
+                    : t("settings.billing.freelancerSubtitle", "Kelola rekening bank Indonesia atau dompet digital untuk menerima pencairan dana milestone.")}
                 </p>
               </div>
 
@@ -1387,18 +1552,14 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                   </label>
                   <select
                     value={language}
-                    onChange={(e) => {
-                      const nextLang = e.target.value as Locale;
-                      setLanguage(nextLang);
-                      setLocale(nextLang);
-                    }}
+                    onChange={(e) => setLanguage(e.target.value as Locale)}
                     className="h-10 w-full rounded-xl border border-border bg-background px-3.5 text-xs text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                   >
                     <option value="id">{t("settings.preferences.languageId", "Bahasa Indonesia (Default)")}</option>
                     <option value="en">{t("settings.preferences.languageEn", "English (US)")}</option>
                   </select>
                   <p className="text-[11px] text-muted-foreground">
-                    {locale === "id" 
+                    {language === "id" 
                       ? "Bahasa default adalah Bahasa Indonesia. Anda dapat mengubahnya ke English kapan saja." 
                       : "Default language is Indonesian. You can switch to English anytime."}
                   </p>
@@ -1411,11 +1572,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                   </label>
                   <select
                     value={currency}
-                    onChange={(e) => {
-                      const nextCurr = e.target.value as Currency;
-                      setCurrency(nextCurr);
-                      setGlobalCurrency(nextCurr);
-                    }}
+                    onChange={(e) => setCurrency(e.target.value as Currency)}
                     className="h-10 w-full rounded-xl border border-border bg-background px-3.5 text-xs text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                   >
                     <option value="IDR">{t("settings.preferences.currencyIdr", "IDR (Rp - Rupiah)")}</option>
@@ -1441,7 +1598,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                   <span>
                     {isSaving 
                       ? t("common.saving", "Menyimpan...") 
-                      : t("settings.preferences.saveBtn", "Simpan Preferensi Bahasa")}
+                      : t("settings.preferences.saveBtn", "Simpan Preferensi")}
                   </span>
                 </button>
               </div>
