@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { getOpenProjects } from "@/lib/services/projects";
+import { useTranslation } from "@/context/language-context";
+import { ModalCloseButton } from "@/components/ui/modal-close-button";
 
 interface Milestone {
   phase: string;
@@ -71,6 +73,7 @@ export default function ProjectMarketPage() {
   // Selected project for inspection modal
   const [activeProject, setActiveProject] = useState<MarketProject | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     async function loadMarket() {
@@ -166,10 +169,10 @@ export default function ProjectMarketPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight md:text-3xl text-foreground">
-          Project Market
+          {t("market.title", "Pasar Proyek")}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Jelajahi proyek yang dibuat klien lain, pantau referensi budget, dan tinjau spesifikasi teknis.
+          {t("market.subtitle", "Jelajahi proyek yang dibuat klien lain, pantau referensi budget, dan tinjau spesifikasi teknis.")}
         </p>
       </div>
 
@@ -183,7 +186,7 @@ export default function ProjectMarketPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari nama proyek, perusahaan, stack teknologi (Next.js, Python, Flutter, Figma)..."
+              placeholder={t("market.searchPlaceholder", "Cari nama proyek, perusahaan, stack teknologi (Next.js, Python, Flutter, Figma)...")}
               className="h-11 w-full rounded-2xl border border-border bg-card pl-10 pr-4 text-xs sm:text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-xs"
             />
             {searchQuery && (
@@ -204,10 +207,10 @@ export default function ProjectMarketPage() {
               aria-label="Filter status proyek"
               className="h-11 rounded-2xl border border-border bg-card px-3 text-xs font-medium text-foreground focus:border-primary focus:outline-none shadow-xs cursor-pointer"
             >
-              <option value="Semua Status">Semua Status</option>
-              <option value="Menerima Proposal">Menerima Proposal</option>
-              <option value="Sedang Dikerjakan">Sedang Dikerjakan</option>
-              <option value="Selesai">Selesai (Blueprint)</option>
+              <option value="Semua Status">{t("market.allStatus", "Semua Status")}</option>
+              <option value="Menerima Proposal">{t("market.acceptingProposals", "Menerima Proposal")}</option>
+              <option value="Sedang Dikerjakan">{t("market.inProgress", "Sedang Dikerjakan")}</option>
+              <option value="Selesai">{t("market.completed", "Selesai (Blueprint)")}</option>
             </select>
 
             {/* Budget Range Selector */}
@@ -217,10 +220,10 @@ export default function ProjectMarketPage() {
               aria-label="Filter rentang budget"
               className="h-11 rounded-2xl border border-border bg-card px-3 text-xs font-medium text-foreground focus:border-primary focus:outline-none shadow-xs cursor-pointer"
             >
-              <option value="Semua">Semua Budget</option>
-              <option value="< 10jt">&lt; Rp 10 Juta</option>
-              <option value="10jt - 20jt">Rp 10jt - Rp 20jt</option>
-              <option value="> 20jt">&gt; Rp 20 Juta</option>
+              <option value="Semua">{t("market.allBudget", "Semua Budget")}</option>
+              <option value="< 10jt">{t("market.under5m", "< Rp 10 Juta")}</option>
+              <option value="10jt - 20jt">{t("market.range5to15m", "Rp 10jt - Rp 20jt")}</option>
+              <option value="> 20jt">{t("market.above30m", "> Rp 20 Juta")}</option>
             </select>
 
             {/* Sort Selector */}
@@ -230,9 +233,9 @@ export default function ProjectMarketPage() {
               aria-label="Urutkan proyek"
               className="h-11 rounded-2xl border border-border bg-card px-3 text-xs font-medium text-foreground focus:border-primary focus:outline-none shadow-xs cursor-pointer"
             >
-              <option value="newest">Terbaru</option>
-              <option value="budget_high">Budget Tertinggi</option>
-              <option value="proposals">Paling Populer</option>
+              <option value="newest">{t("market.newest", "Terbaru")}</option>
+              <option value="budget_high">{t("market.highestBudget", "Budget Tertinggi")}</option>
+              <option value="proposals">{t("market.mostProposals", "Paling Populer")}</option>
               <option value="name">Nama Proyek (A-Z)</option>
             </select>
           </div>
@@ -416,14 +419,8 @@ export default function ProjectMarketPage() {
       {/* 5. PROJECT DETAIL & BENCHMARK MODAL */}
       {activeProject && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in">
-          <div className="relative w-full max-w-3xl max-h-[90vh] flex flex-col rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-2xl overflow-y-auto animate-in zoom-in-95">
-            {/* Close Button */}
-            <button
-              onClick={() => setActiveProject(null)}
-              className="absolute right-4 top-4 rounded-xl p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-            >
-              <X className="h-5 w-5" />
-            </button>
+          <div className="relative w-full max-w-3xl max-h-[90vh] flex flex-col rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-2xl overflow-hidden animate-in zoom-in-95">
+            <ModalCloseButton onClick={() => setActiveProject(null)} />
 
             {/* Modal Header */}
             <div className="space-y-3 border-b border-border/60 pb-5">

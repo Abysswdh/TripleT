@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
@@ -22,13 +22,15 @@ import {
   Settings,
   Menu,
   X,
-  ArrowLeftRight
+  ArrowLeftRight,
+  User
 } from "lucide-react";
 
 export function Navbar() {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolledPastHero, setScrolledPastHero] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   
   const pathname = usePathname();
   const router = useRouter();
@@ -73,6 +75,21 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [isClientDashboard]);
 
+  // Click outside to close user dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setUserDropdownOpen(false);
+      }
+    };
+    if (userDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [userDropdownOpen]);
+
   // Seamless 1-click role switcher
   const handleSwitchRole = () => {
     const targetRole = isClientView ? "freelancer" : "customer";
@@ -99,7 +116,7 @@ export function Navbar() {
 
   const freelancerLinks: NavLink[] = [
     { href: "/freelancer/dashboard", label: t("nav.overview", "Overview"), icon: LayoutDashboard },
-    { href: "/freelancer/explore", label: t("nav.exploreQuests", "Explore Quests"), icon: Compass },
+    { href: "/freelancer/explore", label: t("nav.exploreQuests", "Explore Projects"), icon: Compass },
     { href: "/freelancer/my-work", label: t("nav.myWork", "My Work"), icon: Briefcase },
     { href: "/freelancer/skills", label: t("nav.skills", "Skills"), icon: Award },
     { href: "/freelancer/earnings", label: t("nav.earnings", "Earnings"), icon: CreditCard },
@@ -217,7 +234,7 @@ export function Navbar() {
                 )}
 
               {/* User Dropdown */}
-              <div className="relative">
+              <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
                   className="flex items-center gap-2 rounded-xl p-1 hover:bg-muted/60 transition-colors"
@@ -256,15 +273,23 @@ export function Navbar() {
                         <Link
                           href={role === "freelancer" ? "/freelancer/dashboard" : "/client/dashboard"}
                           onClick={() => setUserDropdownOpen(false)}
-                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
                         >
                           <LayoutDashboard className="h-3.5 w-3.5" />
-                          {t("nav.goToDashboard", "Go to Dashboard")}
+                          {t("nav.dashboard", "Dashboard")}
+                        </Link>
+                        <Link
+                          href={role === "freelancer" ? "/freelancer/profile" : "/client/profile"}
+                          onClick={() => setUserDropdownOpen(false)}
+                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                        >
+                          <User className="h-3.5 w-3.5" />
+                          {t("nav.profile", "Profil Anda")}
                         </Link>
                         <Link
                           href={role === "freelancer" ? "/freelancer/settings" : "/client/settings"}
                           onClick={() => setUserDropdownOpen(false)}
-                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
                         >
                           <Settings className="h-3.5 w-3.5" />
                           {t("nav.settings", "Settings")}
@@ -273,11 +298,27 @@ export function Navbar() {
                     )}
                     {isDashboard && isClientView && (
                       <>
-                        <Link href="/client/dashboard" className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => setUserDropdownOpen(false)}>
+                        <Link
+                          href="/client/dashboard"
+                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                          onClick={() => setUserDropdownOpen(false)}
+                        >
                           <LayoutDashboard className="h-3.5 w-3.5" />
                           {t("nav.dashboard", "Dashboard")}
                         </Link>
-                        <Link href="/client/settings" className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => setUserDropdownOpen(false)}>
+                        <Link
+                          href="/client/profile"
+                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                          onClick={() => setUserDropdownOpen(false)}
+                        >
+                          <User className="h-3.5 w-3.5" />
+                          {t("nav.profile", "Profil Anda")}
+                        </Link>
+                        <Link
+                          href="/client/settings"
+                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                          onClick={() => setUserDropdownOpen(false)}
+                        >
                           <Settings className="h-3.5 w-3.5" />
                           {t("nav.settings", "Settings")}
                         </Link>
@@ -285,7 +326,27 @@ export function Navbar() {
                     )}
                     {isDashboard && isFreelancerView && (
                       <>
-                        <Link href="/freelancer/settings" className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => setUserDropdownOpen(false)}>
+                        <Link
+                          href="/freelancer/dashboard"
+                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                          onClick={() => setUserDropdownOpen(false)}
+                        >
+                          <LayoutDashboard className="h-3.5 w-3.5" />
+                          {t("nav.overview", "Dashboard")}
+                        </Link>
+                        <Link
+                          href="/freelancer/profile"
+                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                          onClick={() => setUserDropdownOpen(false)}
+                        >
+                          <User className="h-3.5 w-3.5" />
+                          {t("nav.profile", "Profil Anda")}
+                        </Link>
+                        <Link
+                          href="/freelancer/settings"
+                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                          onClick={() => setUserDropdownOpen(false)}
+                        >
                           <Settings className="h-3.5 w-3.5" />
                           {t("nav.settings", "Settings")}
                         </Link>

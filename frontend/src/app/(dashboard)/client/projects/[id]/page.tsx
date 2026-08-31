@@ -458,7 +458,7 @@ export default function ClientProjectDetailPage() {
                     project.status === "Completed" ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20" :
                     "bg-amber-500/10 text-amber-600 border border-amber-500/20"
                   }`}>{project.status}</span>
-                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 border border-amber-500/20">{project.difficulty} Quest</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 border border-amber-500/20">Skala {project.difficulty}</span>
                 </div>
 
                 <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground leading-snug">{project.title}</h1>

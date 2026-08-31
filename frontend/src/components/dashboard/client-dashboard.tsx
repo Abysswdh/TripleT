@@ -23,6 +23,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Grainient from "@/components/ui/Grainient";
 import { CreateProjectModal, type CreateProjectModalProps, type CreatedProject } from "@/components/dashboard/create-project-modal";
+import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import { createClient } from "@/lib/supabase/client";
 
 interface FeaturedTalent {
@@ -1059,14 +1060,8 @@ export function ClientDashboard() {
               className="fixed inset-0 bg-black/60 backdrop-blur-md transition-opacity"
               onClick={() => setIsChoiceModalOpen(false)}
             />
-            <div className="relative z-10 w-full max-w-lg rounded-3xl border border-border/80 bg-card p-6 md:p-8 shadow-2xl space-y-6 animate-in zoom-in-95 duration-200">
-              {/* Close Button */}
-              <button
-                onClick={() => setIsChoiceModalOpen(false)}
-                className="absolute right-5 top-5 rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-              >
-                <X className="h-5 w-5" />
-              </button>
+            <div className="relative z-10 w-full max-w-lg rounded-3xl border border-border/80 bg-card p-6 md:p-8 shadow-2xl space-y-6 animate-in zoom-in-95 duration-200 overflow-hidden">
+              <ModalCloseButton onClick={() => setIsChoiceModalOpen(false)} />
 
               <div className="space-y-2">
                 <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
@@ -1166,13 +1161,8 @@ export function ClientDashboard() {
               className="fixed inset-0 bg-black/60 backdrop-blur-md transition-opacity"
               onClick={() => setSelectedProjectForProposals(null)}
             />
-            <div className="relative z-10 w-full max-w-3xl rounded-3xl border border-border/80 bg-card p-6 md:p-8 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
-              <button
-                onClick={() => setSelectedProjectForProposals(null)}
-                className="absolute right-5 top-5 rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-              >
-                <X className="h-5 w-5" />
-              </button>
+            <div className="relative z-10 w-full max-w-3xl rounded-3xl border border-border/80 bg-card p-6 md:p-8 shadow-2xl space-y-5 max-h-[90vh] overflow-hidden">
+              <ModalCloseButton onClick={() => setSelectedProjectForProposals(null)} />
 
               <div>
                 <span className="text-xs font-semibold text-primary">{selectedProjectForProposals.category}</span>
@@ -1310,13 +1300,8 @@ export function ClientDashboard() {
               className="fixed inset-0 bg-black/60 backdrop-blur-md transition-opacity"
               onClick={() => setSelectedTalentForInvite(null)}
             />
-            <div className="relative z-10 w-full max-w-lg rounded-3xl border border-border/80 bg-card p-6 md:p-8 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
-              <button
-                onClick={() => setSelectedTalentForInvite(null)}
-                className="absolute right-5 top-5 rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-              >
-                <X className="h-5 w-5" />
-              </button>
+            <div className="relative z-10 w-full max-w-lg rounded-3xl border border-border/80 bg-card p-6 md:p-8 shadow-2xl space-y-5 max-h-[90vh] overflow-hidden">
+              <ModalCloseButton onClick={() => setSelectedTalentForInvite(null)} />
 
               {inviteSuccess ? (
                 <div className="py-8 text-center space-y-3">
