@@ -114,7 +114,7 @@ export default function ProjectMarketPage() {
             deliverables: m.deliverables && m.deliverables.length > 0 ? m.deliverables : ["Source Code", "Dokumentasi"],
           })),
           benchmarkScore: "Benchmark Terverifikasi",
-          benchmarkNote: "Spesifikasi proyek terverifikasi dengan milestone escrow.",
+          benchmarkNote: "Spesifikasi proyek terverifikasi dengan sistem termin rekber.",
         }));
 
         setMarketProjects(mapped);

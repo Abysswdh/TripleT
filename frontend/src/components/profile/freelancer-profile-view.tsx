@@ -23,7 +23,8 @@ import {
   Edit3,
   Share2,
   ExternalLink,
-  Sparkles
+  Sparkles,
+  Zap
 } from "lucide-react";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
 
@@ -44,6 +45,7 @@ export interface TalentProfile {
   earnings: string;
   aboutMe: string[];
   streakWeeks: number;
+  availability?: string;
   verifiedSkills: string[];
   otherSkills: string[];
   recentProjects: {
@@ -78,6 +80,7 @@ export const TALENT_PROFILES: Record<string, TalentProfile> = {
       "My approach is deeply collaborative. I don't just write code; I partner with clients to understand their users and business goals, ensuring every technical decision drives value. Whether you need a rapid MVP or a refactor of a legacy monolithic system, I bring strategic thinking and technical excellence to the table."
     ],
     streakWeeks: 12,
+    availability: "15 – 30 Jam / Minggu (Part-Time)",
     verifiedSkills: ["REACT", "NODE.JS", "TYPESCRIPT", "SYSTEM DESIGN", "NEXT.JS", "SUPABASE"],
     otherSkills: ["AWS", "GRAPHQL", "POSTGRESQL", "TAILWIND CSS", "DOCKER"],
     recentProjects: [
@@ -128,6 +131,7 @@ export const TALENT_PROFILES: Record<string, TalentProfile> = {
       "My design methodology emphasizes atomic components, accessibility (WCAG), and seamless developer handoff to ensure rapid, consistent engineering implementation."
     ],
     streakWeeks: 18,
+    availability: "> 30 Jam / Minggu (Full-Time)",
     verifiedSkills: ["FIGMA", "DESIGN SYSTEMS", "PROTOTYPING", "USER RESEARCH", "WIREFRAMING"],
     otherSkills: ["UI DESIGN", "UX AUDIT", "DESIGN TOKENS", "MOBILE APP UI"],
     recentProjects: [
@@ -178,6 +182,7 @@ export const TALENT_PROFILES: Record<string, TalentProfile> = {
       "Whether building custom model fine-tuning workflows, enterprise vector search with pgvector/Pinecone, or FastAPI asynchronous microservices, I deliver intelligent applications that perform reliably under high load."
     ],
     streakWeeks: 10,
+    availability: "15 – 30 Jam / Minggu (Part-Time)",
     verifiedSkills: ["PYTHON", "FASTAPI", "OPENAI", "LANGCHAIN", "RAG PIPELINES", "WEBSOCKETS"],
     otherSkills: ["PYTORCH", "PINECONE", "DOCKER", "POSTGRESQL", "HUGGINGFACE"],
     recentProjects: [
@@ -228,6 +233,7 @@ export const TALENT_PROFILES: Record<string, TalentProfile> = {
       "With 5+ years crafting consumer and enterprise mobile solutions, I handle everything from pixel-perfect UI animations to native device feature bindings and App Store / Play Store deployment."
     ],
     streakWeeks: 14,
+    availability: "< 15 Jam / Minggu (Side Hustle)",
     verifiedSkills: ["FLUTTER", "DART", "FIREBASE", "MIDTRANS", "BLOC / RIVERPOD"],
     otherSkills: ["REST API", "OFFLINE-FIRST", "BIOMETRICS", "PUSH NOTIFICATIONS"],
     recentProjects: [
@@ -383,6 +389,13 @@ export function FreelancerProfileView({ talentId = "tal-1", isOwner = false }: F
         reviewsCount: 0,
         responseTime: "< 2 Jam",
         earnings: meta.hourly_rate ? `Rp ${(meta.hourly_rate * 20).toLocaleString("id-ID")}` : "Rp 0",
+        availability: meta.weekly_availability === "part_time"
+          ? "< 15 Jam / Mgg"
+          : meta.weekly_availability === "full_time"
+          ? "> 30 Jam / Mgg"
+          : meta.weekly_availability === "flexible"
+          ? "Fleksibel"
+          : "15–30 Jam / Mgg",
         aboutMe: meta.bio ? [meta.bio] : [
           "Freelancer spesialis terdaftar di platform TripleT. Berpengalaman mengerjakan proyek pengembangan teknologi dan desain modern."
         ],
@@ -444,6 +457,15 @@ export function FreelancerProfileView({ talentId = "tal-1", isOwner = false }: F
             reviewsCount: data.total_reviews_count || 0,
             responseTime: "< 2 Jam",
             earnings: data.hourly_rate ? `Rp ${(data.hourly_rate * 20).toLocaleString("id-ID")}` : "Rp 0",
+            availability: data.starting_price?.includes("Jam")
+              ? data.starting_price.split("(")[0].trim()
+              : data.availability || (meta.weekly_availability === "part_time"
+              ? "< 15 Jam / Mgg"
+              : meta.weekly_availability === "full_time"
+              ? "> 30 Jam / Mgg"
+              : meta.weekly_availability === "flexible"
+              ? "Fleksibel"
+              : "15–30 Jam / Mgg"),
             aboutMe: data.bio ? [data.bio] : (u.bio ? [u.bio] : baseProfile.aboutMe),
             streakWeeks: data.streak_weeks || 1,
             verifiedSkills: data.skills && data.skills.length > 0 ? data.skills : (meta.skills || baseProfile.verifiedSkills),
@@ -620,13 +642,15 @@ export function FreelancerProfileView({ talentId = "tal-1", isOwner = false }: F
                 <div className="text-[11px] text-muted-foreground font-medium">Response</div>
               </div>
 
-              {/* Stat 4: Earnings */}
+              {/* Stat 4: Kapasitas / Availability */}
               <div className="rounded-2xl border border-border/80 bg-card p-4 text-center space-y-1 shadow-xs hover:border-primary/30 transition-colors">
                 <div className="mx-auto h-7 w-7 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
-                  <Banknote className="h-4 w-4" />
+                  <Zap className="h-4 w-4" />
                 </div>
-                <div className="text-lg font-bold text-emerald-600">{profile.earnings}</div>
-                <div className="text-[11px] text-muted-foreground font-medium">Earnings</div>
+                <div className="text-sm sm:text-base font-bold text-emerald-600 truncate" title={profile.availability || "15–30 Jam / Minggu"}>
+                  {profile.availability?.split("(")[0]?.trim() || "15–30 Jam/Mgg"}
+                </div>
+                <div className="text-[11px] text-muted-foreground font-medium">Kapasitas / Mgg</div>
               </div>
             </div>
 

@@ -89,7 +89,7 @@ export default function DashboardRedirectPage() {
                 {[
                   { icon: <Zap className="h-3.5 w-3.5 text-amber-500" />, text: "Earn XP & unlock skill badges" },
                   { icon: <Star className="h-3.5 w-3.5 text-violet-500" />, text: "Portfolio quest terverifikasi" },
-                  { icon: <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />, text: "Pembayaran escrow terjamin" },
+                  { icon: <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />, text: "Pembayaran rekber terjamin" },
                 ].map(({ icon, text }) => (
                   <li key={text} className="flex items-center gap-2">
                     {icon}<span>{text}</span>
@@ -124,14 +124,14 @@ export default function DashboardRedirectPage() {
                   </span>
                 </div>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Posting proyek, temukan talenta digital terverifikasi, dan kelola pengerjaan dengan aman lewat escrow.
+                  Posting proyek, temukan talenta digital terverifikasi, dan kelola pengerjaan dengan aman lewat rekber.
                 </p>
               </div>
 
               <ul className="space-y-2 text-xs text-muted-foreground">
                 {[
                   { icon: <Star className="h-3.5 w-3.5 text-primary" />, text: "Talenta terverifikasi & berpengalaman" },
-                  { icon: <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />, text: "Dana aman di escrow hingga selesai" },
+                  { icon: <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />, text: "Dana aman di rekber hingga selesai" },
                   { icon: <Zap className="h-3.5 w-3.5 text-amber-500" />, text: "Blueprint AI & template instan" },
                 ].map(({ icon, text }) => (
                   <li key={text} className="flex items-center gap-2">

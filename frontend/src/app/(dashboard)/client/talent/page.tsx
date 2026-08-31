@@ -4,23 +4,25 @@ import { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { Search, Star, ShieldCheck, X, CheckCircle2, SlidersHorizontal, ArrowRight, Award } from "lucide-react";
 import Link from "next/link";
-import { getTalents, type TalentRecord } from "@/lib/services/talents";
+import { getTalents, inviteTalentToProject, type TalentRecord } from "@/lib/services/talents";
+import { getClientProjects, type ProjectRecord } from "@/lib/services/projects";
 import { useTranslation } from "@/context/language-context";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
 
 const CATEGORY_TABS = [
   "Semua Kategori",
-  "Web & Fullstack",
-  "Mobile Apps",
-  "UI/UX & Design",
-  "AI & Machine Learning",
-  "Backend & Cloud",
-  "DevOps & Data"
+  "Full-Stack Web & Next.js",
+  "Backend & Cloud Systems",
+  "UI/UX & Product Design",
+  "Mobile App Development",
+  "AI & Machine Learning"
 ] as const;
 
 export default function ClientTalentPage() {
   const [mounted, setMounted] = useState(false);
   const [talents, setTalents] = useState<TalentRecord[]>([]);
+  const [clientProjects, setClientProjects] = useState<ProjectRecord[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("Semua Kategori");
   const [selectedLevel, setSelectedLevel] = useState<string>("Semua Level");
@@ -30,17 +32,25 @@ export default function ClientTalentPage() {
   const [selectedTalent, setSelectedTalent] = useState<TalentRecord | null>(null);
   const [inviteMessage, setInviteMessage] = useState("");
   const [inviteSuccess, setInviteSuccess] = useState(false);
+  const [isSubmittingInvite, setIsSubmittingInvite] = useState(false);
   const { t } = useTranslation();
 
   useEffect(() => {
     setMounted(true);
-    async function loadTalents() {
-      const data = await getTalents();
-      if (data && data.length > 0) {
-        setTalents(data);
+    async function loadData() {
+      const [talentData, projData] = await Promise.all([
+        getTalents(),
+        getClientProjects()
+      ]);
+      if (talentData && talentData.length > 0) {
+        setTalents(talentData);
+      }
+      if (projData && projData.length > 0) {
+        setClientProjects(projData);
+        setSelectedProjectId(projData[0].id);
       }
     }
-    loadTalents();
+    loadData();
   }, []);
 
   // Filter & Sort Logic
@@ -51,7 +61,7 @@ export default function ClientTalentPage() {
         const q = searchQuery.toLowerCase();
         const matchesSearch =
           talent.name.toLowerCase().includes(q) ||
-          talent.role.toLowerCase().includes(q) ||
+          talent.title.toLowerCase().includes(q) ||
           (talent.location && talent.location.toLowerCase().includes(q)) ||
           talent.skills.some((s) => s.toLowerCase().includes(q));
 
@@ -61,21 +71,21 @@ export default function ClientTalentPage() {
           const cat = selectedCategory.toLowerCase();
           matchesCategory =
             (talent.category && talent.category.toLowerCase().includes(cat)) ||
-            talent.role.toLowerCase().includes(cat) ||
+            talent.title.toLowerCase().includes(cat) ||
             talent.skills.some((s) => s.toLowerCase().includes(cat));
         }
 
         // 3. Level / Badge
         const matchesLevel =
           selectedLevel === "Semua Level" ||
-          talent.level.toLowerCase() === selectedLevel.toLowerCase();
+          talent.badgeLevel.toLowerCase() === selectedLevel.toLowerCase();
 
         // 4. Rate Tier
-        const rateNum = talent.hourlyRateNumeric || 150000;
+        const rateNum = talent.hourlyRateNumeric || 35;
         let matchesRate = true;
-        if (selectedRateTier === "< 150k") matchesRate = rateNum < 150000;
-        else if (selectedRateTier === "150k - 300k") matchesRate = rateNum >= 150000 && rateNum <= 300000;
-        else if (selectedRateTier === "> 300k") matchesRate = rateNum > 300000;
+        if (selectedRateTier === "< 150k") matchesRate = rateNum < 25;
+        else if (selectedRateTier === "150k - 300k") matchesRate = rateNum >= 25 && rateNum <= 40;
+        else if (selectedRateTier === "> 300k") matchesRate = rateNum > 40;
 
         return matchesSearch && matchesCategory && matchesLevel && matchesRate;
       })
@@ -88,14 +98,24 @@ export default function ClientTalentPage() {
       });
   }, [talents, searchQuery, selectedCategory, selectedLevel, selectedRateTier, sortBy]);
 
-  const handleSendInvite = (e: React.FormEvent) => {
+  const handleSendInvite = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedTalent) return;
+
+    setIsSubmittingInvite(true);
+    const targetProjId = selectedProjectId || (clientProjects[0]?.id) || "da000000-0000-0000-0000-000000000001";
+    await inviteTalentToProject({
+      projectId: targetProjId,
+      freelancerId: selectedTalent.userId,
+      message: inviteMessage,
+    });
+    setIsSubmittingInvite(false);
     setInviteSuccess(true);
     setTimeout(() => {
       setInviteSuccess(false);
       setSelectedTalent(null);
       setInviteMessage("");
-    }, 1500);
+    }, 2000);
   };
 
   return (
@@ -241,22 +261,22 @@ export default function ClientTalentPage() {
                         <h3 className="text-sm font-bold text-foreground truncate group-hover/card:text-primary transition-colors">
                           {talent.name}
                         </h3>
-                        {talent.isVerified && <ShieldCheck className="h-4 w-4 text-primary shrink-0" />}
+                        {talent.verified && <ShieldCheck className="h-4 w-4 text-primary shrink-0" />}
                       </div>
-                      <p className="text-xs text-muted-foreground truncate">{talent.role}</p>
+                      <p className="text-xs text-muted-foreground truncate">{talent.title}</p>
                     </div>
                   </div>
 
                   <span
                     className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold shrink-0 ${
-                      talent.level === "Verified Pro"
+                      talent.badgeLevel === "Verified Pro"
                         ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
-                        : talent.level === "Top Rated"
+                        : talent.badgeLevel === "Top Rated"
                         ? "bg-amber-500/10 text-amber-600 border border-amber-500/20"
                         : "bg-blue-500/10 text-blue-600 border border-blue-500/20"
                     }`}
                   >
-                    {talent.level}
+                    {talent.badgeLevel}
                   </span>
                 </div>
 
@@ -346,12 +366,30 @@ export default function ClientTalentPage() {
                         <h3 className="text-base font-bold font-sans text-foreground">{selectedTalent.name}</h3>
                         <ShieldCheck className="h-4 w-4 text-primary" />
                       </div>
-                      <p className="text-xs text-muted-foreground">{selectedTalent.role}</p>
+                      <p className="text-xs text-muted-foreground">{selectedTalent.title}</p>
                       <span className="text-xs font-bold text-primary">{selectedTalent.hourlyRate}</span>
                     </div>
                   </div>
 
                   <form onSubmit={handleSendInvite} className="space-y-4 pt-2">
+                    {clientProjects.length > 0 && (
+                      <div>
+                        <label className="block text-xs font-semibold mb-1.5 text-foreground">
+                          Pilih Proyek Anda
+                        </label>
+                        <select
+                          value={selectedProjectId}
+                          onChange={(e) => setSelectedProjectId(e.target.value)}
+                          className="w-full rounded-2xl border border-input bg-background p-2.5 text-xs text-foreground focus:border-primary focus:outline-none"
+                        >
+                          {clientProjects.map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.title} ({p.budget})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                     <div>
                       <label className="block text-xs font-semibold mb-1.5 text-foreground">
                         {t("talent.customMessage", "Pesan Tambahan / Catatan Singkat")}
@@ -375,9 +413,10 @@ export default function ClientTalentPage() {
                       </button>
                       <button
                         type="submit"
-                        className="flex-1 rounded-xl bg-primary py-2.5 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary/90 transition-all"
+                        disabled={isSubmittingInvite}
+                        className="flex-1 rounded-xl bg-primary py-2.5 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary/90 transition-all disabled:opacity-50"
                       >
-                        {t("talent.sendInvite", "Kirim Undangan Proyek")}
+                        {isSubmittingInvite ? "Mengirim..." : t("talent.sendInvite", "Kirim Undangan Proyek")}
                       </button>
                     </div>
                   </form>

@@ -64,9 +64,15 @@ export function StepWelcome({ data, onFinish }: StepWelcomeProps) {
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground font-medium">Tarif Dasar Proyek:</span>
-                <span className="font-extrabold text-primary">
-                  Rp {(data.startingPrice || 500000).toLocaleString("id-ID")}
+                <span className="text-muted-foreground font-medium">Kapasitas Kerja:</span>
+                <span className="font-bold text-primary text-xs sm:text-sm">
+                  {data.weeklyAvailability === "part_time"
+                    ? "< 15 Jam / Mgg (Side Hustle)"
+                    : data.weeklyAvailability === "full_time"
+                    ? "> 30 Jam / Mgg (Full-Time)"
+                    : data.weeklyAvailability === "flexible"
+                    ? "Fleksibel (Malam & Weekend)"
+                    : "15 – 30 Jam / Mgg (Part-Time)"}
                 </span>
               </div>
             </>

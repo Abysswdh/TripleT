@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
-import { Loader2 } from "lucide-react";
+import { Loader2, Sparkles } from "lucide-react";
 import logoWithText from "@/assets/logo_with_text.svg";
 import logoWithoutText from "@/assets/logo_wo_text.svg";
 import { useAuth } from "@/hooks/use-auth";
@@ -41,8 +41,8 @@ const STEP_INFO: Record<number, { title: string; desc: string }> = {
     desc: "Pilih keahlian utama atau kategori proyek yang relevan.",
   },
   5: {
-    title: "Tarif & Bio",
-    desc: "Tentukan estimasi tarif atau anggaran serta tulis bio perkenalan singkat.",
+    title: "Kapasitas & Bio",
+    desc: "Tentukan ketersediaan waktu mingguan atau anggaran dan tulis bio perkenalan.",
   },
   6: {
     title: "Selamat Datang!",
@@ -122,23 +122,22 @@ export default function OnboardingPage() {
   const currentInfo = STEP_INFO[step] || STEP_INFO[1];
 
   return (
-    <div className="w-full max-w-[1040px] mx-auto min-h-screen sm:min-h-0 py-2 sm:py-6">
+    <div className="w-full max-w-[1040px] mx-auto h-full max-h-[100dvh] sm:max-h-[640px] flex flex-col justify-center overflow-hidden py-0 sm:py-2">
       {/* Dev Mode Fast Step-Switcher Toolbar (Only shown when not logged in with an actual user) */}
       {isDev && !user && (
-        <div className="mb-3 mx-2 sm:mx-0 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs text-amber-900 dark:text-amber-200 animate-in fade-in duration-200">
+        <div className="mb-2 mx-2 sm:mx-0 flex flex-wrap items-center justify-between gap-1.5 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs text-amber-900 dark:text-amber-200 animate-in fade-in duration-200 shrink-0">
           <div className="flex items-center gap-2 font-semibold">
             <span className="flex h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
-            <span>Dev Preview Toolbar (Unauthenticated)</span>
+            <span className="text-[11px]">Dev Preview</span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-[11px] text-muted-foreground mr-1">Lompat ke Step:</span>
+          <div className="flex flex-wrap items-center gap-1">
             {[1, 2, 3, 4, 5, 6].map((num) => (
               <button
                 key={num}
                 type="button"
                 onClick={() => setStep(num)}
-                className={`h-6 px-2 rounded-lg text-xs font-bold transition-all ${
+                className={`h-5 px-1.5 rounded-md text-[11px] font-bold transition-all ${
                   step === num
                     ? "bg-amber-600 text-white shadow-xs"
                     : "bg-white/80 dark:bg-card border border-border/80 text-foreground hover:bg-amber-500/20"
@@ -155,7 +154,7 @@ export default function OnboardingPage() {
                   role: data.role === "freelancer" ? "customer" : "freelancer",
                 })
               }
-              className="ml-1 h-6 px-2.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-600 transition-all shadow-xs"
+              className="ml-1 h-5 px-2 rounded-md bg-primary text-white text-[11px] font-bold hover:bg-primary-600 transition-all shadow-xs"
             >
               Role: {data.role === "freelancer" ? "Freelancer" : "Client"}
             </button>
@@ -164,9 +163,9 @@ export default function OnboardingPage() {
       )}
 
       {/* Split-Card: Clean unscrollable container */}
-      <div className="overflow-hidden min-h-screen sm:min-h-0 sm:rounded-3xl border-0 sm:border border-slate-200/90 bg-white shadow-2xl shadow-slate-300/40 flex flex-col lg:flex-row h-auto lg:h-[620px]">
+      <div className="overflow-hidden h-full max-h-[100dvh] sm:max-h-[580px] sm:h-[580px] rounded-none sm:rounded-3xl border-0 sm:border border-slate-200/90 bg-white shadow-2xl shadow-slate-300/40 flex flex-col lg:flex-row">
         {/* Left Side: React Bits Silk Canvas Banner */}
-        <div className="relative w-full lg:w-[390px] lg:min-w-[390px] h-[150px] sm:h-[190px] lg:h-full overflow-hidden bg-[#0C0838] flex flex-col justify-between p-6 sm:p-8 lg:p-9 text-white select-none shrink-0">
+        <div className="relative w-full lg:w-[360px] lg:min-w-[360px] h-[130px] sm:h-[150px] lg:h-full overflow-hidden bg-[#0C0838] flex flex-col justify-between p-5 sm:p-6 lg:p-7 text-white select-none shrink-0">
           {/* Animated WebGL Silk Background */}
           <div className="absolute inset-0 z-0">
             <Silk
@@ -183,44 +182,49 @@ export default function OnboardingPage() {
           <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
 
           {/* Top Clean Branding */}
-          <div className="relative z-20 flex items-center">
+          <div className="relative z-20 flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
               <Image
                 src={logoWithoutText}
                 alt="Doable! Logo"
-                height={28}
-                width={28}
-                className="h-7 w-7 object-contain brightness-0 invert"
+                height={26}
+                width={26}
+                className="h-6.5 w-6.5 object-contain brightness-0 invert"
               />
-              <span className="text-xl font-heading font-extrabold tracking-tight text-white">
-                Doable<span className="text-blue-300">!</span>
+              <span className="text-lg font-heading font-extrabold tracking-tight text-white">
+                Doable!
               </span>
             </Link>
+
+            <span className="rounded-full bg-white/10 backdrop-blur-md px-3 py-1 text-xs font-bold text-white/90 border border-white/15 flex items-center gap-1.5 shadow-xs select-none">
+              <Sparkles className="h-3.5 w-3.5 text-blue-300" />
+              <span>Onboarding</span>
+            </span>
           </div>
 
           {/* Dynamic Step Title (Updates seamlessly with each step) */}
           <div className="relative z-20 my-auto py-1">
-            <h1 className="text-2xl sm:text-3xl font-heading font-extrabold tracking-tight text-white drop-shadow-md">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-heading font-extrabold tracking-tight text-white drop-shadow-md">
               {currentInfo.title}
             </h1>
-            <p className="mt-2 text-xs sm:text-sm text-white/80 leading-relaxed font-light hidden sm:block">
+            <p className="mt-1.5 text-xs sm:text-sm text-white/80 leading-relaxed font-light hidden sm:block">
               {currentInfo.desc}
             </p>
           </div>
 
           {/* Sole Bottom Step Progress Indicator */}
-          <div className="relative z-20 flex items-center justify-between text-xs text-white/85 pt-3 border-t border-white/15">
-            <span className="font-medium">Langkah {step} dari 6</span>
-            <div className="flex items-center gap-1.5">
+          <div className="relative z-20 flex items-center justify-between text-xs text-white/85 pt-2.5 border-t border-white/15">
+            <span className="font-medium text-[11px]">Langkah {step} dari 6</span>
+            <div className="flex items-center gap-1">
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <div
                   key={i}
-                  className={`h-2 rounded-full transition-all duration-500 ease-out ${
+                  className={`h-1.5 rounded-full transition-all duration-500 ease-out ${
                     i === step
-                      ? "w-7 bg-white shadow-sm shadow-white/50"
+                      ? "w-6 bg-white shadow-sm shadow-white/50"
                       : i < step
-                        ? "w-2.5 bg-blue-300"
-                        : "w-2 bg-white/25"
+                        ? "w-2 bg-blue-300"
+                        : "w-1.5 bg-white/25"
                   }`}
                 />
               ))}
@@ -229,7 +233,7 @@ export default function OnboardingPage() {
         </div>
 
         {/* Right Side: Clean Unscrollable Interactive Step Wizard Content */}
-        <div className="relative flex-1 bg-white p-6 sm:p-8 lg:p-10 h-full flex flex-col justify-between overflow-hidden">
+        <div className="relative flex-1 bg-white p-5 sm:p-6 lg:p-8 h-full flex flex-col justify-between overflow-hidden">
           {/* Animated Step Container */}
           <div
             key={step}

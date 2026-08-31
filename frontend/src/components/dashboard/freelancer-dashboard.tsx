@@ -27,6 +27,7 @@ import { useEffect } from "react";
 import Grainient from "@/components/ui/Grainient";
 import { getOpenProjects } from "@/lib/services/projects";
 import { submitProposal } from "@/lib/services/proposals";
+import { getFreelancerContracts, submitMilestoneDeliverable } from "@/lib/services/contracts";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
 
 interface QuestOpportunity {
@@ -182,6 +183,33 @@ export function FreelancerDashboard() {
             return [...mapped, ...remainingMock];
           });
         }
+        // 2. Load live contracts for timeline
+        const liveContracts = await getFreelancerContracts();
+        if (liveContracts && liveContracts.length > 0) {
+          const mappedTimeline: TimelineActionItem[] = liveContracts.flatMap((c) =>
+            c.milestones.map((m, idx) => ({
+              id: m.id,
+              projectTitle: c.projectTitle,
+              clientName: c.clientName,
+              milestoneTitle: m.title,
+              milestoneNumber: idx + 1,
+              totalMilestones: c.milestones.length || 3,
+              amount: m.amount || Math.round(c.totalAmount / (c.milestones.length || 1)),
+              currency: "IDR" as const,
+              dueDate: m.dueDate || "3 hari lagi",
+              urgency: (m.status === "submitted" ? "review" : "normal") as "review" | "normal" | "urgent",
+              progress: m.status === "completed" ? 100 : m.status === "submitted" ? 100 : c.progress || 35,
+              tasksChecklist: [
+                { id: `${m.id}-1`, title: "Setup arsitektur dan komponen", done: m.status === "completed" || m.status === "submitted" },
+                { id: `${m.id}-2`, title: "Integrasi API & logic", done: m.status === "completed" || m.status === "submitted" },
+                { id: `${m.id}-3`, title: "Testing dan penyerahan", done: m.status === "completed" }
+              ],
+            }))
+          );
+          if (mappedTimeline.length > 0) {
+            setTimelineItems(mappedTimeline);
+          }
+        }
       } catch (err) {
         console.error("Error loading quests from Supabase:", err);
       }
@@ -208,43 +236,51 @@ export function FreelancerDashboard() {
     setSubmitModalOpen(true);
   };
 
-  const handleConfirmSubmit = (e: React.FormEvent) => {
+  const handleConfirmSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeItemToSubmit) return;
 
     setIsSubmitting(true);
+    try {
+      await submitMilestoneDeliverable({
+        contractMilestoneId: activeItemToSubmit.id,
+        deliverableNote,
+        fileUrl: deliverableUrl,
+      });
+    } catch (err) {
+      console.error("Error submitting milestone deliverable:", err);
+    }
+
+    // Update item in timeline to "review"
+    setTimelineItems((prev) =>
+      prev.map((item) =>
+        item.id === activeItemToSubmit.id
+          ? {
+            ...item,
+            urgency: "review",
+            dueDate: "Menunggu Review Klien",
+            submittedAt: "Baru saja",
+            progress: 100,
+            tasksChecklist: item.tasksChecklist.map((t) => ({ ...t, done: true })),
+          }
+          : item
+      )
+    );
+
+    // Complete corresponding mission
+    setDailyMissions((prev) =>
+      prev.map((m) => (m.actionTarget === activeItemToSubmit.id ? { ...m, completed: true } : m))
+    );
+
+    // Add XP reward
+    setCurrentXP((prev: number) => prev + 150);
+
+    setIsSubmitting(false);
+    setSubmissionSuccess(true);
+
     setTimeout(() => {
-      // Update item in timeline to "review"
-      setTimelineItems((prev) =>
-        prev.map((item) =>
-          item.id === activeItemToSubmit.id
-            ? {
-              ...item,
-              urgency: "review",
-              dueDate: "Menunggu Review Klien",
-              submittedAt: "Baru saja",
-              progress: 100,
-              tasksChecklist: item.tasksChecklist.map((t) => ({ ...t, done: true })),
-            }
-            : item
-        )
-      );
-
-      // Complete corresponding mission
-      setDailyMissions((prev) =>
-        prev.map((m) => (m.actionTarget === activeItemToSubmit.id ? { ...m, completed: true } : m))
-      );
-
-      // Add XP reward
-      setCurrentXP((prev: number) => prev + 150);
-
-      setIsSubmitting(false);
-      setSubmissionSuccess(true);
-
-      setTimeout(() => {
-        setSubmitModalOpen(false);
-      }, 1600);
-    }, 1000);
+      setSubmitModalOpen(false);
+    }, 1600);
   };
 
   const toggleTaskCheck = (itemId: string, taskId: string) => {
@@ -489,7 +525,7 @@ export function FreelancerDashboard() {
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
                         <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                           <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-                          <span>Escrow Terkunci di Rekening Bersama</span>
+                          <span>Terkunci Aman di Rekber</span>
                         </div>
 
                         <Link
@@ -901,7 +937,7 @@ export function FreelancerDashboard() {
                 </div>
                 <h4 className="text-base font-bold text-foreground">Hasil Karya Berhasil Diserahkan!</h4>
                 <p className="text-xs text-muted-foreground">
-                  Klien ({activeItemToSubmit.clientName}) telah menerima notifikasi untuk memeriksa dan melepaskan dana escrow sebesar <strong>{formatMoney(activeItemToSubmit.amount, activeItemToSubmit.currency)}</strong>.
+                  Klien ({activeItemToSubmit.clientName}) telah menerima notifikasi untuk memeriksa dan melepaskan dana rekber sebesar <strong>{formatMoney(activeItemToSubmit.amount, activeItemToSubmit.currency)}</strong>.
                 </p>
                 <div className="inline-flex items-center gap-1 text-xs font-bold text-amber-600 bg-amber-500/10 px-3 py-1 rounded-full">
                   <Zap className="h-3.5 w-3.5" />

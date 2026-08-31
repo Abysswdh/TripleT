@@ -206,7 +206,7 @@ export function StepSkills({
       </div>
 
       {/* Navigation Footer */}
-      <div className="flex items-center justify-between pt-4 border-t border-border/40">
+      <div className="flex items-center justify-end gap-3 pt-4 border-t border-border/40">
         <button
           type="button"
           onClick={onPrev}

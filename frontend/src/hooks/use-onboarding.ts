@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 export type RoleType = "freelancer" | "customer";
 export type ExperienceLevel = "starter" | "intermediate" | "expert";
 export type FreelancerBackground = "mahasiswa" | "fresh_grad" | "switch_career" | "professional";
+export type WeeklyAvailability = "part_time" | "semi_full" | "full_time" | "flexible";
 export type ClientHiringType = "umkm" | "startup" | "agency" | "individual";
 export type ClientBudgetPref = "umkm" | "standard" | "enterprise";
 
@@ -19,6 +20,7 @@ export interface OnboardingData {
   experienceLevel: ExperienceLevel;
   skills: string[];
   headline: string;
+  weeklyAvailability: WeeklyAvailability;
   startingPrice: number; // Tarif mulai per proyek (bukan per jam)
   // Client specific
   hiringType: ClientHiringType;
@@ -42,6 +44,7 @@ const initialData: OnboardingData = {
   experienceLevel: "starter",
   skills: ["Figma", "UI/UX Design"],
   headline: "",
+  weeklyAvailability: "semi_full",
   startingPrice: 500000,
   hiringType: "umkm",
   businessName: "",
@@ -170,20 +173,31 @@ export function useOnboarding() {
         const headlineText = data.headline || `${data.skills[0] || "Digital & Tech"} Specialist`;
         const eduText = data.backgroundType === "mahasiswa" ? "Mahasiswa / Pelajar Aktif" : data.backgroundType === "fresh_grad" ? "Fresh Graduate" : data.backgroundType === "switch_career" ? "Career Switcher" : "Profesional";
 
+        const availLabel =
+          data.weeklyAvailability === "full_time"
+            ? "> 30 Jam / Minggu (Full-Time)"
+            : data.weeklyAvailability === "part_time"
+            ? "< 15 Jam / Minggu (Side Hustle)"
+            : data.weeklyAvailability === "flexible"
+            ? "Fleksibel (Malam & Weekend)"
+            : "15 – 30 Jam / Minggu (Part-Time)";
+
         await supabase.from("freelancer_profiles").upsert(
           {
             user_id: user.id,
             headline: headlineText,
             bio: data.bio || `Halo! Saya ${displayName}, ${headlineText}. Siap berkolaborasi dalam proyek.`,
             skills: data.skills.length > 0 ? data.skills : ["UI/UX Design", "Figma"],
-            hourly_rate: data.startingPrice,
-            starting_price: `Mulai Rp ${(data.startingPrice || 500000).toLocaleString("id-ID")}`,
+            hourly_rate: data.weeklyAvailability === "full_time" ? 250000 : data.weeklyAvailability === "semi_full" ? 200000 : 150000,
+            starting_price: availLabel,
+            availability: data.weeklyAvailability,
+            experience_level: data.experienceLevel,
             category: data.projectCategories[0] || "Web Development",
-            years_experience: data.experienceLevel === "starter" ? 0 : data.experienceLevel === "expert" ? 4 : 2,
-            education: eduText,
-            completed_projects_count: 0,
-            average_rating: 5.0,
-            total_reviews_count: 0,
+            badge_level: "Verified Pro",
+            organization: eduText,
+            completed_projects: 0,
+            rating: 5.0,
+            reviews_count: 0,
           },
           { onConflict: "user_id" }
         );
@@ -193,10 +207,9 @@ export function useOnboarding() {
             user_id: user.id,
             company_name: data.businessName || "Bisnis UMKM / Startup",
             company_size: data.hiringType === "umkm" ? "1-10 Karyawan (UMKM)" : data.hiringType === "startup" ? "11-50 Karyawan (Startup)" : "Personal / Proyek Sendiri",
+            client_type: data.hiringType,
             industry: data.projectCategories[0] || "Teknologi & Kreatif",
-            hiring_needs: data.projectCategories,
-            budget_range: data.budgetPreference === "umkm" ? "< Rp 2.000.000 (Ramah UMKM)" : data.budgetPreference === "enterprise" ? "> Rp 10.000.000 (Enterprise)" : "Rp 2.000.000 - Rp 10.000.000 (Standar)",
-            verified_badge: false,
+            is_verified: false,
           },
           { onConflict: "user_id" }
         );
@@ -210,6 +223,8 @@ export function useOnboarding() {
           username: cleanUsername || undefined,
           onboarding_completed: true,
           experience_level: data.experienceLevel,
+          weekly_availability: data.weeklyAvailability,
+          availability: data.weeklyAvailability,
           willing_to_verify_ktp: data.willingToVerifyKtp,
         },
       });

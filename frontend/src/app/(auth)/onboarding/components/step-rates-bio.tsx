@@ -1,6 +1,6 @@
 "use client";
 
-import { ClientBudgetPref, OnboardingData } from "@/hooks/use-onboarding";
+import { ClientBudgetPref, OnboardingData, WeeklyAvailability } from "@/hooks/use-onboarding";
 import { ArrowLeft, Loader2, ShieldCheck, Sparkles } from "lucide-react";
 
 interface StepRatesBioProps {
@@ -12,12 +12,32 @@ interface StepRatesBioProps {
   error: string | null;
 }
 
-const STARTING_PRICE_OPTIONS = [
-  { value: 250000, label: "Rp 250.000", desc: "Starter / Tugas Ringan" },
-  { value: 500000, label: "Rp 500.000", desc: "Standar Desain / Fitur" },
-  { value: 1000000, label: "Rp 1.000.000", desc: "Modul Menengah" },
-  { value: 2500000, label: "Rp 2.500.000", desc: "Proyek Komprehensif" },
-];
+const AVAILABILITY_OPTIONS = [
+  {
+    id: "part_time",
+    label: "Side Hustle / Santai",
+    hours: "< 15 Jam / Minggu",
+    desc: "Mengerjakan proyek fleksibel & akhir pekan",
+  },
+  {
+    id: "semi_full",
+    label: "Part-Time Aktif",
+    hours: "15 – 30 Jam / Minggu",
+    desc: "Siap kolaborasi proyek rutin & berkala",
+  },
+  {
+    id: "full_time",
+    label: "Full-Time Freelancer",
+    hours: "> 30 Jam / Minggu",
+    desc: "Dedikasi penuh waktu & respons cepat",
+  },
+  {
+    id: "flexible",
+    label: "Fleksibel / Malam",
+    hours: "Sesuai Kebutuhan",
+    desc: "Tersedia di luar jam kantor utama",
+  },
+] as const;
 
 export function StepRatesBio({
   data,
@@ -41,44 +61,28 @@ export function StepRatesBio({
 
         {isFreelancer ? (
           <>
-            {/* Starting Price Options */}
+            {/* Weekly Availability Options */}
             <div>
               <label className="mb-2 block text-xs sm:text-sm font-bold text-foreground">
-                Estimasi Tarif Minimum Mulai (Per Proyek)
+                Ketersediaan Waktu & Kapasitas Mingguan
               </label>
-              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 mb-2.5">
-                {STARTING_PRICE_OPTIONS.map((opt) => (
+              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                {AVAILABILITY_OPTIONS.map((opt) => (
                   <button
-                    key={opt.value}
+                    key={opt.id}
                     type="button"
-                    onClick={() => onUpdate({ startingPrice: opt.value })}
+                    onClick={() => onUpdate({ weeklyAvailability: opt.id as WeeklyAvailability })}
                     className={`rounded-2xl border p-3 text-left transition-all ${
-                      data.startingPrice === opt.value
+                      data.weeklyAvailability === opt.id
                         ? "border-primary bg-primary/5 ring-2 ring-primary shadow-xs"
                         : "border-border/70 bg-card hover:border-border hover:bg-muted/40"
                     }`}
                   >
                     <p className="text-xs sm:text-sm font-bold text-foreground">{opt.label}</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">{opt.desc}</p>
+                    <p className="text-xs font-bold text-primary mt-0.5">{opt.hours}</p>
+                    <p className="text-[10px] text-muted-foreground mt-1 leading-tight">{opt.desc}</p>
                   </button>
                 ))}
-              </div>
-
-              {/* Custom Input */}
-              <div className="relative max-w-[280px]">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold text-xs">
-                  Rp
-                </span>
-                <input
-                  id="startingPriceCustom"
-                  type="number"
-                  step={50000}
-                  min={100000}
-                  max={50000000}
-                  value={data.startingPrice ?? 500000}
-                  onChange={(e) => onUpdate({ startingPrice: Number(e.target.value) })}
-                  className="h-11 w-full rounded-2xl border border-border bg-card pl-11 pr-4 text-sm font-bold focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-xs"
-                />
               </div>
             </div>
 
@@ -167,7 +171,7 @@ export function StepRatesBio({
       </div>
 
       {/* Navigation Footer */}
-      <div className="flex items-center justify-between pt-4 border-t border-border/40">
+      <div className="flex items-center justify-end gap-3 pt-4 border-t border-border/40">
         <button
           type="button"
           onClick={onPrev}

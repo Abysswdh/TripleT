@@ -1,105 +1,161 @@
 import { createClient } from "@/lib/supabase/client";
 
+export interface TalentFilterOptions {
+  searchQuery?: string;
+  category?: string;
+  level?: string;
+  rateTier?: string;
+  sortBy?: "rating" | "reviews" | "rate_asc" | "rate_desc" | "name";
+}
+
 export interface TalentRecord {
   id: string;
   userId: string;
   name: string;
+  title: string;
   avatar: string;
-  coverImage?: string;
-  role: string;
-  headline: string;
-  organization?: string;
-  location?: string;
-  level: "Verified Pro" | "Top Rated" | "Rising Star" | "Level 2 Seller";
-  category: string;
   rating: number;
   reviewsCount: number;
-  completedProjects?: number;
-  startingPrice: string;
   hourlyRate: string;
-  hourlyRateNumeric?: number;
+  hourlyRateNumeric: number;
+  location: string;
+  verified: boolean;
+  badgeLevel: string;
   skills: string[];
-  verifiedSkills?: string[];
-  isVerified: boolean;
-  aboutMe?: string[];
+  bio: string;
+  responseTime: string;
+  completedProjects: number;
+  totalEarnings: number;
+  category: string;
   githubUrl?: string;
   linkedinUrl?: string;
   portfolioUrl?: string;
 }
 
 /**
- * Fetch all freelancer profiles joined with users
+ * Fetch all freelancers from Supabase freelancer_profiles joined with users
  */
-export async function getTalents(): Promise<TalentRecord[]> {
+export async function getTalents(filters?: TalentFilterOptions): Promise<TalentRecord[]> {
   const supabase = createClient();
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("freelancer_profiles")
     .select(`
       *,
-      user:users!user_id(id, full_name, avatar_url, location, is_verified, bio)
-    `)
-    .order("rating", { ascending: false });
+      user:users!user_id(id, full_name, avatar_url, location, is_verified, bio, email)
+    `);
+
+  if (filters?.level && filters.level !== "All") {
+    query = query.eq("badge_level", filters.level);
+  }
+
+  if (filters?.category && filters.category !== "All" && filters.category !== "Semua") {
+    query = query.eq("category", filters.category);
+  }
+
+  const { data, error } = await query;
 
   if (error || !data) {
     console.error("Error fetching talents from Supabase:", error);
     return [];
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return data.map((t: any) => formatTalentRecord(t));
+  let results: TalentRecord[] = data.map((item) => {
+    const user = item.user || {};
+    const rateNum = Number(item.hourly_rate) || 35;
+    return {
+      id: user.id || item.id,
+      userId: user.id || item.user_id,
+      name: user.full_name || "Specialist Talent",
+      title: item.headline || "Digital Specialist",
+      avatar: user.avatar_url || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
+      rating: Number(item.rating) || 5.0,
+      reviewsCount: item.reviews_count || 0,
+      hourlyRate: item.starting_price || `$${rateNum}/hr`,
+      hourlyRateNumeric: rateNum,
+      location: user.location || "Indonesia",
+      verified: user.is_verified ?? true,
+      badgeLevel: item.badge_level || "Verified Pro",
+      skills: item.skills || [],
+      bio: user.bio || item.headline || "",
+      responseTime: item.response_time || "< 1 jam",
+      completedProjects: item.completed_projects || 0,
+      totalEarnings: item.total_earnings || 0,
+      category: item.category || "Full-Stack Web & Next.js",
+      githubUrl: item.github_url,
+      linkedinUrl: item.linkedin_url,
+      portfolioUrl: item.portfolio_url,
+    };
+  });
+
+  // Apply in-memory filters for flexible search & rate tiers
+  if (filters?.searchQuery && filters.searchQuery.trim()) {
+    const q = filters.searchQuery.toLowerCase().trim();
+    results = results.filter(
+      (t) =>
+        t.name.toLowerCase().includes(q) ||
+        t.title.toLowerCase().includes(q) ||
+        t.bio.toLowerCase().includes(q) ||
+        t.skills.some((s) => s.toLowerCase().includes(q))
+    );
+  }
+
+  if (filters?.rateTier && filters.rateTier !== "all") {
+    if (filters.rateTier === "tier-1") {
+      // Under $25 / 150k
+      results = results.filter((t) => t.hourlyRateNumeric < 25);
+    } else if (filters.rateTier === "tier-2") {
+      // $25 - $40 / 150k - 300k
+      results = results.filter((t) => t.hourlyRateNumeric >= 25 && t.hourlyRateNumeric <= 40);
+    } else if (filters.rateTier === "tier-3") {
+      // Above $40 / > 300k
+      results = results.filter((t) => t.hourlyRateNumeric > 40);
+    }
+  }
+
+  // Sorting
+  if (filters?.sortBy) {
+    if (filters.sortBy === "rating") {
+      results.sort((a, b) => b.rating - a.rating);
+    } else if (filters.sortBy === "reviews") {
+      results.sort((a, b) => b.reviewsCount - a.reviewsCount);
+    } else if (filters.sortBy === "rate_asc") {
+      results.sort((a, b) => a.hourlyRateNumeric - b.hourlyRateNumeric);
+    } else if (filters.sortBy === "rate_desc") {
+      results.sort((a, b) => b.hourlyRateNumeric - a.hourlyRateNumeric);
+    } else if (filters.sortBy === "name") {
+      results.sort((a, b) => a.name.localeCompare(b.name));
+    }
+  }
+
+  return results;
 }
 
 /**
- * Fetch a single freelancer talent profile by user ID
+ * Send a project invitation from a client to a freelancer
  */
-export async function getTalentById(userId: string): Promise<TalentRecord | null> {
+export async function inviteTalentToProject(params: {
+  projectId: string;
+  freelancerId: string;
+  message?: string;
+}): Promise<{ success: boolean; error?: string }> {
   const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  const { data, error } = await supabase
-    .from("freelancer_profiles")
-    .select(`
-      *,
-      user:users!user_id(id, full_name, avatar_url, location, is_verified, bio)
-    `)
-    .or(`user_id.eq.${userId},id.eq.${userId}`)
-    .maybeSingle();
+  const clientId = user?.id || "ca000000-0000-0000-0000-000000000001";
 
-  if (error || !data) {
-    console.error("Error fetching talent by ID:", error);
-    return null;
+  const { error } = await supabase.from("talent_invitations").insert({
+    project_id: params.projectId,
+    client_id: clientId,
+    freelancer_id: params.freelancerId,
+    message: params.message || "Hi! I would like to invite you to propose for our project.",
+    status: "pending",
+  });
+
+  if (error) {
+    console.error("Error sending talent invitation:", error);
+    return { success: false, error: error.message };
   }
 
-  return formatTalentRecord(data);
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function formatTalentRecord(t: any): TalentRecord {
-  const user = t.user || {};
-  return {
-    id: t.id,
-    userId: t.user_id,
-    name: user.full_name || "Talenta Doable!",
-    avatar: user.avatar_url || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
-    coverImage: t.cover_image || "https://images.unsplash.com/photo-1557683316-973673baf926?w=600&auto=format&fit=crop&q=80",
-    role: t.headline?.split("|")[0]?.trim() || t.category || "Fullstack Engineer",
-    headline: t.headline || user.bio || "Digital Talent di Ekosistem Doable!",
-    organization: t.organization || "Indonesia Digital Talent",
-    location: user.location || "Indonesia",
-    level: (t.badge_level as "Verified Pro" | "Top Rated" | "Rising Star") || "Verified Pro",
-    category: t.category || "Web Development",
-    rating: Number(t.rating) || 5.0,
-    reviewsCount: t.reviews_count || 0,
-    completedProjects: t.completed_projects || 0,
-    startingPrice: t.starting_price || (t.hourly_rate ? `Rp ${(t.hourly_rate * 20).toLocaleString("id-ID")}` : "Rp 2.500.000"),
-    hourlyRate: t.hourly_rate ? `Rp ${t.hourly_rate.toLocaleString("id-ID")} / jam` : "Rp 150.000 / jam",
-    hourlyRateNumeric: t.hourly_rate || 150000,
-    skills: t.skills || [],
-    verifiedSkills: t.verified_skills || [],
-    isVerified: Boolean(user.is_verified),
-    aboutMe: t.about_me || [],
-    githubUrl: t.github_url,
-    linkedinUrl: t.linkedin_url,
-    portfolioUrl: t.portfolio_url,
-  };
+  return { success: true };
 }

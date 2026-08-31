@@ -8,6 +8,7 @@ import { useDashboardRole, DashboardRole } from "@/context/role-context";
 import { useTranslation, type Locale } from "@/context/language-context";
 import { useCurrency, type Currency } from "@/context/currency-context";
 import { createClient } from "@/lib/supabase/client";
+import { uploadProfileMedia } from "@/lib/services/storage";
 import { api } from "@/lib/api";
 import {
   User,
@@ -117,15 +118,22 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
-  const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAvatarUrl(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    if (file && user?.id) {
+      setIsUploadingAvatar(true);
+      const res = await uploadProfileMedia(file, user.id, "avatar");
+      setIsUploadingAvatar(false);
+      if (res.publicUrl) {
+        setAvatarUrl(res.publicUrl);
+        setSaveSuccess(true);
+        setSaveMessage("Foto profil berhasil diperbarui!");
+        setTimeout(() => setSaveSuccess(false), 3000);
+      } else if (res.error) {
+        setErrorMessage(res.error);
+      }
     }
   };
 
