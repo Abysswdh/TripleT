@@ -9,8 +9,10 @@ import logoWithoutText from "@/assets/logo_wo_text.svg";
 import { useAuth } from "@/hooks/use-auth";
 import { useOnboarding } from "@/hooks/use-onboarding";
 import { StepRole } from "./components/step-role";
-import { StepDetails } from "./components/step-details";
-import { StepProfile } from "./components/step-profile";
+import { StepIdentity } from "./components/step-identity";
+import { StepBackground } from "./components/step-background";
+import { StepSkills } from "./components/step-skills";
+import { StepRatesBio } from "./components/step-rates-bio";
 import { StepWelcome } from "./components/step-welcome";
 
 // Dynamically import Silk with SSR disabled so WebGL canvas initializes cleanly on client
@@ -27,16 +29,24 @@ const STEP_INFO: Record<number, { title: string; desc: string }> = {
     desc: "Tentukan peran utamamu untuk mempersonalisasi pengalaman di Doable!.",
   },
   2: {
-    title: "Detail & Skill",
-    desc: "Pilih keahlian atau jenis proyek yang ingin kamu kerjakan atau buat.",
+    title: "Identitas Diri",
+    desc: "Tuliskan nama lengkap dan tentukan domisili wilayah akunmu.",
   },
   3: {
-    title: "Lengkapi Profil",
-    desc: "Pilih avatar badge dan tulis bio singkat agar akunmu menonjol.",
+    title: "Latar Belakang",
+    desc: "Tentukan tingkat pengalaman dan status profesional atau bisnis usahamu.",
   },
   4: {
+    title: "Keahlian & Kategori",
+    desc: "Pilih keahlian utama atau kategori proyek yang relevan.",
+  },
+  5: {
+    title: "Tarif & Bio",
+    desc: "Tentukan estimasi tarif atau anggaran serta tulis bio perkenalan singkat.",
+  },
+  6: {
     title: "Selamat Datang!",
-    desc: "Profilmu telah siap! Mulai jelajahi quest dan proyek sekarang.",
+    desc: "Profilmu telah selesai! Mulai jelajahi fitur dan peluang sekarang.",
   },
 };
 
@@ -44,6 +54,7 @@ export default function OnboardingPage() {
   const { user, loading: authLoading } = useAuth();
   const {
     step,
+    setStep,
     nextStep,
     prevStep,
     data,
@@ -56,6 +67,8 @@ export default function OnboardingPage() {
     error,
   } = useOnboarding();
 
+  const isDev = process.env.NODE_ENV === "development";
+
   if (authLoading) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
@@ -64,8 +77,8 @@ export default function OnboardingPage() {
     );
   }
 
-  // If visitor is not authenticated yet, guide them to login/register
-  if (!user && step !== 4) {
+  // If visitor is not authenticated yet, guide them to login/register (bypassed in dev mode for UI design)
+  if (!user && step !== 6 && !isDev) {
     return (
       <div className="animate-fade-in text-center max-w-md mx-auto p-4">
         <div className="mb-6">
@@ -109,9 +122,49 @@ export default function OnboardingPage() {
   const currentInfo = STEP_INFO[step] || STEP_INFO[1];
 
   return (
-    <div className="w-full max-w-[1040px] mx-auto min-h-screen sm:min-h-0">
-      {/* Split-Card: Fullscreen on mobile, centered fixed larger modal on desktop */}
-      <div className="overflow-hidden min-h-screen sm:min-h-0 sm:rounded-3xl border-0 sm:border border-slate-200/90 bg-white shadow-2xl shadow-slate-300/40 flex flex-col lg:flex-row h-auto lg:h-[660px]">
+    <div className="w-full max-w-[1040px] mx-auto min-h-screen sm:min-h-0 py-2 sm:py-6">
+      {/* Dev Mode Fast Step-Switcher Toolbar (Only shown when not logged in with an actual user) */}
+      {isDev && !user && (
+        <div className="mb-3 mx-2 sm:mx-0 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs text-amber-900 dark:text-amber-200 animate-in fade-in duration-200">
+          <div className="flex items-center gap-2 font-semibold">
+            <span className="flex h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+            <span>Dev Preview Toolbar (Unauthenticated)</span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[11px] text-muted-foreground mr-1">Lompat ke Step:</span>
+            {[1, 2, 3, 4, 5, 6].map((num) => (
+              <button
+                key={num}
+                type="button"
+                onClick={() => setStep(num)}
+                className={`h-6 px-2 rounded-lg text-xs font-bold transition-all ${
+                  step === num
+                    ? "bg-amber-600 text-white shadow-xs"
+                    : "bg-white/80 dark:bg-card border border-border/80 text-foreground hover:bg-amber-500/20"
+                }`}
+              >
+                Step {num}
+              </button>
+            ))}
+
+            <button
+              type="button"
+              onClick={() =>
+                updateData({
+                  role: data.role === "freelancer" ? "customer" : "freelancer",
+                })
+              }
+              className="ml-1 h-6 px-2.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-600 transition-all shadow-xs"
+            >
+              Role: {data.role === "freelancer" ? "Freelancer" : "Client"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Split-Card: Clean unscrollable container */}
+      <div className="overflow-hidden min-h-screen sm:min-h-0 sm:rounded-3xl border-0 sm:border border-slate-200/90 bg-white shadow-2xl shadow-slate-300/40 flex flex-col lg:flex-row h-auto lg:h-[620px]">
         {/* Left Side: React Bits Silk Canvas Banner */}
         <div className="relative w-full lg:w-[390px] lg:min-w-[390px] h-[150px] sm:h-[190px] lg:h-full overflow-hidden bg-[#0C0838] flex flex-col justify-between p-6 sm:p-8 lg:p-9 text-white select-none shrink-0">
           {/* Animated WebGL Silk Background */}
@@ -157,25 +210,26 @@ export default function OnboardingPage() {
 
           {/* Sole Bottom Step Progress Indicator */}
           <div className="relative z-20 flex items-center justify-between text-xs text-white/85 pt-3 border-t border-white/15">
-            <span className="font-medium">Langkah {step} dari 4</span>
+            <span className="font-medium">Langkah {step} dari 6</span>
             <div className="flex items-center gap-1.5">
-              {[1, 2, 3, 4].map((i) => (
+              {[1, 2, 3, 4, 5, 6].map((i) => (
                 <div
                   key={i}
-                  className={`h-2 rounded-full transition-all duration-500 ease-out ${i === step
+                  className={`h-2 rounded-full transition-all duration-500 ease-out ${
+                    i === step
                       ? "w-7 bg-white shadow-sm shadow-white/50"
                       : i < step
                         ? "w-2.5 bg-blue-300"
                         : "w-2 bg-white/25"
-                    }`}
+                  }`}
                 />
               ))}
             </div>
           </div>
         </div>
 
-        {/* Right Side: Interactive Step Wizard Content */}
-        <div className="relative flex-1 bg-white p-6 sm:p-8 lg:p-10 h-full flex flex-col justify-between overflow-y-auto">
+        {/* Right Side: Clean Unscrollable Interactive Step Wizard Content */}
+        <div className="relative flex-1 bg-white p-6 sm:p-8 lg:p-10 h-full flex flex-col justify-between overflow-hidden">
           {/* Animated Step Container */}
           <div
             key={step}
@@ -190,7 +244,25 @@ export default function OnboardingPage() {
             )}
 
             {step === 2 && (
-              <StepDetails
+              <StepIdentity
+                data={data}
+                onUpdate={updateData}
+                onNext={nextStep}
+                onPrev={prevStep}
+              />
+            )}
+
+            {step === 3 && (
+              <StepBackground
+                data={data}
+                onUpdate={updateData}
+                onNext={nextStep}
+                onPrev={prevStep}
+              />
+            )}
+
+            {step === 4 && (
+              <StepSkills
                 data={data}
                 onUpdate={updateData}
                 onToggleSkill={toggleSkill}
@@ -200,8 +272,8 @@ export default function OnboardingPage() {
               />
             )}
 
-            {step === 3 && (
-              <StepProfile
+            {step === 5 && (
+              <StepRatesBio
                 data={data}
                 onUpdate={updateData}
                 onSubmit={submitOnboarding}
@@ -211,7 +283,7 @@ export default function OnboardingPage() {
               />
             )}
 
-            {step === 4 && (
+            {step === 6 && (
               <StepWelcome data={data} onFinish={finishAndGoToDashboard} />
             )}
           </div>

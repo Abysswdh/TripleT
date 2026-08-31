@@ -13,6 +13,7 @@ export type ClientBudgetPref = "umkm" | "standard" | "enterprise";
 export interface OnboardingData {
   role: RoleType;
   fullName: string;
+  username: string;
   // Freelancer specific
   backgroundType: FreelancerBackground;
   experienceLevel: ExperienceLevel;
@@ -36,6 +37,7 @@ const STORAGE_KEY = "doable_onboarding_data";
 const initialData: OnboardingData = {
   role: "freelancer",
   fullName: "",
+  username: "",
   backgroundType: "mahasiswa",
   experienceLevel: "starter",
   skills: ["Figma", "UI/UX Design"],
@@ -85,7 +87,7 @@ export function useOnboarding() {
   }, []);
 
   const nextStep = useCallback(() => {
-    setStep((s) => Math.min(s + 1, 4));
+    setStep((s) => Math.min(s + 1, 6));
   }, []);
 
   const prevStep = useCallback(() => {
@@ -130,10 +132,20 @@ export function useOnboarding() {
       } = await supabase.auth.getUser();
 
       if (!user) {
+        // If in development mode and testing without login, simulate success
+        if (process.env.NODE_ENV === "development") {
+          console.warn("Dev mode: Bypassing Supabase auth check on submitOnboarding");
+          try {
+            sessionStorage.removeItem(STORAGE_KEY);
+          } catch {}
+          setStep(6);
+          return;
+        }
         throw new Error("Silakan masuk terlebih dahulu untuk menyelesaikan onboarding");
       }
 
       const displayName = data.fullName || user.user_metadata?.full_name || (data.role === "customer" ? (data.businessName || "Klien Doable!") : "Talenta Muda Doable!");
+      const cleanUsername = data.username ? data.username.toLowerCase().trim().replace(/[^a-z0-9_.]/g, "") : (user.user_metadata?.username || undefined);
 
       // 1. Update/Upsert public.users table
       await supabase.from("users").upsert(
@@ -141,6 +153,7 @@ export function useOnboarding() {
           id: user.id,
           email: user.email,
           full_name: displayName,
+          username: cleanUsername || null,
           role: data.role,
           bio: data.bio || (data.role === "freelancer" ? "Siap mengerjakan proyek desain & teknologi." : "Klien pemberi kerja di platform Doable!"),
           avatar_url: data.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
@@ -194,6 +207,7 @@ export function useOnboarding() {
         data: {
           role: data.role,
           full_name: displayName,
+          username: cleanUsername || undefined,
           onboarding_completed: true,
           experience_level: data.experienceLevel,
           willing_to_verify_ktp: data.willingToVerifyKtp,
@@ -205,8 +219,8 @@ export function useOnboarding() {
         sessionStorage.removeItem(STORAGE_KEY);
       } catch {}
 
-      // Advance to Step 4 (Welcome)
-      setStep(4);
+      // Advance to Step 6 (Welcome)
+      setStep(6);
     } catch (err) {
       console.error("Error during onboarding submit:", err);
       setError(err instanceof Error ? err.message : "Gagal menyimpan profil");

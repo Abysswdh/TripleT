@@ -1,4 +1,4 @@
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
@@ -30,26 +30,21 @@ export async function updateSession(request: NextRequest) {
     supabaseAnonKey,
     {
       cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value;
+        getAll() {
+          return request.cookies.getAll();
         },
-        set(name: string, value: string, options: CookieOptions) {
-          request.cookies.set({ name, value, ...options });
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          );
           response = NextResponse.next({
             request: {
               headers: request.headers,
             },
           });
-          response.cookies.set({ name, value, ...options });
-        },
-        remove(name: string, options: CookieOptions) {
-          request.cookies.set({ name, value: "", ...options });
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          });
-          response.cookies.set({ name, value: "", ...options });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          );
         },
       },
     }
@@ -60,13 +55,16 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const isDev = process.env.NODE_ENV === "development";
+
   // Protected routes: redirect to login if not authenticated
   const protectedPaths = ["/dashboard", "/onboarding"];
   const isProtected = protectedPaths.some((path) =>
     request.nextUrl.pathname.startsWith(path)
   );
 
-  if (isProtected && !user) {
+  // In development mode, allow direct access to /onboarding for UI designing without login
+  if (isProtected && !user && !(isDev && request.nextUrl.pathname.startsWith("/onboarding"))) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", request.nextUrl.pathname);
     return NextResponse.redirect(loginUrl);
@@ -85,10 +83,10 @@ export async function updateSession(request: NextRequest) {
     );
   }
 
-  // If already onboarded, redirect away from /onboarding to /dashboard
+  // If already onboarded, redirect away from /onboarding to /dashboard (bypassed in dev mode)
   if (request.nextUrl.pathname.startsWith("/onboarding") && user) {
     const isOnboarded = user.user_metadata?.onboarding_completed;
-    if (isOnboarded) {
+    if (isOnboarded && !isDev) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
   }
