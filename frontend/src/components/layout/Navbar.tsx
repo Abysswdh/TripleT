@@ -26,6 +26,7 @@ import {
   ArrowLeftRight,
   User
 } from "lucide-react";
+import { NotificationDropdown } from "@/components/layout/NotificationDropdown";
 
 export function Navbar() {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
@@ -248,7 +249,7 @@ export function Navbar() {
 
           {/* Right Actions */}
           <div className="flex items-center gap-3">
-            {!user ? (
+            {!user && !isDashboard ? (
               <div className="flex items-center gap-4">
                 <Link
                   href="/login"
@@ -282,6 +283,9 @@ export function Navbar() {
                     </Link>
                   </div>
                 )}
+
+              {/* Notification Center Popover */}
+              <NotificationDropdown />
 
               {/* User Dropdown */}
               <div className="relative" ref={dropdownRef}>

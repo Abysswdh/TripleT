@@ -63,8 +63,8 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith(path)
   );
 
-  // In development mode, allow direct access to /onboarding for UI designing without login
-  if (isProtected && !user && !(isDev && request.nextUrl.pathname.startsWith("/onboarding"))) {
+  // In development mode, allow direct access to protected routes for UI designing and auditing without login
+  if (isProtected && !user && !isDev) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", request.nextUrl.pathname);
     return NextResponse.redirect(loginUrl);

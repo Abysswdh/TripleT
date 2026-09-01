@@ -36,6 +36,7 @@ import {
   Timer,
   TrendingUp,
 } from "lucide-react";
+import { PaymentModal } from "@/components/payment/payment-modal";
 import {
   GanttProvider,
   GanttSidebar,
@@ -221,6 +222,7 @@ export default function ClientProjectDetailPage() {
   const [project, setProject] = useState<ProjectDetailData>(defaultStatic);
   const [milestones, setMilestones] = useState<Milestone[]>(defaultStatic.milestones);
   const [features, setFeatures] = useState<GanttFeature[]>(defaultStatic.initialFeatures);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
   useEffect(() => {
     async function loadLiveProject() {
@@ -482,6 +484,12 @@ export default function ClientProjectDetailPage() {
                   <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1 mt-1">
                     <ShieldCheck className="h-3 w-3" />Garansi Pembayaran Aman
                   </span>
+                  <button
+                    onClick={() => setIsPaymentModalOpen(true)}
+                    className="mt-2 w-full text-center text-[10px] font-bold text-emerald-600 bg-emerald-500/10 hover:bg-emerald-500/20 py-1.5 rounded-lg transition-colors"
+                  >
+                    Deposit Rekber 🛡️
+                  </button>
                 </div>
 
                 {/* Deadline */}
@@ -1059,6 +1067,18 @@ export default function ClientProjectDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Payment Gateway & Escrow Modal */}
+      <PaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        projectId={projectId}
+        projectTitle={project.title}
+        amount={parseInt(project.budget.replace(/\D/g, "") || "5000000", 10)}
+        onSuccess={(trx) => {
+          // Success state displayed in modal
+        }}
+      />
     </div>
   );
 }
