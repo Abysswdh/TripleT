@@ -372,12 +372,17 @@ export function FreelancerProfileView({ talentId = "tal-1", isOwner = false }: F
 
   // If viewing own profile, initialize with the current user's actual profile details
   const meta = user?.user_metadata || {};
+  const DEFAULT_AVATAR = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80";
+  const DEFAULT_BANNER = "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1200&auto=format&fit=crop&q=80";
+  const cleanAvatar = (url?: string | null) => (url && typeof url === "string" && url.startsWith("http")) ? url : DEFAULT_AVATAR;
+  const cleanBanner = (url?: string | null) => (url && typeof url === "string" && url.startsWith("http")) ? url : DEFAULT_BANNER;
+
   const localProfile: TalentProfile = isOwner && user
     ? {
         id: user.id,
         name: meta.full_name || meta.name || (user.email ? user.email.split("@")[0] : "Freelancer"),
-        avatar: meta.avatar_url || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
-        coverImage: "https://images.unsplash.com/photo-1557683316-973673baf926?w=1200&auto=format&fit=crop&q=80",
+        avatar: cleanAvatar(meta.avatar_url),
+        coverImage: cleanBanner(meta.banner_url || meta.cover_image),
         role: meta.headline || (meta.skills && meta.skills[0] ? `${meta.skills[0]} Specialist` : "Digital Specialist"),
         location: meta.location || "Indonesia",
         organization: "Member Terdaftar TripleT",
@@ -444,8 +449,8 @@ export function FreelancerProfileView({ talentId = "tal-1", isOwner = false }: F
           setLiveProfile({
             id: data.id || targetUserId,
             name: u.full_name || meta.full_name || (u.email ? u.email.split("@")[0] : baseProfile.name),
-            avatar: u.avatar_url || meta.avatar_url || baseProfile.avatar,
-            coverImage: u.banner_url || data.cover_image || meta.banner_url || meta.cover_image || baseProfile.coverImage,
+            avatar: cleanAvatar(u.avatar_url || meta.avatar_url || baseProfile.avatar),
+            coverImage: cleanBanner(u.banner_url || data.cover_image || meta.banner_url || meta.cover_image || baseProfile.coverImage),
             role: data.headline || meta.headline || baseProfile.role,
             location: u.location || meta.location || "Indonesia",
             organization: data.education || baseProfile.organization,

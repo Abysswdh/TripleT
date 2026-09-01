@@ -313,17 +313,24 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
       setEmail(user.email || "");
       const meta = user.user_metadata || {};
       
-      // Initialize with metadata
+      // Initialize with sanitized metadata
+      const DEFAULT_AVATAR = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80";
+      const DEFAULT_BANNER = "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1200&auto=format&fit=crop&q=80";
+      const cleanAvatar = (url?: string | null) => (url && typeof url === "string" && url.startsWith("http")) ? url : DEFAULT_AVATAR;
+      const cleanBanner = (url?: string | null) => (url && typeof url === "string" && url.startsWith("http")) ? url : DEFAULT_BANNER;
+
       setFullName(meta.full_name || meta.name || "");
       setDisplayName(meta.display_name || meta.user_name || meta.username || (user.email ? user.email.split("@")[0] : ""));
       setPhone(meta.phone || "");
       setBio(meta.bio || "");
-      setAvatarUrl(meta.avatar_url || "");
-      setBannerUrl(meta.banner_url || meta.cover_image || "");
+      setAvatarUrl(cleanAvatar(meta.avatar_url));
+      setBannerUrl(cleanBanner(meta.banner_url || meta.cover_image));
 
-      // Query database table for the latest source-of-truth
+      // Query database tables for the latest source-of-truth across users, freelancer_profiles, and client_profiles
       try {
         const supabase = createClient();
+        
+        // 1. Fetch core user row
         const { data: dbUser } = await supabase
           .from("users")
           .select("*")
@@ -331,20 +338,55 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
           .single();
 
         if (dbUser) {
-          if (dbUser.avatar_url) setAvatarUrl(dbUser.avatar_url);
-          if (dbUser.banner_url) setBannerUrl(dbUser.banner_url);
+          if (dbUser.avatar_url) setAvatarUrl(cleanAvatar(dbUser.avatar_url));
+          if (dbUser.banner_url) setBannerUrl(cleanBanner(dbUser.banner_url));
           if (dbUser.full_name) setFullName(dbUser.full_name);
           if (dbUser.bio) setBio(dbUser.bio);
           if (dbUser.phone) setPhone(dbUser.phone);
           if (dbUser.location) setLocation(dbUser.location);
           if (dbUser.username) setDisplayName(dbUser.username);
         }
+
+        // 2. Fetch freelancer profile row
+        const { data: flProfile } = await supabase
+          .from("freelancer_profiles")
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (flProfile) {
+          if (flProfile.hourly_rate) setHourlyRate(String(flProfile.hourly_rate));
+          if (flProfile.skills && Array.isArray(flProfile.skills) && flProfile.skills.length > 0) {
+            setSelectedSkills(flProfile.skills);
+          }
+          if (flProfile.experience_level) setExperienceLevel(flProfile.experience_level);
+          if (flProfile.availability) setAvailability(flProfile.availability);
+          if (flProfile.github_url) setGithubUrl(flProfile.github_url);
+          if (flProfile.linkedin_url) setLinkedinUrl(flProfile.linkedin_url);
+          if (flProfile.portfolio_url) setPortfolioUrl(flProfile.portfolio_url);
+        }
+
+        // 3. Fetch client profile row
+        const { data: clProfile } = await supabase
+          .from("client_profiles")
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (clProfile) {
+          if (clProfile.company_name) setCompanyName(clProfile.company_name);
+          if (clProfile.company_website) setCompanyWebsite(clProfile.company_website);
+          if (clProfile.company_size) setCompanySize(clProfile.company_size);
+          if (clProfile.industry) setIndustry(clProfile.industry);
+          if (clProfile.billing_address) setBillingAddress(clProfile.billing_address);
+          if (clProfile.tax_id) setTaxId(clProfile.tax_id);
+        }
       } catch (err) {
-        console.warn("Could not fetch profile from public.users:", err);
+        console.warn("Could not fetch profile from tables:", err);
       }
 
-      if (meta.company_name) setCompanyName(meta.company_name);
-      if (meta.hourly_rate) setHourlyRate(String(meta.hourly_rate));
+      if (meta.company_name && !companyName) setCompanyName(meta.company_name);
+      if (meta.hourly_rate && !hourlyRate) setHourlyRate(String(meta.hourly_rate));
       if (meta.preferred_language && (meta.preferred_language === "id" || meta.preferred_language === "en")) {
         setLocale(meta.preferred_language as Locale);
         setLanguage(meta.preferred_language as Locale);
@@ -470,6 +512,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
       // Upsert direct database tables in Supabase
       if (user?.id) {
         try {
+          // 1. Core user table upsert
           await supabase.from("users").upsert(
             {
               id: user.id,
@@ -486,7 +529,8 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
             { onConflict: "id" }
           );
 
-          if (currentRole === "freelancer") {
+          // 2. Freelancer profile upsert
+          if (currentRole === "freelancer" || selectedSkills.length > 0 || hourlyRate) {
             await supabase.from("freelancer_profiles").upsert(
               {
                 user_id: user.id,
@@ -494,7 +538,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                 bio: bio,
                 hourly_rate: parseInt(hourlyRate, 10) || 0,
                 skills: selectedSkills,
-                years_experience: experienceLevel.includes("Senior") ? 5 : experienceLevel.includes("Mid") ? 3 : 1,
+                availability: availability,
                 github_url: githubUrl,
                 linkedin_url: linkedinUrl,
                 portfolio_url: portfolioUrl,
@@ -502,14 +546,19 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
               },
               { onConflict: "user_id" }
             );
-          } else {
+          }
+
+          // 3. Client profile upsert
+          if (currentRole === "customer" || companyName || companySize) {
             await supabase.from("client_profiles").upsert(
               {
                 user_id: user.id,
-                company_name: companyName,
+                company_name: companyName || fullName,
+                company_website: companyWebsite,
                 company_size: companySize,
                 industry: industry,
-                banner_url: finalBannerUrl || undefined,
+                billing_address: billingAddress,
+                tax_id: taxId,
               },
               { onConflict: "user_id" }
             );

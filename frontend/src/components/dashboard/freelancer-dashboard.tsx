@@ -31,6 +31,7 @@ import { ModalCloseButton } from "@/components/ui/modal-close-button";
 
 interface QuestOpportunity {
   id: string;
+  ownerId?: string;
   title: string;
   clientName: string;
   clientRating: number;
@@ -149,6 +150,7 @@ export function FreelancerDashboard() {
   const [proposalCover, setProposalCover] = useState("");
   const [deliveryDays, setDeliveryDays] = useState("2");
   const [proposalSubmitted, setProposalSubmitted] = useState(false);
+  const [proposalError, setProposalError] = useState<string | null>(null);
 
   // Fetch live quests from Supabase
   useEffect(() => {
@@ -158,6 +160,7 @@ export function FreelancerDashboard() {
         if (liveProjects && liveProjects.length > 0) {
           const mapped: QuestOpportunity[] = liveProjects.map((p) => ({
             id: p.id,
+            ownerId: p.ownerId || p.owner?.id,
             title: p.title,
             clientName: p.owner?.fullName || "Klien Terverifikasi",
             clientRating: 5.0,
@@ -297,9 +300,13 @@ export function FreelancerDashboard() {
   };
 
   const handleOpenProposal = (quest: QuestOpportunity) => {
+    if (user && quest.ownerId === user.id) {
+      return; // Anti self-dealing guard
+    }
     setSelectedQuest(quest);
     setBidAmount(quest.budget);
     setProposalSubmitted(false);
+    setProposalError(null);
   };
 
   const handleSubmitProposal = async (e: React.FormEvent) => {
@@ -307,23 +314,26 @@ export function FreelancerDashboard() {
     if (!selectedQuest) return;
 
     const numericBid = parseInt(bidAmount.replace(/\D/g, "") || "0", 10) || selectedQuest.budgetNumeric;
+    setProposalError(null);
 
-    try {
-      await submitProposal({
-        projectId: selectedQuest.id,
-        bidAmount: numericBid,
-        deliveryDays: parseInt(deliveryDays || "7", 10),
-        coverLetter: proposalCover || "Halo! Saya sangat tertarik mengerjakan proyek ini dengan kualitas terbaik.",
-        skills: selectedQuest.matchingSkills,
-      });
-    } catch (err) {
-      console.error("Error submitting proposal to Supabase:", err);
+    const res = await submitProposal({
+      projectId: selectedQuest.id,
+      bidAmount: numericBid,
+      deliveryDays: parseInt(deliveryDays || "7", 10),
+      coverLetter: proposalCover || "Halo! Saya sangat tertarik mengerjakan proyek ini dengan kualitas terbaik.",
+      skills: selectedQuest.matchingSkills,
+    });
+
+    if (!res.success) {
+      setProposalError(res.error || "Gagal mengirimkan proposal.");
+      return;
     }
 
     setProposalSubmitted(true);
     setTimeout(() => {
       setSelectedQuest(null);
       setProposalSubmitted(false);
+      setProposalError(null);
     }, 1600);
   };
 
@@ -636,12 +646,18 @@ export function FreelancerDashboard() {
                           </span>
                         </div>
 
-                        <button
-                          onClick={() => handleOpenProposal(quest)}
-                          className="rounded-xl bg-primary px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-primary/90 transition-colors"
-                        >
-                          Ajukan Proposal
-                        </button>
+                        {user && quest.ownerId === user.id ? (
+                          <span className="rounded-xl bg-muted/80 px-3.5 py-1.5 text-xs font-semibold text-muted-foreground border border-border/50 select-none">
+                            Proyek Anda Sendiri
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => handleOpenProposal(quest)}
+                            className="rounded-xl bg-primary px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-primary/90 transition-colors"
+                          >
+                            Ajukan Proposal
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1029,6 +1045,11 @@ export function FreelancerDashboard() {
               </div>
             ) : (
               <form onSubmit={handleSubmitProposal} className="space-y-4 text-xs">
+                {proposalError && (
+                  <div className="rounded-xl bg-destructive/10 border border-destructive/20 p-3 text-xs text-destructive">
+                    {proposalError}
+                  </div>
+                )}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <label className="font-semibold text-foreground">Tawaran Harga</label>

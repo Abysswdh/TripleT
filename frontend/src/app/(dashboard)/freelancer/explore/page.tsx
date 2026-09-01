@@ -11,8 +11,14 @@ import {
 import Link from "next/link";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
 
+import { useEffect } from "react";
+import { useAuth } from "@/hooks/use-auth";
+import { getOpenProjects } from "@/lib/services/projects";
+import { submitProposal } from "@/lib/services/proposals";
+
 interface Quest {
   id: string;
+  ownerId?: string;
   title: string;
   clientName: string;
   category: string;
@@ -27,13 +33,10 @@ interface Quest {
   deadline: string;
 }
 
-import { useEffect } from "react";
-import { getOpenProjects } from "@/lib/services/projects";
-import { submitProposal } from "@/lib/services/proposals";
-
 const CATEGORIES = ["Semua", "Web Development", "Backend & API Engineering", "UI/UX & Product Design", "AI & Machine Learning", "Mobile App Development"];
 
 export default function FreelancerExploreQuestsPage() {
+  const { user } = useAuth();
   const [quests, setQuests] = useState<Quest[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Semua");
@@ -42,6 +45,7 @@ export default function FreelancerExploreQuestsPage() {
   const [proposalCover, setProposalCover] = useState("");
   const [deliveryDays, setDeliveryDays] = useState("7");
   const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadProjects() {
@@ -49,6 +53,7 @@ export default function FreelancerExploreQuestsPage() {
       if (liveProjects && liveProjects.length > 0) {
         const mapped: Quest[] = liveProjects.map((p) => ({
           id: p.id,
+          ownerId: p.ownerId,
           title: p.title,
           clientName: p.owner?.fullName || "Klien Terverifikasi",
           category: p.category,
@@ -58,7 +63,7 @@ export default function FreelancerExploreQuestsPage() {
           matchScore: 95,
           proposalsCount: p.proposalsCount,
           postedAt: p.postedDate,
-          difficulty: (p.difficulty as "Entry" | "Intermediate" | "Expert") || "Intermediate",
+          difficulty: p.difficulty === "Enterprise" ? "Expert" : p.difficulty === "Standard" ? "Intermediate" : "Entry",
           description: p.description,
           deadline: p.dueDate,
         }));
@@ -71,19 +76,20 @@ export default function FreelancerExploreQuestsPage() {
   const filteredQuests = quests.filter((quest) => {
     const matchesSearch =
       quest.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      quest.skills.some((s) => s.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      quest.clientName.toLowerCase().includes(searchQuery.toLowerCase());
-
+      quest.skills.some((s) => s.toLowerCase().includes(searchQuery.toLowerCase()));
     const matchesCategory =
       selectedCategory === "Semua" || quest.category.toLowerCase().includes(selectedCategory.toLowerCase());
-
     return matchesSearch && matchesCategory;
   });
 
   const handleOpenProposal = (quest: Quest) => {
+    if (user && quest.ownerId === user.id) {
+      return; // Anti self-dealing guard
+    }
     setSelectedQuest(quest);
     setBidAmount(quest.budget);
     setSubmitted(false);
+    setSubmitError(null);
   };
 
   const handleSubmitProposal = async (e: React.FormEvent) => {
@@ -91,23 +97,26 @@ export default function FreelancerExploreQuestsPage() {
     if (!selectedQuest) return;
 
     const numericBid = parseInt(bidAmount.replace(/\D/g, "") || "0", 10) || 5000000;
+    setSubmitError(null);
 
-    try {
-      await submitProposal({
-        projectId: selectedQuest.id,
-        bidAmount: numericBid,
-        deliveryDays: parseInt(deliveryDays || "7", 10),
-        coverLetter: proposalCover || "Halo! Saya sangat tertarik mengerjakan proyek ini.",
-        skills: selectedQuest.skills,
-      });
-    } catch (err) {
-      console.error("Error submitting proposal:", err);
+    const res = await submitProposal({
+      projectId: selectedQuest.id,
+      bidAmount: numericBid,
+      deliveryDays: parseInt(deliveryDays || "7", 10),
+      coverLetter: proposalCover || "Halo! Saya sangat tertarik mengerjakan proyek ini.",
+      skills: selectedQuest.skills,
+    });
+
+    if (!res.success) {
+      setSubmitError(res.error || "Gagal mengirimkan proposal.");
+      return;
     }
 
     setSubmitted(true);
     setTimeout(() => {
       setSelectedQuest(null);
       setSubmitted(false);
+      setSubmitError(null);
     }, 1800);
   };
 
@@ -226,13 +235,19 @@ export default function FreelancerExploreQuestsPage() {
             </div>
 
             <div className="mt-5 pt-3 border-t border-border/40">
-              <button
-                onClick={() => handleOpenProposal(quest)}
-                className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary py-2.5 text-xs font-semibold text-white shadow-sm shadow-primary/20 hover:bg-primary-600 transition-all hover:scale-[1.01]"
-              >
-                <span>Ajukan Proposal</span>
-                <ArrowUpRight className="h-3.5 w-3.5" />
-              </button>
+              {user && quest.ownerId === user.id ? (
+                <div className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-muted/80 py-2.5 text-xs font-semibold text-muted-foreground border border-border/60 select-none cursor-not-allowed">
+                  <span>Proyek Anda Sendiri</span>
+                </div>
+              ) : (
+                <button
+                  onClick={() => handleOpenProposal(quest)}
+                  className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary py-2.5 text-xs font-semibold text-white shadow-sm shadow-primary/20 hover:bg-primary-600 transition-all hover:scale-[1.01]"
+                >
+                  <span>Ajukan Proposal</span>
+                  <ArrowUpRight className="h-3.5 w-3.5" />
+                </button>
+              )}
             </div>
           </div>
         )))}
@@ -267,6 +282,12 @@ export default function FreelancerExploreQuestsPage() {
                     Budget Klien: <strong>{selectedQuest.budget}</strong> ({selectedQuest.budgetType})
                   </p>
                 </div>
+
+                {submitError && (
+                  <div className="rounded-xl bg-destructive/10 border border-destructive/20 p-3 text-xs text-destructive">
+                    {submitError}
+                  </div>
+                )}
 
                 <form onSubmit={handleSubmitProposal} className="space-y-4">
                   <div>

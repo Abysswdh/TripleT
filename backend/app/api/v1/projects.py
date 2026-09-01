@@ -22,7 +22,7 @@ async def create_project(
     user_id: CurrentUserId,
     db: DbSession,
 ):
-    """Create a new project (customer only)."""
+    """Create a new project (available to any authenticated user)."""
     project = Project(
         **project_data.model_dump(),
         owner_id=user_id,

@@ -37,6 +37,24 @@ export async function submitProposal(params: {
     targetFreelancerId = user?.id || "fa000000-0000-0000-0000-000000000001";
   }
 
+  // Anti Self-Dealing validation: Prevent project owner from submitting proposal to their own project
+  try {
+    const { data: projData } = await supabase
+      .from("projects")
+      .select("owner_id")
+      .eq("id", params.projectId)
+      .single();
+
+    if (projData && projData.owner_id === targetFreelancerId) {
+      return {
+        success: false,
+        error: "Anda tidak dapat mengajukan proposal pada proyek yang Anda buat sendiri (Anti Self-Dealing).",
+      };
+    }
+  } catch (checkErr) {
+    console.warn("Anti-self-dealing check notice:", checkErr);
+  }
+
   const bidDisplay = `Rp ${params.bidAmount.toLocaleString("id-ID")}`;
 
   const { data, error } = await supabase

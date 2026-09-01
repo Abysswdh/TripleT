@@ -11,6 +11,9 @@ export type WeeklyAvailability = "part_time" | "semi_full" | "full_time" | "flex
 export type ClientHiringType = "umkm" | "startup" | "agency" | "individual";
 export type ClientBudgetPref = "umkm" | "standard" | "enterprise";
 
+export const DEFAULT_AVATAR_URL = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80";
+export const DEFAULT_BANNER_URL = "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1200&auto=format&fit=crop&q=80";
+
 export interface OnboardingData {
   role: RoleType;
   fullName: string;
@@ -52,7 +55,7 @@ const initialData: OnboardingData = {
   projectCategories: ["UI/UX & Product Design"],
   bio: "",
   locationCity: "Jakarta, DKI Jakarta",
-  avatarUrl: "avatar-1",
+  avatarUrl: DEFAULT_AVATAR_URL,
   willingToVerifyKtp: true,
 };
 
@@ -149,6 +152,8 @@ export function useOnboarding() {
 
       const displayName = data.fullName || user.user_metadata?.full_name || (data.role === "customer" ? (data.businessName || "Klien Doable!") : "Talenta Muda Doable!");
       const cleanUsername = data.username ? data.username.toLowerCase().trim().replace(/[^a-z0-9_.]/g, "") : (user.user_metadata?.username || undefined);
+      const userAvatar = (data.avatarUrl && data.avatarUrl.startsWith("http")) ? data.avatarUrl : DEFAULT_AVATAR_URL;
+      const userBanner = DEFAULT_BANNER_URL;
 
       // 1. Update/Upsert public.users table
       await supabase.from("users").upsert(
@@ -159,7 +164,8 @@ export function useOnboarding() {
           username: cleanUsername || null,
           role: data.role,
           bio: data.bio || (data.role === "freelancer" ? "Siap mengerjakan proyek desain & teknologi." : "Klien pemberi kerja di platform Doable!"),
-          avatar_url: data.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+          avatar_url: userAvatar,
+          banner_url: userBanner,
           location: data.locationCity || "Jakarta, Indonesia",
           onboarding_completed: true,
           is_active: true,
@@ -168,7 +174,7 @@ export function useOnboarding() {
         { onConflict: "id" }
       );
 
-      // 2. Role-specific profile table insertion
+      // 2. Dual-Role Profile Initializations (Ensure BOTH profiles exist for seamless switching)
       if (data.role === "freelancer") {
         const headlineText = data.headline || `${data.skills[0] || "Digital & Tech"} Specialist`;
         const eduText = data.backgroundType === "mahasiswa" ? "Mahasiswa / Pelajar Aktif" : data.backgroundType === "fresh_grad" ? "Fresh Graduate" : data.backgroundType === "switch_career" ? "Career Switcher" : "Profesional";
@@ -182,6 +188,7 @@ export function useOnboarding() {
             ? "Fleksibel (Malam & Weekend)"
             : "15 – 30 Jam / Minggu (Part-Time)";
 
+        // Primary: Freelancer Profile
         await supabase.from("freelancer_profiles").upsert(
           {
             user_id: user.id,
@@ -195,21 +202,60 @@ export function useOnboarding() {
             category: data.projectCategories[0] || "Web Development",
             badge_level: "Verified Pro",
             organization: eduText,
+            cover_image: userBanner,
             completed_projects: 0,
             rating: 5.0,
             reviews_count: 0,
           },
           { onConflict: "user_id" }
         );
-      } else {
+
+        // Secondary / Lazy-load: Client Profile fallback
         await supabase.from("client_profiles").upsert(
           {
             user_id: user.id,
-            company_name: data.businessName || "Bisnis UMKM / Startup",
+            company_name: data.businessName || displayName,
+            company_size: "1-10 Karyawan (UMKM)",
+            client_type: "individual",
+            industry: data.projectCategories[0] || "Teknologi & Kreatif",
+            banner_url: userBanner,
+            is_verified: false,
+          },
+          { onConflict: "user_id" }
+        );
+      } else {
+        // Primary: Client Profile
+        await supabase.from("client_profiles").upsert(
+          {
+            user_id: user.id,
+            company_name: data.businessName || displayName,
             company_size: data.hiringType === "umkm" ? "1-10 Karyawan (UMKM)" : data.hiringType === "startup" ? "11-50 Karyawan (Startup)" : "Personal / Proyek Sendiri",
             client_type: data.hiringType,
             industry: data.projectCategories[0] || "Teknologi & Kreatif",
+            banner_url: userBanner,
             is_verified: false,
+          },
+          { onConflict: "user_id" }
+        );
+
+        // Secondary / Lazy-load: Freelancer Profile fallback
+        await supabase.from("freelancer_profiles").upsert(
+          {
+            user_id: user.id,
+            headline: "Digital & Tech Specialist",
+            bio: data.bio || `Halo! Saya ${displayName}. Siap berkolaborasi dalam proyek profesional.`,
+            skills: ["UI/UX Design", "Web Development"],
+            hourly_rate: 200000,
+            starting_price: "15 – 30 Jam / Minggu (Part-Time)",
+            availability: "semi_full",
+            experience_level: "intermediate",
+            category: "Web Development",
+            badge_level: "Verified Pro",
+            organization: "Profesional",
+            cover_image: userBanner,
+            completed_projects: 0,
+            rating: 5.0,
+            reviews_count: 0,
           },
           { onConflict: "user_id" }
         );
@@ -221,6 +267,8 @@ export function useOnboarding() {
           role: data.role,
           full_name: displayName,
           username: cleanUsername || undefined,
+          avatar_url: userAvatar,
+          banner_url: userBanner,
           onboarding_completed: true,
           experience_level: data.experienceLevel,
           weekly_availability: data.weeklyAvailability,

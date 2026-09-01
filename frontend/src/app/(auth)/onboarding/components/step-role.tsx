@@ -12,7 +12,7 @@ interface StepRoleProps {
 export function StepRole({ selectedRole, onSelectRole, onNext }: StepRoleProps) {
   return (
     <div className="flex h-full flex-col justify-between">
-      {/* Scaled-Up Role Cards Grid (No redundant h2/p) */}
+      {/* Scaled-Up Role Cards Grid */}
       <div className="my-auto grid grid-cols-1 gap-5 sm:grid-cols-2">
         {/* Freelancer Card */}
         <div

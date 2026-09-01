@@ -207,12 +207,17 @@ export function ClientProfileView({ clientId, isOwner = true }: ClientProfileVie
           ? new Date(cData.user.created_at).getFullYear().toString()
           : "2025";
 
+        const DEFAULT_AVATAR = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80";
+        const DEFAULT_BANNER = "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1200&auto=format&fit=crop&q=80";
+        const cleanAvatar = (url?: string | null) => (url && typeof url === "string" && url.startsWith("http")) ? url : DEFAULT_AVATAR;
+        const cleanBanner = (url?: string | null) => (url && typeof url === "string" && url.startsWith("http")) ? url : DEFAULT_BANNER;
+
         setProfile({
           id: targetId,
           companyName: cData?.company_name || u.full_name || meta.company_name || meta.full_name || (u.email ? u.email.split("@")[0] : (user?.email ? user.email.split("@")[0] : "Perusahaan Klien")),
           tagline: meta.tagline || (meta.bio ? meta.bio : (cData?.industry ? `Perusahaan di bidang ${cData.industry}` : "Pemberi kerja terdaftar di platform TripleT")),
-          avatar: u.avatar_url || meta.avatar_url || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=300&auto=format&fit=crop&q=80",
-          coverImage: u.banner_url || cData?.banner_url || meta.banner_url || meta.cover_image || "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1200&auto=format&fit=crop&q=80",
+          avatar: cleanAvatar(u.avatar_url || meta.avatar_url),
+          coverImage: cleanBanner(u.banner_url || cData?.banner_url || meta.banner_url || meta.cover_image),
           industry: cData?.industry || meta.industry || "Teknologi & Bisnis",
           companySize: cData?.company_size || meta.company_size || "1-10 Karyawan (Startup)",
           location: meta.location || cData?.user?.location || "Jakarta, Indonesia",

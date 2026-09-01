@@ -92,7 +92,8 @@ export function Navbar() {
   }, [userDropdownOpen]);
 
   // Live avatar state synced from database and custom update events
-  const [dbAvatarUrl, setDbAvatarUrl] = useState<string | null>(null);
+  const DEFAULT_AVATAR = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80";
+  const [dbAvatarUrl, setDbAvatarUrl] = useState<string | null>(DEFAULT_AVATAR);
 
   useEffect(() => {
     if (!user) {
@@ -100,8 +101,15 @@ export function Navbar() {
       return;
     }
 
+    const cleanUrl = (url?: string | null) => {
+      if (url && typeof url === "string" && url.startsWith("http")) {
+        return url;
+      }
+      return DEFAULT_AVATAR;
+    };
+
     if (user.user_metadata?.avatar_url) {
-      setDbAvatarUrl(user.user_metadata.avatar_url);
+      setDbAvatarUrl(cleanUrl(user.user_metadata.avatar_url));
     }
 
     const supabase = createClient();
@@ -113,7 +121,7 @@ export function Navbar() {
           .eq("id", user.id)
           .single();
         if (data?.avatar_url !== undefined) {
-          setDbAvatarUrl(data.avatar_url);
+          setDbAvatarUrl(cleanUrl(data.avatar_url));
         }
       } catch (err) {
         console.warn("Could not fetch navbar avatar:", err);
