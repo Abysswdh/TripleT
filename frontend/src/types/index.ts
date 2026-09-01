@@ -9,6 +9,7 @@ export interface UserProfile {
   email: string;
   full_name: string | null;
   avatar_url: string | null;
+  banner_url: string | null;
   bio: string | null;
   role: "freelancer" | "customer";
   skills: string[] | null;
@@ -26,6 +27,7 @@ export interface UserProfile {
 export interface UserUpdate {
   full_name?: string;
   avatar_url?: string;
+  banner_url?: string;
   bio?: string;
   role?: "freelancer" | "customer";
   skills?: string[];

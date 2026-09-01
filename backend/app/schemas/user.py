@@ -14,6 +14,7 @@ class UserBase(BaseModel):
     email: EmailStr
     full_name: Optional[str] = None
     avatar_url: Optional[str] = None
+    banner_url: Optional[str] = None
     bio: Optional[str] = None
     role: str = "customer"
 
@@ -31,6 +32,7 @@ class UserUpdate(BaseModel):
     """Fields that can be updated."""
     full_name: Optional[str] = None
     avatar_url: Optional[str] = None
+    banner_url: Optional[str] = None
     bio: Optional[str] = None
     role: Optional[str] = None
     skills: Optional[list[str]] = None
@@ -62,6 +64,7 @@ class UserProfile(BaseModel):
     id: uuid.UUID
     full_name: Optional[str] = None
     avatar_url: Optional[str] = None
+    banner_url: Optional[str] = None
     role: str
     skills: Optional[list[str]] = None
     level: int = 1

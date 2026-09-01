@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
 import { createPortal } from "react-dom";
 import { useSearchParams } from "next/navigation";
-import { Search, Star, ShieldCheck, CheckCircle2, SlidersHorizontal, Briefcase, ArrowRight, Sparkles, Layers } from "lucide-react";
+import { Search, Star, ShieldCheck, CheckCircle2, SlidersHorizontal, Briefcase, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { getTalents, inviteTalentToProject, type TalentRecord } from "@/lib/services/talents";
 import { getClientProjects, type ProjectRecord } from "@/lib/services/projects";
@@ -19,7 +19,7 @@ const CATEGORY_TABS = [
   "AI & Machine Learning"
 ] as const;
 
-export default function ClientTalentPage() {
+function ClientTalentContent() {
   const [mounted, setMounted] = useState(false);
   const searchParams = useSearchParams();
   const urlProjectId = searchParams?.get("projectId") || searchParams?.get("project") || "";
@@ -516,5 +516,13 @@ export default function ClientTalentPage() {
           document.body
         )}
     </div>
+  );
+}
+
+export default function ClientTalentPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen p-8 flex items-center justify-center"><div className="animate-spin h-8 w-8 rounded-full border-b-2 border-primary" /></div>}>
+      <ClientTalentContent />
+    </Suspense>
   );
 }

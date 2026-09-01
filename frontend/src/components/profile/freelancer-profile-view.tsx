@@ -21,7 +21,8 @@ import {
   Edit3,
   Share2,
   Zap,
-  Briefcase
+  Briefcase,
+  Camera
 } from "lucide-react";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import { getClientProjects, type ProjectRecord } from "@/lib/services/projects";
@@ -418,7 +419,7 @@ export function FreelancerProfileView({ talentId = "tal-1", isOwner = false }: F
           .from("freelancer_profiles")
           .select(`
             *,
-            user:users!user_id(id, full_name, avatar_url, location, is_verified, bio, email)
+            user:users!user_id(id, full_name, avatar_url, banner_url, location, is_verified, bio, email)
           `)
           .or(`user_id.eq.${targetUserId},id.eq.${targetUserId}`)
           .maybeSingle();
@@ -444,7 +445,7 @@ export function FreelancerProfileView({ talentId = "tal-1", isOwner = false }: F
             id: data.id || targetUserId,
             name: u.full_name || meta.full_name || (u.email ? u.email.split("@")[0] : baseProfile.name),
             avatar: u.avatar_url || meta.avatar_url || baseProfile.avatar,
-            coverImage: data.cover_image || baseProfile.coverImage,
+            coverImage: u.banner_url || data.cover_image || meta.banner_url || meta.cover_image || baseProfile.coverImage,
             role: data.headline || meta.headline || baseProfile.role,
             location: u.location || meta.location || "Indonesia",
             organization: data.education || baseProfile.organization,
@@ -546,15 +547,25 @@ export function FreelancerProfileView({ talentId = "tal-1", isOwner = false }: F
             {/* 1. Profile Identity Card */}
             <div className="rounded-3xl border border-border/80 bg-card overflow-hidden shadow-sm">
               {/* Header Cover Banner */}
-              <div className="relative h-28 w-full bg-gradient-to-br from-blue-500/25 via-indigo-500/20 to-purple-500/30 overflow-hidden">
+              <div className="relative h-28 w-full bg-gradient-to-br from-blue-500/25 via-indigo-500/20 to-purple-500/30 overflow-hidden group">
                 {profile.coverImage && (
                   <img
                     src={profile.coverImage}
                     alt="Cover"
-                    className="h-full w-full object-cover opacity-60"
+                    className="h-full w-full object-cover opacity-75 transition-transform duration-300 group-hover:scale-105"
                   />
                 )}
-                <div className="absolute inset-0 bg-gradient-to-t from-card/80 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-card/80 via-card/20 to-transparent" />
+                {isOwner && (
+                  <Link
+                    href="/freelancer/settings?tab=profile"
+                    className="absolute top-2.5 right-2.5 z-10 inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-white bg-black/60 hover:bg-black/80 backdrop-blur-md rounded-xl transition-all opacity-0 group-hover:opacity-100 shadow-sm border border-white/20"
+                    title="Ubah Banner Profil"
+                  >
+                    <Camera className="h-3.5 w-3.5" />
+                    <span>Ubah Banner</span>
+                  </Link>
+                )}
               </div>
 
               {/* Avatar & Main Info */}

@@ -30,6 +30,7 @@ export interface TalentRecord {
   githubUrl?: string;
   linkedinUrl?: string;
   portfolioUrl?: string;
+  coverImage?: string;
 }
 
 /**
@@ -42,7 +43,7 @@ export async function getTalents(filters?: TalentFilterOptions): Promise<TalentR
     .from("freelancer_profiles")
     .select(`
       *,
-      user:users!user_id(id, full_name, avatar_url, location, is_verified, bio, email)
+      user:users!user_id(id, full_name, avatar_url, banner_url, location, is_verified, bio, email)
     `);
 
   if (filters?.level && filters.level !== "All") {
@@ -69,6 +70,7 @@ export async function getTalents(filters?: TalentFilterOptions): Promise<TalentR
       name: user.full_name || "Specialist Talent",
       title: item.headline || "Digital Specialist",
       avatar: user.avatar_url || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
+      coverImage: user.banner_url || item.cover_image || "https://images.unsplash.com/photo-1557683316-973673baf926?w=1200&auto=format&fit=crop&q=80",
       rating: Number(item.rating) || 5.0,
       reviewsCount: item.reviews_count || 0,
       hourlyRate: item.starting_price || `$${rateNum}/hr`,

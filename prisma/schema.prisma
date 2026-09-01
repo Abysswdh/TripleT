@@ -17,6 +17,7 @@ model User {
   email           String    @unique @db.VarChar(255)
   fullName        String?   @map("full_name") @db.VarChar(255)
   avatarUrl       String?   @map("avatar_url") @db.Text
+  bannerUrl       String?   @map("banner_url") @db.Text
   bio             String?   @db.Text
   role            String    @default("customer") @db.VarChar(50)
   skills          String[]  @default([])

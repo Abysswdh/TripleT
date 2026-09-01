@@ -8,9 +8,10 @@ import { useDashboardRole, DashboardRole } from "@/context/role-context";
 import { useTranslation, type Locale } from "@/context/language-context";
 import { useCurrency, type Currency } from "@/context/currency-context";
 import { createClient } from "@/lib/supabase/client";
-import { uploadProfileMedia } from "@/lib/services/storage";
+import { uploadProfileMedia, deleteProfileMedia } from "@/lib/services/storage";
 import {
   User,
+  Image as ImageIcon,
   Building2,
   Shield,
   Bell,
@@ -90,6 +91,39 @@ const COMPANY_SIZES = [
   "500+ employees (Enterprise)"
 ];
 
+const PRESET_BANNERS = [
+  {
+    id: "preset-office",
+    name: "Modern Office",
+    url: "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1200&auto=format&fit=crop&q=80",
+    gradient: "from-blue-600/40 via-indigo-600/30 to-purple-600/40"
+  },
+  {
+    id: "preset-tech",
+    name: "Creative Tech",
+    url: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=1200&auto=format&fit=crop&q=80",
+    gradient: "from-cyan-600/40 via-blue-600/30 to-indigo-600/40"
+  },
+  {
+    id: "preset-gradient",
+    name: "Cyber Violet",
+    url: "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=1200&auto=format&fit=crop&q=80",
+    gradient: "from-violet-600/40 via-purple-600/30 to-pink-600/40"
+  },
+  {
+    id: "preset-abstract",
+    name: "Abstract Silk",
+    url: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&auto=format&fit=crop&q=80",
+    gradient: "from-emerald-600/40 via-teal-600/30 to-blue-600/40"
+  },
+  {
+    id: "preset-minimal",
+    name: "Minimal Studio",
+    url: "https://images.unsplash.com/photo-1557683316-973673baf926?w=1200&auto=format&fit=crop&q=80",
+    gradient: "from-slate-600/40 via-gray-600/30 to-zinc-600/40"
+  }
+];
+
 export function SettingsView({ initialTab = "profile", defaultRole }: SettingsViewProps) {
   const searchParams = useSearchParams();
   const { user } = useAuth();
@@ -119,6 +153,11 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
   const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [bannerUrl, setBannerUrl] = useState("");
+  const [bannerPreviewUrl, setBannerPreviewUrl] = useState("");
+  const [pendingBannerFile, setPendingBannerFile] = useState<File | null>(null);
+  const bannerFileInputRef = useRef<HTMLInputElement>(null);
+
   const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -130,6 +169,47 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
       const preview = URL.createObjectURL(file);
       setAvatarPreviewUrl(preview);
       setErrorMessage("");
+    }
+  };
+
+  const handleBannerFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        setErrorMessage("Ukuran banner maksimal 5MB");
+        return;
+      }
+      setPendingBannerFile(file);
+      const preview = URL.createObjectURL(file);
+      setBannerPreviewUrl(preview);
+      setErrorMessage("");
+    }
+  };
+
+  const handleSelectPresetBanner = (url: string) => {
+    setBannerUrl(url);
+    setBannerPreviewUrl(url);
+    setPendingBannerFile(null);
+    if (bannerFileInputRef.current) bannerFileInputRef.current.value = "";
+  };
+
+  const handleResetBanner = async () => {
+    // 1. Reset local state
+    setBannerUrl("");
+    setBannerPreviewUrl("");
+    setPendingBannerFile(null);
+    if (bannerFileInputRef.current) bannerFileInputRef.current.value = "";
+
+    // 2. Erase from database & auth if user is authenticated
+    if (user?.id) {
+      try {
+        await deleteProfileMedia(user.id, "banner");
+        setSaveSuccess(true);
+        setSaveMessage(t("settings.profile.resetBannerSuccess", "Banner profil berhasil dihapus!"));
+        setTimeout(() => setSaveSuccess(false), 3000);
+      } catch (err: unknown) {
+        console.error("Error deleting banner from db:", err);
+      }
     }
   };
 
@@ -239,6 +319,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
       setPhone(meta.phone || "");
       setBio(meta.bio || "");
       setAvatarUrl(meta.avatar_url || "");
+      setBannerUrl(meta.banner_url || meta.cover_image || "");
 
       // Query database table for the latest source-of-truth
       try {
@@ -251,6 +332,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
 
         if (dbUser) {
           if (dbUser.avatar_url) setAvatarUrl(dbUser.avatar_url);
+          if (dbUser.banner_url) setBannerUrl(dbUser.banner_url);
           if (dbUser.full_name) setFullName(dbUser.full_name);
           if (dbUser.bio) setBio(dbUser.bio);
           if (dbUser.phone) setPhone(dbUser.phone);
@@ -312,6 +394,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
 
       const supabase = createClient();
       let finalAvatarUrl = avatarUrl;
+      let finalBannerUrl = bannerUrl;
 
       // If user selected a new avatar file, upload it now to Supabase Storage
       if (pendingAvatarFile && user?.id) {
@@ -321,6 +404,21 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
           setAvatarUrl(res.publicUrl);
           setAvatarPreviewUrl("");
           setPendingAvatarFile(null);
+        } else if (res.error) {
+          setErrorMessage(res.error);
+          setIsSaving(false);
+          return;
+        }
+      }
+
+      // If user selected a new banner file, upload it now to Supabase Storage
+      if (pendingBannerFile && user?.id) {
+        const res = await uploadProfileMedia(pendingBannerFile, user.id, "banner");
+        if (res.publicUrl) {
+          finalBannerUrl = res.publicUrl;
+          setBannerUrl(res.publicUrl);
+          setBannerPreviewUrl("");
+          setPendingBannerFile(null);
         } else if (res.error) {
           setErrorMessage(res.error);
           setIsSaving(false);
@@ -337,6 +435,8 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
         location: location,
         timezone: timezone,
         avatar_url: finalAvatarUrl,
+        banner_url: finalBannerUrl,
+        cover_image: finalBannerUrl, // Backward compatibility
         preferred_language: language,
         preferred_currency: currency,
       };
@@ -376,6 +476,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
               email: user.email || email,
               full_name: fullName,
               avatar_url: finalAvatarUrl || undefined,
+              banner_url: finalBannerUrl || undefined,
               bio: bio,
               phone: phone,
               location: location,
@@ -397,6 +498,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                 github_url: githubUrl,
                 linkedin_url: linkedinUrl,
                 portfolio_url: portfolioUrl,
+                cover_image: finalBannerUrl || undefined,
               },
               { onConflict: "user_id" }
             );
@@ -407,6 +509,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                 company_name: companyName,
                 company_size: companySize,
                 industry: industry,
+                banner_url: finalBannerUrl || undefined,
               },
               { onConflict: "user_id" }
             );
@@ -640,8 +743,18 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                 </div>
               </div>
 
-              {/* Avatar Section */}
-              <div className="flex flex-col sm:flex-row items-center gap-6 p-4 rounded-2xl bg-muted/30 border border-border/50">
+              {/* ========================================================================= */}
+              {/* Profile Visuals: Banner & Avatar Header Selection (Mirroring Design)       */}
+              {/* ========================================================================= */}
+              <div className="rounded-3xl border border-border/80 bg-card overflow-hidden shadow-xs">
+                {/* Hidden File Inputs */}
+                <input
+                  type="file"
+                  ref={bannerFileInputRef}
+                  onChange={handleBannerFileChange}
+                  accept="image/png, image/jpeg, image/webp"
+                  className="hidden"
+                />
                 <input
                   type="file"
                   ref={fileInputRef}
@@ -649,50 +762,177 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                   accept="image/png, image/jpeg, image/webp, image/svg+xml"
                   className="hidden"
                 />
-                <div 
-                  className="relative group cursor-pointer"
-                  onClick={() => fileInputRef.current?.click()}
-                  title={t("settings.profile.changeAvatar", "Klik untuk ubah foto")}
-                >
-                  <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-2xl font-bold text-white shadow-md overflow-hidden">
-                    {(avatarPreviewUrl || avatarUrl) ? (
-                      <img src={avatarPreviewUrl || avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
-                    ) : (
-                      <span>{fullName ? fullName.charAt(0).toUpperCase() : email ? email.charAt(0).toUpperCase() : "U"}</span>
-                    )}
-                  </div>
-                  <div className="absolute inset-0 bg-black/40 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
-                    <Camera className="h-5 w-5" />
-                  </div>
-                </div>
-                <div className="space-y-1.5 text-center sm:text-left flex-1">
-                  <div className="flex flex-wrap items-center gap-2.5 justify-center sm:justify-start">
-                    <h4 className="text-sm font-bold text-foreground">{fullName || "Your Full Name"}</h4>
-                    {pendingAvatarFile && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300">
-                        <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-                        Pratinjau (Klik Simpan untuk Menyimpan)
+
+                {/* 1. Header Cover Banner Area */}
+                <div className="relative h-36 sm:h-44 w-full bg-gradient-to-br from-blue-600/30 via-indigo-600/20 to-purple-600/30 overflow-hidden group">
+                  {(bannerPreviewUrl || bannerUrl) ? (
+                    <img
+                      src={bannerPreviewUrl || bannerUrl}
+                      alt="Banner Sampul"
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                    />
+                  ) : (
+                    <div className="h-full w-full flex items-center justify-center bg-gradient-to-r from-blue-600/20 via-indigo-600/15 to-purple-600/25">
+                      <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground/80 bg-background/50 backdrop-blur-md px-3 py-1.5 rounded-xl border border-border/40">
+                        <ImageIcon className="h-4 w-4" />
+                        <span>{t("settings.profile.bannerPlaceholder", "Belum ada banner sampul kustom")}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent pointer-events-none" />
+
+                  {/* Pending Banner Indicator */}
+                  {pendingBannerFile && (
+                    <div className="absolute top-3 left-3 z-10">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/90 text-white backdrop-blur-md px-3 py-1 text-[11px] font-bold shadow-md">
+                        <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
+                        {t("settings.profile.bannerPreviewNotice", "Pratinjau Banner (Klik Simpan)")}
                       </span>
-                    )}
-                    {(avatarPreviewUrl || avatarUrl) && (
+                    </div>
+                  )}
+
+                  {/* Banner Action Buttons (Top Right Overlay) */}
+                  <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
+                    {(bannerPreviewUrl || bannerUrl) && (
                       <button
                         type="button"
-                        onClick={handleResetAvatar}
-                        className="px-2 py-0.5 text-[11px] text-destructive hover:bg-destructive/10 rounded-lg transition-colors font-medium"
+                        onClick={handleResetBanner}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-black/50 hover:bg-destructive/80 backdrop-blur-md rounded-xl transition-all shadow-sm"
+                        title={t("settings.profile.resetBanner", "Reset Banner ke Default")}
                       >
-                        {t("settings.profile.reset", "Reset")}
+                        <X className="h-3.5 w-3.5" />
+                        <span>{t("settings.profile.reset", "Reset")}</span>
                       </button>
                     )}
+                    <button
+                      type="button"
+                      onClick={() => bannerFileInputRef.current?.click()}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-white bg-black/60 hover:bg-black/85 backdrop-blur-md rounded-xl transition-all shadow-sm border border-white/20 hover:border-white/40"
+                    >
+                      <Camera className="h-3.5 w-3.5" />
+                      <span>{t("settings.profile.changeBanner", "Ubah Banner")}</span>
+                    </button>
                   </div>
-                  <p className="text-xs text-muted-foreground">{t("settings.profile.avatarHelp", "PNG, JPG, atau SVG. Ukuran maksimum 5MB.")}</p>
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline pt-1"
-                  >
-                    <Camera className="h-3.5 w-3.5" />
-                    <span>{t("settings.profile.uploadPhoto", "Ubah / Unggah Foto")}</span>
-                  </button>
+                </div>
+
+                {/* 2. Avatar & Identity Overlay (Exact Layout as Profile View) */}
+                <div className="px-6 pb-6 pt-2">
+                  <div className="flex flex-col sm:flex-row items-center sm:items-end justify-between gap-4 -mt-14 sm:-mt-16 mb-4">
+                    {/* Interactive Avatar Container */}
+                    <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                      <div className="h-24 w-24 sm:h-28 sm:w-28 rounded-2xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-3xl font-bold text-white shadow-xl overflow-hidden border-4 border-card bg-muted">
+                        {(avatarPreviewUrl || avatarUrl) ? (
+                          <img
+                            src={avatarPreviewUrl || avatarUrl}
+                            alt="Avatar"
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <span>
+                            {fullName ? fullName.charAt(0).toUpperCase() : email ? email.charAt(0).toUpperCase() : "U"}
+                          </span>
+                        )}
+                      </div>
+                      <div className="absolute inset-0 bg-black/45 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white border-4 border-transparent">
+                        <Camera className="h-6 w-6" />
+                        <span className="text-[10px] font-bold mt-1">Ubah Foto</span>
+                      </div>
+                    </div>
+
+                    {/* Avatar Actions & Help Info */}
+                    <div className="flex-1 text-center sm:text-left space-y-1 sm:pt-4">
+                      <div className="flex flex-wrap items-center gap-2 justify-center sm:justify-start">
+                        <h4 className="text-base font-bold text-foreground">{fullName || "Nama Profil Anda"}</h4>
+                        {pendingAvatarFile && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300">
+                            <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                            Pratinjau Foto
+                          </span>
+                        )}
+                        {(avatarPreviewUrl || avatarUrl) && (
+                          <button
+                            type="button"
+                            onClick={handleResetAvatar}
+                            className="px-2 py-0.5 text-[11px] text-destructive hover:bg-destructive/10 rounded-lg transition-colors font-medium"
+                          >
+                            {t("settings.profile.reset", "Reset Foto")}
+                          </button>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {t("settings.profile.avatarHelp", "PNG, JPG, atau SVG. Ukuran maksimum 5MB.")}
+                      </p>
+                      <div className="pt-1 flex flex-wrap gap-2 justify-center sm:justify-start">
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+                        >
+                          <Camera className="h-3.5 w-3.5" />
+                          <span>{t("settings.profile.uploadPhoto", "Ubah / Unggah Foto")}</span>
+                        </button>
+                        <span className="text-muted-foreground/40 hidden sm:inline">•</span>
+                        <button
+                          type="button"
+                          onClick={() => bannerFileInputRef.current?.click()}
+                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground hover:underline"
+                        >
+                          <ImageIcon className="h-3.5 w-3.5" />
+                          <span>{t("settings.profile.uploadBanner", "Unggah Banner Kustom")}</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 3. Quick Preset Banners Selector */}
+                  <div className="mt-4 pt-4 border-t border-border/50">
+                    <div className="flex items-center justify-between gap-2 mb-2.5">
+                      <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                        <Sparkles className="h-3.5 w-3.5 text-primary" />
+                        {t("settings.profile.bannerPreset", "Pilihan Banner Cepat")}
+                      </span>
+                      <span className="text-[11px] text-muted-foreground hidden sm:inline">
+                        {t("settings.profile.bannerHelp", "Disarankan rasio lebar (1200x400). Maks 5MB.")}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+                      {PRESET_BANNERS.map((preset) => {
+                        const isSelected = (bannerPreviewUrl || bannerUrl) === preset.url;
+                        return (
+                          <button
+                            key={preset.id}
+                            type="button"
+                            onClick={() => handleSelectPresetBanner(preset.url)}
+                            className={`group relative h-16 rounded-xl overflow-hidden border transition-all text-left ${
+                              isSelected
+                                ? "border-primary ring-2 ring-primary/40 shadow-sm scale-[1.02]"
+                                : "border-border/70 hover:border-primary/50 hover:shadow-xs"
+                            }`}
+                          >
+                            <img
+                              src={preset.url}
+                              alt={preset.name}
+                              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent" />
+                            <div className="absolute bottom-1.5 left-2 right-2 flex items-center justify-between">
+                              <span className="text-[10px] font-bold text-white truncate drop-shadow-sm">
+                                {preset.name}
+                              </span>
+                              {isSelected && (
+                                <span className="h-3.5 w-3.5 rounded-full bg-primary flex items-center justify-center text-[8px] text-white shrink-0">
+                                  ✓
+                                </span>
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               </div>
 

@@ -23,7 +23,8 @@ import {
   ExternalLink,
   Check,
   Clock,
-  FileText
+  FileText,
+  Camera
 } from "lucide-react";
 
 export interface ClientProjectItem {
@@ -125,7 +126,7 @@ export function ClientProfileView({ clientId, isOwner = true }: ClientProfileVie
           .from("client_profiles")
           .select(`
             *,
-            user:users!user_id(id, full_name, avatar_url, location, bio, created_at, email)
+            user:users!user_id(id, full_name, avatar_url, banner_url, location, bio, created_at, email)
           `)
           .or(`user_id.eq.${targetId},id.eq.${targetId}`)
           .maybeSingle();
@@ -210,8 +211,8 @@ export function ClientProfileView({ clientId, isOwner = true }: ClientProfileVie
           id: targetId,
           companyName: cData?.company_name || u.full_name || meta.company_name || meta.full_name || (u.email ? u.email.split("@")[0] : (user?.email ? user.email.split("@")[0] : "Perusahaan Klien")),
           tagline: meta.tagline || (meta.bio ? meta.bio : (cData?.industry ? `Perusahaan di bidang ${cData.industry}` : "Pemberi kerja terdaftar di platform TripleT")),
-          avatar: meta.avatar_url || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=300&auto=format&fit=crop&q=80",
-          coverImage: "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1200&auto=format&fit=crop&q=80",
+          avatar: u.avatar_url || meta.avatar_url || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=300&auto=format&fit=crop&q=80",
+          coverImage: u.banner_url || cData?.banner_url || meta.banner_url || meta.cover_image || "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1200&auto=format&fit=crop&q=80",
           industry: cData?.industry || meta.industry || "Teknologi & Bisnis",
           companySize: cData?.company_size || meta.company_size || "1-10 Karyawan (Startup)",
           location: meta.location || cData?.user?.location || "Jakarta, Indonesia",
@@ -260,15 +261,25 @@ export function ClientProfileView({ clientId, isOwner = true }: ClientProfileVie
             {/* 1. Company Identity Card */}
             <div className="rounded-3xl border border-border/80 bg-card overflow-hidden shadow-sm">
               {/* Header Cover Banner */}
-              <div className="relative h-28 w-full bg-gradient-to-br from-blue-600/30 via-indigo-600/20 to-purple-600/30 overflow-hidden">
+              <div className="relative h-28 w-full bg-gradient-to-br from-blue-600/30 via-indigo-600/20 to-purple-600/30 overflow-hidden group">
                 {profile.coverImage && (
                   <img
                     src={profile.coverImage}
                     alt="Cover"
-                    className="h-full w-full object-cover opacity-60"
+                    className="h-full w-full object-cover opacity-75 transition-transform duration-300 group-hover:scale-105"
                   />
                 )}
-                <div className="absolute inset-0 bg-gradient-to-t from-card/80 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-card/80 via-card/20 to-transparent" />
+                {isOwner && (
+                  <Link
+                    href="/client/settings?tab=profile"
+                    className="absolute top-2.5 right-2.5 z-10 inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-white bg-black/60 hover:bg-black/80 backdrop-blur-md rounded-xl transition-all opacity-0 group-hover:opacity-100 shadow-sm border border-white/20"
+                    title="Ubah Banner Profil"
+                  >
+                    <Camera className="h-3.5 w-3.5" />
+                    <span>Ubah Banner</span>
+                  </Link>
+                )}
               </div>
 
               {/* Avatar / Logo & Main Info */}
