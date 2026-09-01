@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { Search, Star, ShieldCheck, CheckCircle2, SlidersHorizontal } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Search, Star, ShieldCheck, CheckCircle2, SlidersHorizontal, Briefcase, ArrowRight, Sparkles, Layers } from "lucide-react";
 import Link from "next/link";
 import { getTalents, inviteTalentToProject, type TalentRecord } from "@/lib/services/talents";
 import { getClientProjects, type ProjectRecord } from "@/lib/services/projects";
@@ -20,6 +21,9 @@ const CATEGORY_TABS = [
 
 export default function ClientTalentPage() {
   const [mounted, setMounted] = useState(false);
+  const searchParams = useSearchParams();
+  const urlProjectId = searchParams?.get("projectId") || searchParams?.get("project") || "";
+
   const [talents, setTalents] = useState<TalentRecord[]>([]);
   const [clientProjects, setClientProjects] = useState<ProjectRecord[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string>("");
@@ -47,11 +51,19 @@ export default function ClientTalentPage() {
       }
       if (projData && projData.length > 0) {
         setClientProjects(projData);
-        setSelectedProjectId(projData[0].id);
+        if (urlProjectId && projData.some(p => p.id === urlProjectId)) {
+          setSelectedProjectId(urlProjectId);
+        } else {
+          setSelectedProjectId(projData[0].id);
+        }
       }
     }
     loadData();
-  }, []);
+  }, [urlProjectId]);
+
+  const activeProject = useMemo(() => {
+    return clientProjects.find(p => p.id === selectedProjectId) || clientProjects[0] || null;
+  }, [clientProjects, selectedProjectId]);
 
   // Filter & Sort Logic
   const filtered = useMemo(() => {
@@ -120,14 +132,66 @@ export default function ClientTalentPage() {
 
   return (
     <div className="animate-fade-in space-y-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-10 pb-16">
-      {/* 1. Header */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight md:text-3xl text-foreground">
-          {t("talent.title", "Cari Talenta Terverifikasi")}
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {t("talent.subtitle", "Temukan freelancer terbaik dengan keahlian yang telah diuji dan diverifikasi.")}
-        </p>
+      {/* 1. Header & Target Project Banner */}
+      <div className="space-y-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl text-foreground">
+            {t("talent.title", "Cari Talenta Terverifikasi")}
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {t("talent.subtitle", "Temukan freelancer terbaik dengan keahlian yang telah diuji dan diverifikasi.")}
+          </p>
+        </div>
+
+        {/* Target Project Selection Banner */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4.5 rounded-2xl border border-primary/25 bg-gradient-to-r from-primary/10 via-primary/5 to-card shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shrink-0 shadow-sm shadow-primary/25">
+              <Briefcase className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-primary">
+                  Target Proyek Perekrutan:
+                </span>
+                {activeProject && (
+                  <span className="text-[10px] font-bold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                    {activeProject.budget}
+                  </span>
+                )}
+              </div>
+
+              {clientProjects.length > 0 ? (
+                <div className="flex items-center gap-2 mt-1">
+                  <select
+                    value={selectedProjectId}
+                    onChange={(e) => setSelectedProjectId(e.target.value)}
+                    aria-label="Pilih target proyek"
+                    className="font-bold text-xs sm:text-sm text-foreground bg-transparent border-b border-primary/40 focus:outline-none cursor-pointer pr-4"
+                  >
+                    {clientProjects.map((p) => (
+                      <option key={p.id} value={p.id} className="bg-card text-foreground">
+                        {p.title} ({p.budget}) — {p.category}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <p className="text-xs font-semibold text-muted-foreground mt-0.5">
+                  Belum ada proyek terpilih. Anda dapat langsung mengundang atau membuat proyek baru.
+                </p>
+              )}
+            </div>
+          </div>
+
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold px-4 py-2.5 shadow-sm shadow-primary/20 transition-all hover:scale-102 shrink-0"
+          >
+            <span>+ Buat Proyek Baru</span>
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
       </div>
 
       {/* 2. SEARCH & FILTER CONTROLS */}
@@ -306,6 +370,16 @@ export default function ClientTalentPage() {
                     </span>
                   )}
                 </div>
+
+                {/* Target Project Pill */}
+                {activeProject && (
+                  <div className="pt-2">
+                    <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-lg border border-primary/15 truncate max-w-full">
+                      <Briefcase className="h-3 w-3 shrink-0" />
+                      <span className="truncate">Undang ke: {activeProject.title}</span>
+                    </span>
+                  </div>
+                )}
               </Link>
 
               {/* Action Buttons */}
@@ -350,7 +424,7 @@ export default function ClientTalentPage() {
                     {t("talent.inviteSuccess", "Undangan Berhasil Terkirim!")}
                   </h3>
                   <p className="text-xs text-muted-foreground">
-                    {selectedTalent.name} telah menerima notifikasi undangan proyek dan akan segera menghubungimu.
+                    {selectedTalent.name} telah menerima notifikasi undangan proyek <strong>{activeProject?.title}</strong> dan akan segera menghubungimu.
                   </p>
                 </div>
               ) : (
@@ -372,24 +446,39 @@ export default function ClientTalentPage() {
                   </div>
 
                   <form onSubmit={handleSendInvite} className="space-y-4 pt-2">
-                    {clientProjects.length > 0 && (
-                      <div>
-                        <label className="block text-xs font-semibold mb-1.5 text-foreground">
-                          Pilih Proyek Anda
-                        </label>
+                    {/* Selected Project Card */}
+                    <div className="p-3.5 rounded-2xl border border-primary/25 bg-primary/5 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
+                          <Briefcase className="h-3.5 w-3.5" />
+                          <span>Proyek Tujuan Undangan</span>
+                        </span>
+                        {activeProject && (
+                          <span className="text-[10px] font-bold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                            {activeProject.budget}
+                          </span>
+                        )}
+                      </div>
+
+                      {clientProjects.length > 0 ? (
                         <select
                           value={selectedProjectId}
                           onChange={(e) => setSelectedProjectId(e.target.value)}
-                          className="w-full rounded-2xl border border-input bg-background p-2.5 text-xs text-foreground focus:border-primary focus:outline-none"
+                          className="w-full rounded-xl border border-border bg-card p-2.5 text-xs font-semibold text-foreground focus:border-primary focus:outline-none"
                         >
                           {clientProjects.map((p) => (
                             <option key={p.id} value={p.id}>
-                              {p.title} ({p.budget})
+                              {p.title} ({p.budget}) — {p.category}
                             </option>
                           ))}
                         </select>
-                      </div>
-                    )}
+                      ) : (
+                        <div className="text-xs text-muted-foreground">
+                          Belum ada proyek aktif. Silakan buat proyek terlebih dahulu.
+                        </div>
+                      )}
+                    </div>
+
                     <div>
                       <label className="block text-xs font-semibold mb-1.5 text-foreground">
                         {t("talent.customMessage", "Pesan Tambahan / Catatan Singkat")}
@@ -398,7 +487,7 @@ export default function ClientTalentPage() {
                         rows={3}
                         value={inviteMessage}
                         onChange={(e) => setInviteMessage(e.target.value)}
-                        placeholder="Hai! Saya tertarik dengan portofoliomu dan ingin mengundangmu mengajukan proposal untuk proyek kami..."
+                        placeholder={`Hai ${selectedTalent.name}! Saya tertarik dengan portofoliomu dan ingin mengundangmu mengajukan proposal untuk proyek ${activeProject?.title || "kami"}...`}
                         className="w-full rounded-2xl border border-input bg-background p-3.5 text-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                       />
                     </div>

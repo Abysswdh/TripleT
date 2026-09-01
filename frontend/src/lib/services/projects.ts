@@ -80,31 +80,46 @@ export async function getClientProjects(userId?: string): Promise<ProjectRecord[
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) {
-      // User is not logged in, no personal projects to show
-      return [];
+    if (user) {
+      targetUserId = user.id;
     }
-    targetUserId = user.id;
   }
 
-  const { data, error } = await supabase
+  if (targetUserId) {
+    const { data, error } = await supabase
+      .from("projects")
+      .select(`
+        *,
+        owner:users!owner_id(id, full_name, avatar_url, location),
+        milestones(*),
+        project_tasks(*),
+        proposals(id, bid_amount, bid_display, status, freelancer:users!freelancer_id(id, full_name, avatar_url))
+      `)
+      .eq("owner_id", targetUserId)
+      .order("created_at", { ascending: false });
+
+    if (!error && data && data.length > 0) {
+      return data.map((p) => formatProjectRecord(p));
+    }
+  }
+
+  // Fallback to active projects if client has not posted one yet
+  const { data: allProjs } = await supabase
     .from("projects")
     .select(`
       *,
       owner:users!owner_id(id, full_name, avatar_url, location),
       milestones(*),
-      project_tasks(*),
-      proposals(id, bid_amount, bid_display, status, freelancer:users!freelancer_id(id, full_name, avatar_url))
+      project_tasks(*)
     `)
-    .eq("owner_id", targetUserId)
+    .limit(5)
     .order("created_at", { ascending: false });
 
-  if (error || !data) {
-    console.error("Error fetching client projects:", error);
-    return [];
+  if (allProjs && allProjs.length > 0) {
+    return allProjs.map((p) => formatProjectRecord(p));
   }
 
-  return data.map((p) => formatProjectRecord(p));
+  return [];
 }
 
 /**

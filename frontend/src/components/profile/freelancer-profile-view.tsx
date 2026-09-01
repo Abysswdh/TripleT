@@ -20,9 +20,11 @@ import {
   Check,
   Edit3,
   Share2,
-  Zap
+  Zap,
+  Briefcase
 } from "lucide-react";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
+import { getClientProjects, type ProjectRecord } from "@/lib/services/projects";
 
 export interface TalentProfile {
   id: string;
@@ -482,6 +484,21 @@ export function FreelancerProfileView({ talentId = "tal-1", isOwner = false }: F
   const [hireMessage, setHireMessage] = useState("");
   const [hireSuccess, setHireSuccess] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [clientProjects, setClientProjects] = useState<ProjectRecord[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<string>("");
+
+  useEffect(() => {
+    async function loadClientProjects() {
+      const projs = await getClientProjects();
+      if (projs && projs.length > 0) {
+        setClientProjects(projs);
+        setSelectedProjectId(projs[0].id);
+      }
+    }
+    loadClientProjects();
+  }, []);
+
+  const activeTargetProject = clientProjects.find((p) => p.id === selectedProjectId) || clientProjects[0] || null;
 
   const handleHireSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -490,7 +507,7 @@ export function FreelancerProfileView({ talentId = "tal-1", isOwner = false }: F
       setHireSuccess(false);
       setIsHireModalOpen(false);
       setHireMessage("");
-    }, 1500);
+    }, 1800);
   };
 
   const handleCopyLink = () => {
@@ -890,16 +907,52 @@ export function FreelancerProfileView({ talentId = "tal-1", isOwner = false }: F
                 </div>
 
                 <form onSubmit={handleHireSubmit} className="space-y-4 pt-2">
+                  {/* Selected Project Card */}
+                  <div className="p-3.5 rounded-2xl border border-primary/25 bg-primary/5 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
+                        <Briefcase className="h-3.5 w-3.5" />
+                        <span>Proyek yang Ditawarkan</span>
+                      </span>
+                      {activeTargetProject && (
+                        <span className="text-[10px] font-bold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                          {activeTargetProject.budget}
+                        </span>
+                      )}
+                    </div>
+
+                    {clientProjects.length > 0 ? (
+                      <select
+                        value={selectedProjectId}
+                        onChange={(e) => setSelectedProjectId(e.target.value)}
+                        className="w-full rounded-xl border border-border bg-card p-2.5 text-xs font-semibold text-foreground focus:border-primary focus:outline-none"
+                      >
+                        {clientProjects.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.title} ({p.budget}) — {p.category}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Belum ada proyek dibuat.</span>
+                        <Link href="/dashboard" className="text-primary font-bold hover:underline">
+                          + Buat Proyek Baru
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+
                   <div>
                     <label className="block text-xs font-semibold mb-1.5 text-foreground">
                       Pesan Singkat / Ringkasan Kebutuhan
                     </label>
                     <textarea
-                      rows={4}
+                      rows={3}
                       required
                       value={hireMessage}
                       onChange={(e) => setHireMessage(e.target.value)}
-                      placeholder={`Halo ${profile.name}, kami memiliki proyek pengembangan yang sesuai dengan keahlianmu. Bisakah kita berdiskusi lebih lanjut?`}
+                      placeholder={`Halo ${profile.name}, kami memiliki proyek ${activeTargetProject?.title || "pengembangan"} yang sesuai dengan keahlianmu. Bisakah kita berdiskusi lebih lanjut?`}
                       className="w-full rounded-2xl border border-border bg-muted/40 p-3.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                     />
                   </div>

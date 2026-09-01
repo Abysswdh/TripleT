@@ -9,7 +9,6 @@ import { useTranslation, type Locale } from "@/context/language-context";
 import { useCurrency, type Currency } from "@/context/currency-context";
 import { createClient } from "@/lib/supabase/client";
 import { uploadProfileMedia } from "@/lib/services/storage";
-import { api } from "@/lib/api";
 import {
   User,
   Building2,
@@ -415,21 +414,6 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
         } catch (dbErr) {
           console.info("Direct DB table sync notice:", dbErr);
         }
-      }
-
-      // Also try updating backend /api/v1/users/me if available
-      try {
-        await api.patch("/users/me", {
-          full_name: fullName,
-          bio: bio,
-          avatar_url: avatarUrl || undefined,
-          skills: currentRole === "freelancer" ? selectedSkills : undefined,
-          hourly_rate: currentRole === "freelancer" ? parseInt(hourlyRate, 10) || null : null,
-          experience_level: currentRole === "freelancer" ? experienceLevel : null,
-        });
-      } catch (backendErr) {
-        // Backend API might not be running in purely local/mock mode, so continue gracefully
-        console.info("Backend profile sync notice:", backendErr);
       }
 
       if (typeof window !== "undefined") {
