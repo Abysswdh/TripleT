@@ -128,23 +128,35 @@ export async function getClientProjects(userId?: string): Promise<ProjectRecord[
 export async function getProjectById(projectId: string): Promise<ProjectRecord | null> {
   const supabase = createClient();
 
-  const { data, error } = await supabase
-    .from("projects")
-    .select(`
-      *,
-      owner:users!owner_id(id, full_name, avatar_url, location),
-      milestones(*),
-      project_tasks(*)
-    `)
-    .eq("id", projectId)
-    .single();
+  try {
+    const { data, error } = await supabase
+      .from("projects")
+      .select(`
+        *,
+        owner:users!owner_id(id, full_name, avatar_url, location),
+        milestones(*),
+        project_tasks(*)
+      `)
+      .eq("id", projectId)
+      .single();
 
-  if (error || !data) {
-    console.error("Error fetching project by ID:", error);
-    return null;
+    if (!error && data) {
+      return formatProjectRecord(data);
+    }
+  } catch (err) {
+    console.warn("Direct project lookup notice:", err);
   }
 
-  return formatProjectRecord(data);
+  // Graceful fallback to search in open projects list
+  try {
+    const all = await getOpenProjects();
+    const found = all.find((p) => p.id === projectId);
+    if (found) return found;
+  } catch (fallbackErr) {
+    console.warn("Fallback project lookup notice:", fallbackErr);
+  }
+
+  return null;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

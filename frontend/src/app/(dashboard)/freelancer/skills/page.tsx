@@ -7,11 +7,7 @@ import {
   ArrowRight,
   ShieldCheck,
   RotateCcw,
-  Sparkles,
   Trophy,
-  CheckCircle2,
-  Lock,
-  Layers,
   Search
 } from "lucide-react";
 import Link from "next/link";

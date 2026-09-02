@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
   Award,
@@ -9,7 +9,6 @@ import {
   CheckCircle2,
   XCircle,
   ShieldCheck,
-  AlertTriangle,
   ArrowRight,
   ArrowLeft,
   RotateCcw,
@@ -152,9 +151,14 @@ export function QuizModal({ quiz, isOpen, onClose, onCompleted }: QuizModalProps
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-black/70 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-3xl rounded-3xl border border-border/80 bg-card p-6 sm:p-8 shadow-2xl transition-all duration-300 max-h-[90vh] flex flex-col justify-between overflow-y-auto">
+      <div className="relative w-full max-w-3xl rounded-3xl border border-border/80 bg-card p-6 sm:p-8 shadow-2xl transition-all duration-300 max-h-[90vh] flex flex-col justify-between overflow-hidden">
+        <ModalCloseButton
+          onClick={onClose}
+          aria-label="Tutup Kuis"
+        />
+
         {/* Top Header */}
-        <div className="flex items-center justify-between border-b border-border/60 pb-4 mb-6">
+        <div className="flex items-center justify-between border-b border-border/60 pb-4 mb-6 pr-10">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary font-bold text-lg">
               {quiz.badgeIcon || <Award className="h-5 w-5" />}
@@ -172,17 +176,11 @@ export function QuizModal({ quiz, isOpen, onClose, onCompleted }: QuizModalProps
               <h2 className="text-lg font-bold text-foreground mt-0.5">{quiz.name}</h2>
             </div>
           </div>
-
-          <ModalCloseButton
-            onClick={onClose}
-            aria-label="Tutup Kuis"
-            className="hover:rotate-90 transition-transform duration-200"
-          />
         </div>
 
         {/* Phase 1: Intro / Overview */}
         {phase === "intro" && (
-          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <div className="space-y-6 overflow-y-auto flex-1 animate-in fade-in slide-in-from-bottom-2 duration-200">
             <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5 space-y-3">
               <div className="flex items-center gap-2 text-primary font-bold text-sm">
                 <BookOpen className="h-4 w-4" />

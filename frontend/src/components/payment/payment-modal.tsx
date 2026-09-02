@@ -4,20 +4,13 @@ import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import {
   ShieldCheck,
-  CreditCard,
-  Building2,
-  QrCode,
-  Zap,
   CheckCircle2,
   Copy,
   Check,
   Clock,
   ArrowRight,
   ArrowLeft,
-  Lock,
   Sparkles,
-  Receipt,
-  ExternalLink,
 } from "lucide-react";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import {
@@ -26,7 +19,6 @@ import {
   confirmPaymentSuccess,
   type PaymentTransaction,
 } from "@/lib/services/payments";
-import { useCurrency } from "@/context/currency-context";
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -60,8 +52,6 @@ export function PaymentModal({
   const [cardNumber, setCardNumber] = useState("");
   const [cardExp, setCardExp] = useState("");
   const [cardCvv, setCardCvv] = useState("");
-
-  const { formatMoney } = useCurrency();
 
   useEffect(() => {
     setMounted(true);
@@ -118,9 +108,11 @@ export function PaymentModal({
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-black/70 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-xl rounded-3xl border border-border/80 bg-card p-6 sm:p-8 shadow-2xl transition-all duration-300 max-h-[92vh] flex flex-col justify-between overflow-y-auto">
+      <div className="relative w-full max-w-xl rounded-3xl border border-border/80 bg-card p-6 sm:p-8 shadow-2xl transition-all duration-300 max-h-[92vh] flex flex-col justify-between overflow-hidden">
+        <ModalCloseButton onClick={onClose} aria-label="Tutup Pembayaran" />
+
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border/60 pb-4 mb-5">
+        <div className="flex items-center justify-between border-b border-border/60 pb-4 mb-5 pr-10">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600">
               <ShieldCheck className="h-5 w-5" />
@@ -133,8 +125,6 @@ export function PaymentModal({
               <h2 className="text-base font-bold text-foreground mt-0.5">Pembayaran Deposit Proyek</h2>
             </div>
           </div>
-
-          <ModalCloseButton onClick={onClose} aria-label="Tutup Pembayaran" />
         </div>
 
         {/* Invoice Summary Card */}

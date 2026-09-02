@@ -1075,7 +1075,7 @@ export default function ClientProjectDetailPage() {
         projectId={projectId}
         projectTitle={project.title}
         amount={parseInt(project.budget.replace(/\D/g, "") || "5000000", 10)}
-        onSuccess={(trx) => {
+        onSuccess={() => {
           // Success state displayed in modal
         }}
       />

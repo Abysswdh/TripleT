@@ -25,7 +25,6 @@ import Link from "next/link";
 import { useEffect } from "react";
 import Grainient from "@/components/ui/Grainient";
 import { getOpenProjects } from "@/lib/services/projects";
-import { submitProposal } from "@/lib/services/proposals";
 import { getFreelancerContracts, submitMilestoneDeliverable } from "@/lib/services/contracts";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
 
@@ -145,12 +144,6 @@ export function FreelancerDashboard() {
   // Quest Feed State
   const [quests, setQuests] = useState<QuestOpportunity[]>(mockQuests);
   const [selectedCategory, setSelectedCategory] = useState("Semua");
-  const [selectedQuest, setSelectedQuest] = useState<QuestOpportunity | null>(null);
-  const [bidAmount, setBidAmount] = useState("");
-  const [proposalCover, setProposalCover] = useState("");
-  const [deliveryDays, setDeliveryDays] = useState("2");
-  const [proposalSubmitted, setProposalSubmitted] = useState(false);
-  const [proposalError, setProposalError] = useState<string | null>(null);
 
   // Fetch live quests from Supabase
   useEffect(() => {
@@ -297,44 +290,6 @@ export function FreelancerDashboard() {
         return { ...item, tasksChecklist: updatedChecklist, progress };
       })
     );
-  };
-
-  const handleOpenProposal = (quest: QuestOpportunity) => {
-    if (user && quest.ownerId === user.id) {
-      return; // Anti self-dealing guard
-    }
-    setSelectedQuest(quest);
-    setBidAmount(quest.budget);
-    setProposalSubmitted(false);
-    setProposalError(null);
-  };
-
-  const handleSubmitProposal = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedQuest) return;
-
-    const numericBid = parseInt(bidAmount.replace(/\D/g, "") || "0", 10) || selectedQuest.budgetNumeric;
-    setProposalError(null);
-
-    const res = await submitProposal({
-      projectId: selectedQuest.id,
-      bidAmount: numericBid,
-      deliveryDays: parseInt(deliveryDays || "7", 10),
-      coverLetter: proposalCover || "Halo! Saya sangat tertarik mengerjakan proyek ini dengan kualitas terbaik.",
-      skills: selectedQuest.matchingSkills,
-    });
-
-    if (!res.success) {
-      setProposalError(res.error || "Gagal mengirimkan proposal.");
-      return;
-    }
-
-    setProposalSubmitted(true);
-    setTimeout(() => {
-      setSelectedQuest(null);
-      setProposalSubmitted(false);
-      setProposalError(null);
-    }, 1600);
   };
 
   // Filtered Quests
@@ -651,12 +606,12 @@ export function FreelancerDashboard() {
                             Proyek Anda Sendiri
                           </span>
                         ) : (
-                          <button
-                            onClick={() => handleOpenProposal(quest)}
-                            className="rounded-xl bg-primary px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-primary/90 transition-colors"
+                          <Link
+                            href={`/freelancer/explore/${quest.id}`}
+                            className="inline-flex items-center gap-1 rounded-xl bg-primary px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-primary/90 transition-colors"
                           >
-                            Ajukan Proposal
-                          </button>
+                            <span>Ajukan Proposal</span>
+                          </Link>
                         )}
                       </div>
                     </div>
@@ -1009,99 +964,6 @@ export function FreelancerDashboard() {
                   >
                     <Send className="h-3.5 w-3.5" />
                     <span>{isSubmitting ? "Menyerahkan..." : "Kirim ke Klien"}</span>
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* MODAL 2: SUBMIT BID PROPOSAL TO CLIENT                                    */}
-      {/* ========================================================================= */}
-      {selectedQuest && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
-          <div className="relative w-full max-w-lg rounded-3xl border border-border bg-card p-6 shadow-2xl space-y-5 animate-in zoom-in-95 overflow-hidden">
-            <ModalCloseButton onClick={() => setSelectedQuest(null)} />
-            <div className="border-b border-border/40 pb-3 pr-10">
-              <span className="text-[10px] font-bold text-primary uppercase tracking-wider">
-                Ajukan Proposal Proyek
-              </span>
-              <h3 className="text-base font-bold text-foreground font-heading">
-                {selectedQuest.title}
-              </h3>
-            </div>
-
-            {proposalSubmitted ? (
-              <div className="text-center py-6 space-y-3">
-                <div className="h-12 w-12 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center mx-auto">
-                  <CheckCircle2 className="h-6 w-6" />
-                </div>
-                <h4 className="text-base font-bold text-foreground">Proposal Berhasil Terkirim!</h4>
-                <p className="text-xs text-muted-foreground">
-                  Klien ({selectedQuest.clientName}) akan meninjau portofolio Anda.
-                </p>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmitProposal} className="space-y-4 text-xs">
-                {proposalError && (
-                  <div className="rounded-xl bg-destructive/10 border border-destructive/20 p-3 text-xs text-destructive">
-                    {proposalError}
-                  </div>
-                )}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <label className="font-semibold text-foreground">Tawaran Harga</label>
-                    <input
-                      type="text"
-                      required
-                      value={bidAmount}
-                      onChange={(e) => setBidAmount(e.target.value)}
-                      className="h-10 w-full rounded-xl border border-border bg-background px-3.5 text-xs text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="font-semibold text-foreground">Estimasi Selesai (Hari)</label>
-                    <input
-                      type="number"
-                      min="1"
-                      max="30"
-                      required
-                      value={deliveryDays}
-                      onChange={(e) => setDeliveryDays(e.target.value)}
-                      className="h-10 w-full rounded-xl border border-border bg-background px-3.5 text-xs text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="font-semibold text-foreground">Pesan Pendukung & Tautan Portofolio</label>
-                  <textarea
-                    rows={4}
-                    required
-                    value={proposalCover}
-                    onChange={(e) => setProposalCover(e.target.value)}
-                    placeholder={`Halo ${selectedQuest.clientName}, saya siap mengerjakan proyek ini dengan hasil berkualitas tinggi dan tepat waktu...`}
-                    className="w-full rounded-xl border border-border bg-background p-3 text-xs text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  />
-                </div>
-
-                <div className="flex items-center justify-end gap-2.5 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedQuest(null)}
-                    className="px-4 py-2 rounded-xl text-muted-foreground hover:bg-muted font-semibold"
-                  >
-                    Batal
-                  </button>
-                  <button
-                    type="submit"
-                    className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2 text-xs font-bold text-white shadow-md shadow-primary/20 hover:bg-primary/90 transition-all"
-                  >
-                    <Send className="h-3.5 w-3.5" />
-                    <span>Kirim Proposal</span>
                   </button>
                 </div>
               </form>

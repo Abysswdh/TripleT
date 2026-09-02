@@ -490,7 +490,7 @@ export function saveQuizResult(result: QuizAttemptResult): void {
 function syncBadgeToProfile(badgeName: string): void {
   try {
     const rawCustomSkills = localStorage.getItem("doable_verified_badges");
-    let badges: string[] = rawCustomSkills ? JSON.parse(rawCustomSkills) : [];
+    const badges: string[] = rawCustomSkills ? JSON.parse(rawCustomSkills) : [];
     if (!badges.includes(badgeName)) {
       badges.push(badgeName);
       localStorage.setItem("doable_verified_badges", JSON.stringify(badges));
