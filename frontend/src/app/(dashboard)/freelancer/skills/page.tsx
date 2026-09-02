@@ -170,66 +170,6 @@ export default function FreelancerSkillsPage() {
         </div>
       </div>
 
-      {/* Search & Filter Bar (High-Visibility Modern Pills) */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Cari tes kompetensi, keahlian teknis (React, TypeScript, UI/UX)..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-11 w-full rounded-2xl border border-border/80 bg-card pl-11 pr-10 text-sm transition-all placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery("")}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-xs p-1 rounded-full hover:bg-muted"
-            >
-              ✕
-            </button>
-          )}
-        </div>
-
-        {/* High-Contrast Category Chips with Icon & Badge */}
-        <div className="flex flex-wrap items-center gap-2">
-          {CATEGORIES.map((cat) => {
-            const count = categoryCounts[cat] || 0;
-            const isSelected = selectedCategory === cat;
-            const icon =
-              cat === "Semua" ? "✨" :
-              cat === "Frontend" ? "⚛️" :
-              cat === "Backend" ? "⚙️" :
-              cat === "UI/UX" ? "🎨" :
-              cat === "Frontend 3D" ? "🧊" : "🗄️";
-
-            return (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`inline-flex items-center gap-1.5 rounded-2xl px-3.5 py-2 text-xs font-bold transition-all duration-200 cursor-pointer ${
-                  isSelected
-                    ? "bg-primary text-primary-foreground shadow-md shadow-primary/25 ring-2 ring-primary/30 scale-[1.03]"
-                    : "border border-border/80 bg-card text-foreground/80 hover:text-foreground hover:border-primary/50 hover:bg-primary/5 hover:scale-[1.01] shadow-2xs"
-                }`}
-              >
-                <span>{icon}</span>
-                <span>{cat}</span>
-                <span
-                  className={`ml-0.5 rounded-full px-1.5 py-0.2 text-[10px] font-extrabold ${
-                    isSelected
-                      ? "bg-white/20 text-white"
-                      : "bg-muted text-muted-foreground"
-                  }`}
-                >
-                  {count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
       {/* Two-Column Split Layout: Left Sticky Sidebar + Right Scrollable Catalog */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* ========================================================================= */}
@@ -239,7 +179,7 @@ export default function FreelancerSkillsPage() {
           {/* 1. Top Status Pill Strip */}
           <div className="flex items-center justify-between rounded-2xl border border-border/70 bg-card p-2.5 px-4 shadow-xs">
             <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
-              <span className="text-base leading-none">🏆</span>
+              <Trophy className="h-3.5 w-3.5 text-amber-500" />
               <span>Lv. 2</span>
             </div>
             <div className="flex items-center gap-1 text-xs font-bold text-amber-500">
@@ -268,8 +208,8 @@ export default function FreelancerSkillsPage() {
             </div>
 
             <div className="flex items-center gap-3.5">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-violet-600 via-indigo-600 to-purple-500 text-white shadow-md shadow-violet-500/25 text-2xl">
-                🛡️
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-violet-600 via-indigo-600 to-purple-500 text-white shadow-md shadow-violet-500/25">
+                <ShieldCheck className="h-6 w-6 text-white" />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-bold text-foreground truncate">Peringkat #3 Mahir</p>
@@ -365,6 +305,58 @@ export default function FreelancerSkillsPage() {
         {/* RIGHT COLUMN: SCROLLABLE QUIZ CATALOG                                     */}
         {/* ========================================================================= */}
         <main className="lg:col-span-7 xl:col-span-8 space-y-6">
+          {/* Search & Filter Bar (Inside Right Scrollable Column) */}
+          <div className="flex flex-col gap-3.5">
+            <div className="relative w-full">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Cari tes kompetensi, keahlian teknis (React, TypeScript, UI/UX)..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-11 w-full rounded-2xl border border-border/80 bg-card pl-11 pr-10 text-sm transition-all placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-xs p-1 rounded-full hover:bg-muted"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            {/* High-Contrast Category Chips without emojis */}
+            <div className="flex flex-wrap items-center gap-2">
+              {CATEGORIES.map((cat) => {
+                const count = categoryCounts[cat] || 0;
+                const isSelected = selectedCategory === cat;
+
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`inline-flex items-center gap-1.5 rounded-2xl px-3.5 py-2 text-xs font-bold transition-all duration-200 cursor-pointer ${
+                      isSelected
+                        ? "bg-primary text-primary-foreground shadow-md shadow-primary/25 ring-2 ring-primary/30 scale-[1.03]"
+                        : "border border-border/80 bg-card text-foreground/80 hover:text-foreground hover:border-primary/50 hover:bg-primary/5 hover:scale-[1.01] shadow-2xs"
+                    }`}
+                  >
+                    <span>{cat}</span>
+                    <span
+                      className={`ml-0.5 rounded-full px-1.5 py-0.2 text-[10px] font-extrabold ${
+                        isSelected
+                          ? "bg-white/20 text-white"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
           {/* Quizzes Cards Grid */}
           {filteredQuizzes.length === 0 ? (

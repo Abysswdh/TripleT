@@ -30,12 +30,6 @@ export function Footer() {
           <Link href="#" className="hover:text-primary transition-colors">
             {t("footer.termsOfService", "Terms of Service")}
           </Link>
-          <Link href="/#realitas" className="hover:text-primary transition-colors">
-            {t("footer.data2024", "Unemployment Data 2024")}
-          </Link>
-          <Link href="/#transformasi-ai" className="hover:text-primary transition-colors">
-            {t("footer.aiEthics", "AI Ethics")}
-          </Link>
           <Link href="#" className="hover:text-primary transition-colors">
             {t("footer.contactUs", "Contact Us")}
           </Link>

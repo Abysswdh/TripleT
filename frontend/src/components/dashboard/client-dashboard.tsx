@@ -81,6 +81,54 @@ interface ClientProject {
   applicants: ProposalApplicant[];
 }
 
+interface MarketPeerProject {
+  id: string;
+  company: string;
+  category: string;
+  status: string;
+  statusType: "open" | "in_progress";
+  title: string;
+  description: string;
+  skills: string[];
+  budget: string;
+}
+
+const MARKET_SAMPLE_PROJECTS: MarketPeerProject[] = [
+  {
+    id: "mkt-1",
+    company: "Nexa Corporation",
+    category: "Web Development",
+    status: "Menerima Proposal",
+    statusType: "open",
+    title: "Enterprise SaaS Analytics Dashboard & Billing",
+    description: "Pengembangan dashboard analitik multi-tenant terintegrasi payment gateway, subscription management, dan visualisasi metrik real-time.",
+    skills: ["Next.js 14", "PostgreSQL", "Prisma"],
+    budget: "Rp 18.500.000",
+  },
+  {
+    id: "mkt-2",
+    company: "Alpha Labs Tech",
+    category: "AI & Machine",
+    status: "Menerima Proposal",
+    statusType: "open",
+    title: "AI Voice Agent Support & Intelligent Ticket Dispatcher",
+    description: "Implementasi agent AI berbasis Large Language Model dan speech-to-text realtime untuk otomatisasi ticketing customer service.",
+    skills: ["Python", "OpenAI Realtime", "LangChain"],
+    budget: "Rp 14.000.000",
+  },
+  {
+    id: "mkt-3",
+    company: "PT FinTech Solusindo",
+    category: "Mobile Apps",
+    status: "Sedang Berjalan",
+    statusType: "in_progress",
+    title: "Cross-Platform Fintech Mobile App (Wallet & QRIS)",
+    description: "Aplikasi mobile dompet digital dengan modul transaksi QRIS dinamis, integrasi biometric auth, dan settlement audit log.",
+    skills: ["Flutter", "Dart", "Biometrics"],
+    budget: "Rp 25.000.000",
+  },
+];
+
 import { getTalents } from "@/lib/services/talents";
 
 export function ClientDashboard() {
@@ -91,13 +139,13 @@ export function ClientDashboard() {
   const [featuredTalents, setFeaturedTalents] = useState<FeaturedTalent[]>([]);
   const [projectStatusFilter, setProjectStatusFilter] = useState<"All" | "Hiring" | "In Progress" | "Completed">("All");
   const [talentCategory, setTalentCategory] = useState("Semua");
+  const [marketCategory, setMarketCategory] = useState("Semua");
   const [savedTalents, setSavedTalents] = useState<string[]>([]);
   const [quickPrompt, setQuickPrompt] = useState("");
 
   // Modal State for Project Creation
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [createModalInitialData, setCreateModalInitialData] = useState<CreateProjectModalProps["initialData"]>(undefined);
-  const [isChoiceModalOpen, setIsChoiceModalOpen] = useState(false);
 
   // Proposal Review Modal State
   const [selectedProjectForProposals, setSelectedProjectForProposals] = useState<ClientProject | null>(null);
@@ -115,6 +163,15 @@ export function ClientDashboard() {
 
   useEffect(() => {
     setMounted(true);
+
+    const handleSync = (e: Event) => {
+      const customEvent = e as CustomEvent<string>;
+      if (typeof customEvent?.detail === "string") {
+        setQuickPrompt(customEvent.detail);
+      }
+    };
+    window.addEventListener("doable-search-sync", handleSync);
+
     let rafId: number;
     const handleScroll = () => {
       rafId = requestAnimationFrame(() => {
@@ -127,6 +184,7 @@ export function ClientDashboard() {
     window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
     return () => {
+      window.removeEventListener("doable-search-sync", handleSync);
       window.removeEventListener("scroll", handleScroll);
       cancelAnimationFrame(rafId);
     };
@@ -222,6 +280,16 @@ export function ClientDashboard() {
     return featuredTalents.filter((t) => t.category.includes(talentCategory));
   }, [featuredTalents, talentCategory]);
 
+  // Filtered Market Projects
+  const filteredMarketProjects = useMemo(() => {
+    if (marketCategory === "Semua") return MARKET_SAMPLE_PROJECTS;
+    return MARKET_SAMPLE_PROJECTS.filter(
+      (p) =>
+        p.category.toLowerCase().includes(marketCategory.toLowerCase()) ||
+        (marketCategory === "Web Development" && p.category.includes("Web"))
+    );
+  }, [marketCategory]);
+
   // Toggle Save Talent
   const toggleSaveTalent = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -248,14 +316,10 @@ export function ClientDashboard() {
     setIsCreateModalOpen(true);
   };
 
-  // Form submit handler (e.g. on Enter key press) -> Open Choice Modal
+  // Form submit handler (e.g. on Enter key press) -> Search Market
   const handleHeroFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (quickPrompt.trim()) {
-      setIsChoiceModalOpen(true);
-    } else {
-      handleCreateProjectFromHero();
-    }
+    handleSearchMarket();
   };
 
 
@@ -348,38 +412,41 @@ export function ClientDashboard() {
               Pasang proyek dalam hitungan menit, tentukan milestone pengerjaan, dan dapatkan proposal terbaik dari talenta terverifikasi dengan garansi pembayaran aman 100%.
             </p>
 
-            {/* Quick Project Scoper & Market Search Bar */}
-            <form onSubmit={handleHeroFormSubmit} className="pt-2 w-full max-w-2xl mx-auto">
-              <div className="flex flex-col sm:flex-row items-stretch gap-2 rounded-2xl bg-white/95 p-2 shadow-2xl backdrop-blur-md">
-                <div className="flex-1 flex items-center gap-3 px-3 py-1">
+            {/* Hero Search Bar */}
+            <form
+              onSubmit={handleHeroFormSubmit}
+              className="pt-2 w-full max-w-2xl mx-auto transition-all duration-300"
+              style={{
+                opacity: p > 0.35 ? Math.max(0, 1 - (p - 0.35) * 3) : 1,
+                transform: p > 0.35 ? `translateY(-${(p - 0.35) * 24}px)` : "translateY(0px)",
+                pointerEvents: p > 0.65 ? "none" : "auto",
+              }}
+            >
+              <div className="flex flex-col sm:flex-row items-stretch gap-2 rounded-2xl bg-white/95 p-2 shadow-2xl backdrop-blur-md border border-white/20 transition-all hover:bg-white hover:shadow-primary/20">
+                <div className="flex-1 flex items-center gap-3 px-3.5 py-1.5">
                   <Sparkles className="h-5 w-5 text-primary shrink-0" />
                   <input
                     type="text"
-                    placeholder='Deskripsikan proyekmu atau cari referensi (e.g. "SaaS AI Dashboard")...'
+                    placeholder="Cari proyek, blueprint template, stack teknologi, atau talenta..."
                     value={quickPrompt}
-                    onChange={(e) => setQuickPrompt(e.target.value)}
-                    className="w-full text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none bg-transparent"
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setQuickPrompt(val);
+                      if (typeof window !== "undefined") {
+                        window.dispatchEvent(new CustomEvent("doable-search-sync", { detail: val }));
+                      }
+                    }}
+                    className="w-full text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none bg-transparent font-medium"
                   />
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center shrink-0">
                   <button
-                    type="button"
-                    onClick={handleSearchMarket}
-                    title="Cari proyek serupa di Project Market"
-                    className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-100 hover:bg-slate-200/90 px-3.5 sm:px-4 py-2.5 text-xs font-bold text-slate-700 transition-all hover:scale-[1.02]"
+                    type="submit"
+                    title="Cari di Project Market"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-primary/30 hover:bg-primary-600 hover:shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98]"
                   >
-                    <Search className="h-3.5 w-3.5 text-slate-600" />
+                    <Search className="h-4 w-4" />
                     <span>Cari di Market</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleCreateProjectFromHero}
-                    title="Buat proyek baru dari deskripsi ini"
-                    className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary px-4 sm:px-5 py-2.5 text-xs font-bold text-white shadow-md hover:bg-primary-600 transition-all hover:scale-[1.02]"
-                  >
-                    <Plus className="h-4 w-4" />
-                    <span>Buat Proyek</span>
                   </button>
                 </div>
               </div>
@@ -799,211 +866,123 @@ export function ClientDashboard() {
         {/* ============================================================ */}
         {/* 5. EXPLORE PROJECT MARKET & PEER BENCHMARKS (PROMOTION HUB) */}
         {/* ============================================================ */}
-        <div className="space-y-4 rounded-2xl sm:rounded-3xl border border-primary/20 bg-gradient-to-b from-card via-card to-primary/5 p-5 sm:p-6 shadow-sm relative overflow-hidden">
-          <div className="absolute top-0 right-0 -mt-12 -mr-12 w-72 h-72 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
-
-          {/* Section Header */}
-          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-              Jelajahi Proyek yang Sudah Dibuat Sebelumnya
-            </h2>
-
-            <Link
-              href="/client/market"
-              className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-primary-foreground shadow-sm hover:bg-primary/90 transition-all hover:scale-102 shrink-0 self-start sm:self-auto"
-            >
-              <span>Buka Project Market</span>
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-
-          {/* Featured Live Peer Projects Snippet */}
-          <div className="relative z-10 pt-1 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                Trending di Project Market Minggu Ini
-              </span>
-            </div>
-
-            <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
-              {/* Project Card 1 */}
-              <div className="flex flex-col justify-between rounded-2xl border border-border/70 bg-card p-4 space-y-3 hover:border-primary/40 hover:shadow-md transition-all">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-[11px]">
-                    <div className="flex items-center gap-1.5 font-bold text-foreground">
-                      <Building2 className="h-3.5 w-3.5 text-primary" />
-                      <span>Nexa Corporation</span>
-                    </div>
-                    <span className="rounded-full bg-emerald-500/10 text-emerald-600 px-2 py-0.5 font-bold text-[10px]">
-                      Menerima Proposal
-                    </span>
-                  </div>
-                  <h4 className="text-sm font-bold text-foreground line-clamp-2">
-                    Enterprise SaaS Analytics Dashboard & Billing
-                  </h4>
-                  <div className="flex flex-wrap gap-1">
-                    <span className="rounded bg-muted/60 px-1.5 py-0.5 text-[10px] text-muted-foreground font-medium">Next.js 14</span>
-                    <span className="rounded bg-muted/60 px-1.5 py-0.5 text-[10px] text-muted-foreground font-medium">PostgreSQL</span>
-                    <span className="rounded bg-muted/60 px-1.5 py-0.5 text-[10px] text-muted-foreground font-medium">Prisma</span>
-                  </div>
-                </div>
-
-                <div className="border-t border-border/50 pt-2.5 flex items-center justify-between">
-                  <div>
-                    <span className="text-[10px] text-muted-foreground block">Estimasi Budget</span>
-                    <span className="text-xs font-bold text-primary">Rp 18.500.000</span>
-                  </div>
-                  <Link
-                    href="/client/market"
-                    className="inline-flex items-center gap-1 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold px-2.5 py-1.5 transition-colors"
-                  >
-                    <span>Detail Scope</span>
-                    <ArrowRight className="h-3 w-3" />
-                  </Link>
-                </div>
-              </div>
-
-              {/* Project Card 2 */}
-              <div className="flex flex-col justify-between rounded-2xl border border-border/70 bg-card p-4 space-y-3 hover:border-primary/40 hover:shadow-md transition-all">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-[11px]">
-                    <div className="flex items-center gap-1.5 font-bold text-foreground">
-                      <Building2 className="h-3.5 w-3.5 text-primary" />
-                      <span>Alpha Labs Tech</span>
-                    </div>
-                    <span className="rounded-full bg-emerald-500/10 text-emerald-600 px-2 py-0.5 font-bold text-[10px]">
-                      Menerima Proposal
-                    </span>
-                  </div>
-                  <h4 className="text-sm font-bold text-foreground line-clamp-2">
-                    AI Voice Agent Support & Intelligent Ticket Dispatcher
-                  </h4>
-                  <div className="flex flex-wrap gap-1">
-                    <span className="rounded bg-muted/60 px-1.5 py-0.5 text-[10px] text-muted-foreground font-medium">Python</span>
-                    <span className="rounded bg-muted/60 px-1.5 py-0.5 text-[10px] text-muted-foreground font-medium">OpenAI Realtime</span>
-                    <span className="rounded bg-muted/60 px-1.5 py-0.5 text-[10px] text-muted-foreground font-medium">LangChain</span>
-                  </div>
-                </div>
-
-                <div className="border-t border-border/50 pt-2.5 flex items-center justify-between">
-                  <div>
-                    <span className="text-[10px] text-muted-foreground block">Estimasi Budget</span>
-                    <span className="text-xs font-bold text-primary">Rp 14.000.000</span>
-                  </div>
-                  <Link
-                    href="/client/market"
-                    className="inline-flex items-center gap-1 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold px-2.5 py-1.5 transition-colors"
-                  >
-                    <span>Detail Scope</span>
-                    <ArrowRight className="h-3 w-3" />
-                  </Link>
-                </div>
-              </div>
-
-              {/* Project Card 3 */}
-              <div className="flex flex-col justify-between rounded-2xl border border-border/70 bg-card p-4 space-y-3 hover:border-primary/40 hover:shadow-md transition-all">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-[11px]">
-                    <div className="flex items-center gap-1.5 font-bold text-foreground">
-                      <Building2 className="h-3.5 w-3.5 text-primary" />
-                      <span>PT FinTech Solusindo</span>
-                    </div>
-                    <span className="rounded-full bg-blue-500/10 text-blue-600 px-2 py-0.5 font-bold text-[10px]">
-                      In Development
-                    </span>
-                  </div>
-                  <h4 className="text-sm font-bold text-foreground line-clamp-2">
-                    Cross-Platform Fintech Mobile App (Wallet & QRIS)
-                  </h4>
-                  <div className="flex flex-wrap gap-1">
-                    <span className="rounded bg-muted/60 px-1.5 py-0.5 text-[10px] text-muted-foreground font-medium">Flutter</span>
-                    <span className="rounded bg-muted/60 px-1.5 py-0.5 text-[10px] text-muted-foreground font-medium">Dart</span>
-                    <span className="rounded bg-muted/60 px-1.5 py-0.5 text-[10px] text-muted-foreground font-medium">Biometrics</span>
-                  </div>
-                </div>
-
-                <div className="border-t border-border/50 pt-2.5 flex items-center justify-between">
-                  <div>
-                    <span className="text-[10px] text-muted-foreground block">Estimasi Budget</span>
-                    <span className="text-xs font-bold text-primary">Rp 25.000.000</span>
-                  </div>
-                  <Link
-                    href="/client/market"
-                    className="inline-flex items-center gap-1 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold px-2.5 py-1.5 transition-colors"
-                  >
-                    <span>Detail Scope</span>
-                    <ArrowRight className="h-3 w-3" />
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ============================================================ */}
-        {/* 6. LIVE PROPOSALS ACTIVITY FEED (RECENT BIDS FROM TALENT) */}
-        {/* ============================================================ */}
-        <div className="rounded-2xl border border-border/70 bg-card p-6 shadow-sm space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-primary" />
-                <span>Aktivitas Proposal & Milestone Masuk Terbaru</span>
-              </h3>
+              <h2 className="text-xl font-bold tracking-tight text-foreground">
+                Jelajahi Proyek yang Sudah Dibuat Sebelumnya
+              </h2>
             </div>
 
-            <Link
-              href="/client/projects"
-              className="text-xs font-semibold text-primary hover:underline self-start sm:self-auto flex items-center gap-1"
-            >
-              <span>Buka Semua Proyek</span>
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
+            <div className="flex flex-wrap items-center gap-3 self-start sm:self-auto">
+              {/* Category Filter Chips */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                {["Semua", "Web Development", "AI & Machine", "Mobile Apps"].map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setMarketCategory(cat)}
+                    className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
+                      marketCategory === cat
+                        ? "bg-primary text-white shadow-xs"
+                        : "border border-border/80 bg-card text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+
+              <Link
+                href="/client/market"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline ml-1"
+              >
+                <span>Buka Project Market</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-2">
-            {projects
-              .flatMap((p) => p.applicants.map((a) => ({ ...a, projectTitle: p.title, projId: p.id })))
-              .slice(0, 4)
-              .map((app) => (
-                <div
-                  key={app.id}
-                  className="flex items-start gap-3.5 rounded-xl border border-border/60 bg-muted/20 p-3.5 hover:border-primary/40 transition-colors"
-                >
-                  <img
-                    src={app.avatar}
-                    alt={app.name}
-                    className="h-10 w-10 rounded-full object-cover border border-border shrink-0"
-                  />
-                  <div className="flex-1 min-w-0 space-y-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="text-sm font-bold text-foreground truncate">{app.name}</span>
-                        <ShieldCheck className="h-3.5 w-3.5 text-primary shrink-0" />
-                      </div>
-                      <span className="text-xs font-bold text-primary shrink-0">{app.bidAmount}</span>
-                    </div>
+          {/* Peer Projects Grid */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredMarketProjects.map((proj) => (
+              <div
+                key={proj.id}
+                className="group flex flex-col justify-between rounded-2xl border border-border/70 bg-card p-5 shadow-xs transition-all hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5 space-y-4"
+              >
+                <div className="space-y-3">
+                  {/* Category & Live Status */}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="rounded-md bg-primary/10 border border-primary/20 px-2 py-0.5 text-xs font-semibold text-primary">
+                      {proj.category}
+                    </span>
+                    <span
+                      className={`inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-xs font-semibold ${
+                        proj.statusType === "open"
+                          ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
+                          : "bg-blue-500/10 text-blue-600 border border-blue-500/20"
+                      }`}
+                    >
+                      <span
+                        className={`h-1.5 w-1.5 rounded-full ${
+                          proj.statusType === "open"
+                            ? "bg-emerald-500 animate-pulse"
+                            : "bg-blue-500 animate-pulse"
+                        }`}
+                      />
+                      {proj.status}
+                    </span>
+                  </div>
 
-                    <div className="text-xs text-muted-foreground flex items-center gap-2">
-                      <span>{app.role}</span>
-                      <span>•</span>
-                      <span className="flex items-center gap-0.5 text-amber-500 font-semibold">
-                        <Star className="h-3 w-3 fill-amber-500" />
-                        {app.rating}
+                  {/* Title & Description */}
+                  <div>
+                    <h3 className="font-sans font-bold text-base text-foreground line-clamp-1 group-hover:text-primary transition-colors">
+                      {proj.title}
+                    </h3>
+                    <p className="mt-1.5 text-sm text-muted-foreground line-clamp-2 leading-relaxed">
+                      {proj.description}
+                    </p>
+                  </div>
+
+                  {/* Budget & Client Strip */}
+                  <div className="flex items-center justify-between text-xs py-1.5 border-y border-border/40">
+                    <div>
+                      <span className="text-xs text-muted-foreground block font-medium">Estimasi Budget</span>
+                      <span className="font-bold text-foreground text-sm">{proj.budget}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-xs text-muted-foreground block font-medium">Klien / Perusahaan</span>
+                      <span className="font-semibold text-foreground flex items-center gap-1 justify-end">
+                        <Building2 className="h-3.5 w-3.5 text-primary shrink-0" />
+                        <span className="truncate max-w-[130px]">{proj.company}</span>
                       </span>
                     </div>
+                  </div>
 
-                    <p className="text-sm text-foreground/90 line-clamp-1 italic font-light">
-                      &ldquo;{app.pitch}&rdquo;
-                    </p>
-
-                    <div className="text-xs text-muted-foreground pt-1 flex items-center justify-between">
-                      <span className="truncate">Proyek: <strong className="text-foreground">{app.projectTitle}</strong></span>
-                      <span className="font-semibold text-emerald-600 shrink-0">{app.deliveryDays} hari</span>
-                    </div>
+                  {/* Skills Chips */}
+                  <div className="flex flex-wrap gap-1">
+                    {proj.skills.map((skill) => (
+                      <span
+                        key={skill}
+                        className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
+                      >
+                        {skill}
+                      </span>
+                    ))}
                   </div>
                 </div>
-              ))}
+
+                {/* Card Footer Actions */}
+                <div className="pt-3 border-t border-border/40 flex items-center justify-between gap-2">
+                  <Link
+                    href={`/client/market?q=${encodeURIComponent(proj.title)}`}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary px-3 py-2 text-xs font-semibold transition-colors"
+                  >
+                    <span>Detail Scope</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -1046,98 +1025,7 @@ export function ClientDashboard() {
       </div>
 
       {/* ============================================================ */}
-      {/* 8. CHOICE MODAL (PROMPTED WHEN PRESSING ENTER IN HERO BAR) */}
-      {/* ============================================================ */}
-      {mounted &&
-        isChoiceModalOpen &&
-        createPortal(
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200 overflow-y-auto">
-            {/* Backdrop with dark blur */}
-            <div
-              className="fixed inset-0 bg-black/60 backdrop-blur-md transition-opacity"
-              onClick={() => setIsChoiceModalOpen(false)}
-            />
-            <div className="relative z-10 w-full max-w-lg rounded-3xl border border-border/80 bg-card p-6 md:p-8 shadow-2xl space-y-6 animate-in zoom-in-95 duration-200 overflow-hidden">
-              <ModalCloseButton onClick={() => setIsChoiceModalOpen(false)} />
-
-              <div className="space-y-2">
-                <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  <span>Pilihan Aksi Cerdas</span>
-                </div>
-                <h3 className="text-xl font-bold tracking-tight text-foreground">
-                  Apa yang ingin Anda lakukan?
-                </h3>
-                {quickPrompt && (
-                  <div className="p-3 rounded-xl bg-muted/50 border border-border/60 text-xs text-foreground font-medium italic line-clamp-2">
-                    &ldquo;{quickPrompt}&rdquo;
-                  </div>
-                )}
-              </div>
-
-              {/* 2 Choice Options */}
-              <div className="grid gap-3.5 sm:grid-cols-2">
-                {/* Option 1: Buat Proyek Baru */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsChoiceModalOpen(false);
-                    handleCreateProjectFromHero();
-                  }}
-                  className="group flex flex-col justify-between text-left p-5 rounded-2xl border-2 border-primary/30 bg-primary/5 hover:border-primary hover:bg-primary/10 transition-all hover:scale-[1.02] shadow-sm space-y-3"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="h-10 w-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-md shadow-primary/25">
-                      <Plus className="h-5 w-5" />
-                    </div>
-                    <span className="text-[10px] font-bold text-primary bg-primary/15 px-2 py-0.5 rounded-md">
-                      Rekomendasi
-                    </span>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">
-                      Pasang Proyek Baru
-                    </h4>
-                    <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
-                      Buat draf spesifikasi proyek dari ide ini, tentukan milestone, dan buka tender proposal ke freelancer.
-                    </p>
-                  </div>
-                </button>
-
-                {/* Option 2: Cari di Market */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsChoiceModalOpen(false);
-                    handleSearchMarket();
-                  }}
-                  className="group flex flex-col justify-between text-left p-5 rounded-2xl border-2 border-border/80 bg-card hover:border-primary/40 hover:bg-muted/40 transition-all hover:scale-[1.02] shadow-sm space-y-3"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="h-10 w-10 rounded-xl bg-muted border border-border text-foreground flex items-center justify-center shadow-xs">
-                      <Search className="h-5 w-5 text-primary" />
-                    </div>
-                    <span className="text-[10px] font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
-                      Eksplorasi
-                    </span>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">
-                      Cari di Market
-                    </h4>
-                    <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
-                      Lihat proyek serupa yang pernah dibuat, bandingkan estimasi budget riil, dan temukan referensi.
-                    </p>
-                  </div>
-                </button>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
-
-      {/* ============================================================ */}
-      {/* 9. INTERACTIVE ONBOARDING-STYLED "PASANG PROYEK BARU" MODAL */}
+      {/* 8. INTERACTIVE ONBOARDING-STYLED "PASANG PROYEK BARU" MODAL */}
       {/* ============================================================ */}
       <CreateProjectModal
         isOpen={isCreateModalOpen}
