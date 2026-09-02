@@ -44,6 +44,8 @@ class User(Base, TimestampMixin):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     onboarding_completed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    freelancer_onboarded: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    client_onboarded: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     # Relationships
     projects = relationship(

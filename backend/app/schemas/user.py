@@ -93,6 +93,8 @@ class UserResponse(UserBase):
     is_active: bool = True
     is_verified: bool = False
     onboarding_completed: bool = False
+    freelancer_onboarded: bool = False
+    client_onboarded: bool = False
     created_at: datetime
     updated_at: datetime
 
@@ -112,6 +114,8 @@ class UserProfile(BaseModel):
     banner_url: Optional[str] = None
     role: str
     is_verified: bool = False
+    freelancer_onboarded: bool = False
+    client_onboarded: bool = False
     freelancer_profile: Optional[FreelancerProfileData] = None
     client_profile: Optional[ClientProfileData] = None
 

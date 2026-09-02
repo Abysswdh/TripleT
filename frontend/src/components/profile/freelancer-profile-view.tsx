@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
@@ -13,7 +13,6 @@ import {
   Star,
   Clock,
   Award,
-  Flame,
   ArrowRight,
   Heart,
   MapPin,
@@ -348,7 +347,6 @@ export function FreelancerProfileView({ talentId = "tal-1", isOwner = false }: F
     fetchHeatmapData().then((data) => setHeatmapData(data));
   }, []);
 
-  const githubHeatmap = heatmapData.weeks;
   const streakDays = heatmapData.streakDays;
   const totalContributions = heatmapData.totalContributions;
 

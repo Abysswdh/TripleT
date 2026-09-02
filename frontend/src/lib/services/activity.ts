@@ -297,7 +297,7 @@ function buildHeatmapFromCounts(
   // Calculate streak
   const todayStr = today.toISOString().slice(0, 10);
   let streakDays = 0;
-  let checkDate = new Date(today);
+  const checkDate = new Date(today);
   while (true) {
     const ds = checkDate.toISOString().slice(0, 10);
     if (ds > todayStr) {

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/use-auth";
 import { useDashboardRole } from "@/context/role-context";
 import { Loader2, Briefcase, Building2, ArrowRight, ShieldCheck, Zap, Star } from "lucide-react";
 
@@ -9,7 +10,8 @@ const STORAGE_KEY = "triplet_active_dashboard_role";
 
 export default function DashboardRedirectPage() {
   const router = useRouter();
-  const { isClient, setRole } = useDashboardRole();
+  const { user } = useAuth();
+  const { setRole } = useDashboardRole();
   const [showRoleSelect, setShowRoleSelect] = useState(false);
 
   useEffect(() => {
@@ -17,23 +19,61 @@ export default function DashboardRedirectPage() {
       ? localStorage.getItem(STORAGE_KEY)
       : null;
 
-    if (saved === "customer" || saved === "freelancer") {
-      // Already has a role — redirect
-      router.replace(saved === "customer" ? "/client/dashboard" : "/freelancer/dashboard");
+    const isFlOnboarded =
+      !!user?.user_metadata?.freelancer_onboarded ||
+      (!!user?.user_metadata?.onboarding_completed && user?.user_metadata?.role === "freelancer") ||
+      (typeof window !== "undefined" && localStorage.getItem("triplet_freelancer_onboarded") === "true");
+
+    const isClOnboarded =
+      !!user?.user_metadata?.client_onboarded ||
+      (!!user?.user_metadata?.onboarding_completed &&
+        (user?.user_metadata?.role === "customer" || user?.user_metadata?.role === "client")) ||
+      (typeof window !== "undefined" && localStorage.getItem("triplet_client_onboarded") === "true");
+
+    if (saved === "customer") {
+      if (isClOnboarded) {
+        router.replace("/client/dashboard");
+      } else {
+        router.replace("/onboarding?role=customer");
+      }
+    } else if (saved === "freelancer") {
+      if (isFlOnboarded) {
+        router.replace("/freelancer/dashboard");
+      } else {
+        router.replace("/onboarding?role=freelancer");
+      }
     } else {
-      // First time — show role selection screen
       setShowRoleSelect(true);
     }
-  }, [router, isClient]);
+  }, [router, user]);
 
   const handleSelectClient = () => {
     setRole("customer");
-    router.push("/client/dashboard");
+    const isClOnboarded =
+      !!user?.user_metadata?.client_onboarded ||
+      (!!user?.user_metadata?.onboarding_completed &&
+        (user?.user_metadata?.role === "customer" || user?.user_metadata?.role === "client")) ||
+      (typeof window !== "undefined" && localStorage.getItem("triplet_client_onboarded") === "true");
+
+    if (!isClOnboarded) {
+      router.push("/onboarding?role=customer");
+    } else {
+      router.push("/client/dashboard");
+    }
   };
 
   const handleSelectFreelancer = () => {
     setRole("freelancer");
-    router.push("/freelancer/dashboard");
+    const isFlOnboarded =
+      !!user?.user_metadata?.freelancer_onboarded ||
+      (!!user?.user_metadata?.onboarding_completed && user?.user_metadata?.role === "freelancer") ||
+      (typeof window !== "undefined" && localStorage.getItem("triplet_freelancer_onboarded") === "true");
+
+    if (!isFlOnboarded) {
+      router.push("/onboarding?role=freelancer");
+    } else {
+      router.push("/freelancer/dashboard");
+    }
   };
 
   if (!showRoleSelect) {

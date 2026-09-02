@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 export type RoleType = "freelancer" | "customer";
@@ -60,24 +60,84 @@ const initialData: OnboardingData = {
 };
 
 export function useOnboarding() {
-  const [step, setStep] = useState(1);
-  const [data, setData] = useState<OnboardingData>(initialData);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const roleParam = searchParams?.get("role") as RoleType | null;
+  const isRoleSwitchMode = Boolean(roleParam && (roleParam === "freelancer" || roleParam === "customer"));
+
+  const [step, setStep] = useState(() => (isRoleSwitchMode ? 2 : 1));
+  const [data, setData] = useState<OnboardingData>(() => ({
+    ...initialData,
+    role: (roleParam === "freelancer" || roleParam === "customer") ? roleParam : "freelancer",
+  }));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
   const supabase = createClient();
 
-  // Load from sessionStorage if available
+  // Load from sessionStorage if available, but respect roleParam override
   useEffect(() => {
     try {
       const saved = sessionStorage.getItem(STORAGE_KEY);
       if (saved) {
-        setData(JSON.parse(saved));
+        const parsed = JSON.parse(saved);
+        if (roleParam && (roleParam === "freelancer" || roleParam === "customer")) {
+          setData({ ...parsed, role: roleParam });
+        } else {
+          setData(parsed);
+        }
+      } else if (roleParam && (roleParam === "freelancer" || roleParam === "customer")) {
+        setData((prev) => ({ ...prev, role: roleParam }));
       }
     } catch {
       // Ignore sessionStorage errors
     }
-  }, []);
+  }, [roleParam]);
+
+  // Ensure secondary onboarding starts at data input (step 2) and skips role selection
+  useEffect(() => {
+    if (isRoleSwitchMode) {
+      setStep((s) => (s < 2 ? 2 : s));
+    }
+  }, [isRoleSwitchMode]);
+
+  // Pre-fill user's existing basic identity (Name, Username, Domisili, Avatar) from Supabase
+  useEffect(() => {
+    async function loadExistingUserProfile() {
+      try {
+        const { data: authData } = await supabase.auth.getUser();
+        if (!authData?.user) return;
+
+        const { data: dbUser } = await supabase
+          .from("users")
+          .select("full_name, username, avatar_url, location, role, freelancer_onboarded, client_onboarded")
+          .eq("id", authData.user.id)
+          .maybeSingle();
+
+        const meta = authData.user.user_metadata || {};
+        const existingName = dbUser?.full_name || meta.full_name || "";
+        const existingUsername = dbUser?.username || meta.username || "";
+        const existingAvatar = (dbUser?.avatar_url && dbUser.avatar_url.startsWith("http")) 
+          ? dbUser.avatar_url 
+          : (meta.avatar_url && meta.avatar_url.startsWith("http")) 
+          ? meta.avatar_url 
+          : DEFAULT_AVATAR_URL;
+        const existingLocation = dbUser?.location || "Jakarta, DKI Jakarta";
+
+        setData((prev) => ({
+          ...prev,
+          fullName: prev.fullName || existingName,
+          username: prev.username || existingUsername,
+          avatarUrl: (prev.avatarUrl && prev.avatarUrl !== DEFAULT_AVATAR_URL) ? prev.avatarUrl : existingAvatar,
+          locationCity: prev.locationCity !== "Jakarta, DKI Jakarta" ? prev.locationCity : existingLocation,
+          role: (roleParam === "freelancer" || roleParam === "customer") ? roleParam : prev.role,
+        }));
+      } catch (err) {
+        console.warn("Could not prefill onboarding user profile:", err);
+      }
+    }
+
+    loadExistingUserProfile();
+  }, [supabase, roleParam]);
 
   // Save to sessionStorage whenever data changes
   const updateData = useCallback((updates: Partial<OnboardingData>) => {
@@ -97,8 +157,11 @@ export function useOnboarding() {
   }, []);
 
   const prevStep = useCallback(() => {
-    setStep((s) => Math.max(s - 1, 1));
-  }, []);
+    setStep((s) => {
+      const minStep = isRoleSwitchMode ? 2 : 1;
+      return Math.max(s - 1, minStep);
+    });
+  }, [isRoleSwitchMode]);
 
   const toggleSkill = useCallback((skill: string) => {
     setData((prev) => {
@@ -150,12 +213,35 @@ export function useOnboarding() {
         throw new Error("Silakan masuk terlebih dahulu untuk menyelesaikan onboarding");
       }
 
+      // Check current onboarding completion statuses from users row
+      const { data: currentUserRow } = await supabase
+        .from("users")
+        .select("freelancer_onboarded, client_onboarded, onboarding_completed, role")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      const wasFreelancerOnboarded = Boolean(
+        currentUserRow?.freelancer_onboarded ||
+        (currentUserRow?.onboarding_completed && currentUserRow?.role === "freelancer") ||
+        user.user_metadata?.freelancer_onboarded
+      );
+
+      const wasClientOnboarded = Boolean(
+        currentUserRow?.client_onboarded ||
+        (currentUserRow?.onboarding_completed && (currentUserRow?.role === "customer" || currentUserRow?.role === "client")) ||
+        user.user_metadata?.client_onboarded
+      );
+
+      // Symmetrically set the newly submitted role to true while preserving the other role's status
+      const newFreelancerOnboarded = data.role === "freelancer" ? true : wasFreelancerOnboarded;
+      const newClientOnboarded = data.role === "customer" ? true : wasClientOnboarded;
+
       const displayName = data.fullName || user.user_metadata?.full_name || (data.role === "customer" ? (data.businessName || "Klien Doable!") : "Talenta Muda Doable!");
       const cleanUsername = data.username ? data.username.toLowerCase().trim().replace(/[^a-z0-9_.]/g, "") : (user.user_metadata?.username || undefined);
       const userAvatar = (data.avatarUrl && data.avatarUrl.startsWith("http")) ? data.avatarUrl : DEFAULT_AVATAR_URL;
       const userBanner = DEFAULT_BANNER_URL;
 
-      // 1. Update/Upsert public.users table
+      // 1. Update/Upsert public.users table with independent role onboarding flags
       await supabase.from("users").upsert(
         {
           id: user.id,
@@ -168,13 +254,15 @@ export function useOnboarding() {
           banner_url: userBanner,
           location: data.locationCity || "Jakarta, Indonesia",
           onboarding_completed: true,
+          freelancer_onboarded: newFreelancerOnboarded,
+          client_onboarded: newClientOnboarded,
           is_active: true,
           is_verified: false,
         },
         { onConflict: "id" }
       );
 
-      // 2. Dual-Role Profile Initializations (Ensure BOTH profiles exist for seamless switching)
+      // 2. Dual-Role Profile Initializations
       if (data.role === "freelancer") {
         const headlineText = data.headline || `${data.skills[0] || "Digital & Tech"} Specialist`;
         const eduText = data.backgroundType === "mahasiswa" ? "Mahasiswa / Pelajar Aktif" : data.backgroundType === "fresh_grad" ? "Fresh Graduate" : data.backgroundType === "switch_career" ? "Career Switcher" : "Profesional";
@@ -188,7 +276,7 @@ export function useOnboarding() {
             ? "Fleksibel (Malam & Weekend)"
             : "15 – 30 Jam / Minggu (Part-Time)";
 
-        // Primary: Freelancer Profile
+        // Primary: Freelancer Profile with user-customized inputs
         await supabase.from("freelancer_profiles").upsert(
           {
             user_id: user.id,
@@ -210,21 +298,31 @@ export function useOnboarding() {
           { onConflict: "user_id" }
         );
 
-        // Secondary / Lazy-load: Client Profile fallback
-        await supabase.from("client_profiles").upsert(
-          {
-            user_id: user.id,
-            company_name: data.businessName || displayName,
-            company_size: "1-10 Karyawan (UMKM)",
-            client_type: "individual",
-            industry: data.projectCategories[0] || "Teknologi & Kreatif",
-            banner_url: userBanner,
-            is_verified: false,
-          },
-          { onConflict: "user_id" }
-        );
+        // Secondary: Client Profile baseline fallback ONLY if client profile does not exist yet
+        if (!wasClientOnboarded) {
+          const { data: existingCl } = await supabase
+            .from("client_profiles")
+            .select("id")
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+          if (!existingCl) {
+            await supabase.from("client_profiles").upsert(
+              {
+                user_id: user.id,
+                company_name: data.businessName || displayName,
+                company_size: "1-10 Karyawan (UMKM)",
+                client_type: "individual",
+                industry: data.projectCategories[0] || "Teknologi & Kreatif",
+                banner_url: userBanner,
+                is_verified: false,
+              },
+              { onConflict: "user_id" }
+            );
+          }
+        }
       } else {
-        // Primary: Client Profile
+        // Primary: Client Profile with user-customized inputs
         await supabase.from("client_profiles").upsert(
           {
             user_id: user.id,
@@ -238,27 +336,37 @@ export function useOnboarding() {
           { onConflict: "user_id" }
         );
 
-        // Secondary / Lazy-load: Freelancer Profile fallback
-        await supabase.from("freelancer_profiles").upsert(
-          {
-            user_id: user.id,
-            headline: "Digital & Tech Specialist",
-            bio: data.bio || `Halo! Saya ${displayName}. Siap berkolaborasi dalam proyek profesional.`,
-            skills: ["UI/UX Design", "Web Development"],
-            hourly_rate: 200000,
-            starting_price: "15 – 30 Jam / Minggu (Part-Time)",
-            availability: "semi_full",
-            experience_level: "intermediate",
-            category: "Web Development",
-            badge_level: "Verified Pro",
-            organization: "Profesional",
-            cover_image: userBanner,
-            completed_projects: 0,
-            rating: 5.0,
-            reviews_count: 0,
-          },
-          { onConflict: "user_id" }
-        );
+        // Secondary: Freelancer Profile baseline fallback ONLY if freelancer profile does not exist yet
+        if (!wasFreelancerOnboarded) {
+          const { data: existingFl } = await supabase
+            .from("freelancer_profiles")
+            .select("id")
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+          if (!existingFl) {
+            await supabase.from("freelancer_profiles").upsert(
+              {
+                user_id: user.id,
+                headline: "Digital & Tech Specialist",
+                bio: data.bio || `Halo! Saya ${displayName}. Siap berkolaborasi dalam proyek profesional.`,
+                skills: ["UI/UX Design", "Web Development"],
+                hourly_rate: 200000,
+                starting_price: "15 – 30 Jam / Minggu (Part-Time)",
+                availability: "semi_full",
+                experience_level: "intermediate",
+                category: "Web Development",
+                badge_level: "Verified Pro",
+                organization: "Profesional",
+                cover_image: userBanner,
+                completed_projects: 0,
+                rating: 5.0,
+                reviews_count: 0,
+              },
+              { onConflict: "user_id" }
+            );
+          }
+        }
       }
 
       // 3. Update Supabase Auth user metadata
@@ -270,12 +378,23 @@ export function useOnboarding() {
           avatar_url: userAvatar,
           banner_url: userBanner,
           onboarding_completed: true,
+          freelancer_onboarded: newFreelancerOnboarded,
+          client_onboarded: newClientOnboarded,
           experience_level: data.experienceLevel,
           weekly_availability: data.weeklyAvailability,
           availability: data.weeklyAvailability,
           willing_to_verify_ktp: data.willingToVerifyKtp,
         },
       });
+
+      // Update localStorage & trigger profile update event
+      if (typeof window !== "undefined") {
+        const targetActiveRole = data.role === "customer" ? "customer" : "freelancer";
+        localStorage.setItem("triplet_active_dashboard_role", targetActiveRole);
+        if (newFreelancerOnboarded) localStorage.setItem("triplet_freelancer_onboarded", "true");
+        if (newClientOnboarded) localStorage.setItem("triplet_client_onboarded", "true");
+        window.dispatchEvent(new Event("profile-updated"));
+      }
 
       // Clear session storage
       try {
@@ -296,6 +415,12 @@ export function useOnboarding() {
     const targetRole = data.role === "customer" ? "customer" : "freelancer";
     if (typeof window !== "undefined") {
       localStorage.setItem("triplet_active_dashboard_role", targetRole);
+      if (targetRole === "customer") {
+        localStorage.setItem("triplet_client_onboarded", "true");
+      } else {
+        localStorage.setItem("triplet_freelancer_onboarded", "true");
+      }
+      window.dispatchEvent(new Event("profile-updated"));
     }
 
     if (targetRole === "customer") {
@@ -319,5 +444,7 @@ export function useOnboarding() {
     finishAndGoToDashboard,
     loading,
     error,
+    isRoleSwitchMode,
+    roleParam,
   };
 }

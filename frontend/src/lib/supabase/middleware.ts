@@ -77,17 +77,64 @@ export async function updateSession(request: NextRequest) {
   );
 
   if (isAuthRoute && user) {
-    const isOnboarded = user.user_metadata?.onboarding_completed;
+    const isFreelancerOnboarded =
+      !!user.user_metadata?.freelancer_onboarded ||
+      (!!user.user_metadata?.onboarding_completed && user.user_metadata?.role === "freelancer");
+    const isClientOnboarded =
+      !!user.user_metadata?.client_onboarded ||
+      (!!user.user_metadata?.onboarding_completed &&
+        (user.user_metadata?.role === "customer" || user.user_metadata?.role === "client"));
+    const isOnboarded = isFreelancerOnboarded || isClientOnboarded || !!user.user_metadata?.onboarding_completed;
+
     return NextResponse.redirect(
       new URL(isOnboarded ? "/dashboard" : "/onboarding", request.url)
     );
   }
 
-  // If already onboarded, redirect away from /onboarding to /dashboard (bypassed in dev mode)
+  // Handle /onboarding access: allow if target role has not completed onboarding
   if (request.nextUrl.pathname.startsWith("/onboarding") && user) {
-    const isOnboarded = user.user_metadata?.onboarding_completed;
-    if (isOnboarded && !isDev) {
+    const roleParam = request.nextUrl.searchParams.get("role");
+    const isFreelancerOnboarded =
+      !!user.user_metadata?.freelancer_onboarded ||
+      (!!user.user_metadata?.onboarding_completed && user.user_metadata?.role === "freelancer");
+    const isClientOnboarded =
+      !!user.user_metadata?.client_onboarded ||
+      (!!user.user_metadata?.onboarding_completed &&
+        (user.user_metadata?.role === "customer" || user.user_metadata?.role === "client"));
+
+    // Allow onboarding if the requested role has not been onboarded yet
+    if (roleParam === "freelancer" && !isFreelancerOnboarded) {
+      return response;
+    }
+    if ((roleParam === "customer" || roleParam === "client") && !isClientOnboarded) {
+      return response;
+    }
+
+    const isBothOnboarded = isFreelancerOnboarded && isClientOnboarded;
+    const isInitialOnboarded = !!user.user_metadata?.onboarding_completed;
+
+    if ((isBothOnboarded || (isInitialOnboarded && !roleParam)) && !isDev) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+  }
+
+  // Role Dashboard Route Protection: ensure user has completed onboarding for the accessed role
+  if (request.nextUrl.pathname.startsWith("/freelancer") && user && !isDev) {
+    const isFreelancerOnboarded =
+      !!user.user_metadata?.freelancer_onboarded ||
+      (!!user.user_metadata?.onboarding_completed && user.user_metadata?.role === "freelancer");
+    if (!isFreelancerOnboarded) {
+      return NextResponse.redirect(new URL("/onboarding?role=freelancer", request.url));
+    }
+  }
+
+  if (request.nextUrl.pathname.startsWith("/client") && user && !isDev) {
+    const isClientOnboarded =
+      !!user.user_metadata?.client_onboarded ||
+      (!!user.user_metadata?.onboarding_completed &&
+        (user.user_metadata?.role === "customer" || user.user_metadata?.role === "client"));
+    if (!isClientOnboarded) {
+      return NextResponse.redirect(new URL("/onboarding?role=customer", request.url));
     }
   }
 

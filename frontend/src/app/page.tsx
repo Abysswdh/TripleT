@@ -16,7 +16,6 @@ import {
   ShieldCheck,
   Briefcase,
   MessageSquare,
-  Flame,
   PieChart,
   HelpCircle,
 } from "lucide-react";
@@ -57,9 +56,6 @@ export default function LandingPage() {
   // Section 4: Auto-Gantt Simulator Category
   const [ganttCategory, setGanttCategory] = useState<"logo" | "web" | "content">("logo");
   const [activeGanttStep, setActiveGanttStep] = useState<number>(2);
-
-  // Section 4: GitHub Streak Hovered Day Tooltip State
-  const [hoveredStreakDay, setHoveredStreakDay] = useState<{ day: number; count: number; date: string } | null>(null);
 
   // Section 5: Dummy Project Simulator
   const [selectedDummyBrief, setSelectedDummyBrief] = useState<number>(0);
@@ -153,18 +149,6 @@ export default function LandingPage() {
       status: "Tersedia untuk Dikerjakan",
     },
   ];
-
-  // GitHub Streak Grid Data Generation (28 days)
-  const streakDays = Array.from({ length: 28 }).map((_, i) => {
-    const intensity = [0, 1, 2, 3, 4][(i * 7 + 3) % 5];
-    const dates = ["2026-08-01", "2026-08-05", "2026-08-10", "2026-08-15", "2026-08-20", "2026-08-25", "2026-08-29"];
-    return {
-      day: i + 1,
-      intensity,
-      count: intensity * 2,
-      date: dates[i % dates.length],
-    };
-  });
 
   return (
     <div className="min-h-screen bg-white text-slate-900 selection:bg-blue-500 selection:text-white font-sans overflow-x-hidden">

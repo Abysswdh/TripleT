@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo } from "react";
 import {
-  Award,
   Zap,
   ArrowRight,
   ShieldCheck,
@@ -13,8 +12,6 @@ import {
   Lock,
   Sparkles,
   Flame,
-  Check,
-  Filter,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -24,8 +21,6 @@ import {
   getSavedQuizResults,
 } from "@/lib/services/quizzes";
 import { createClient } from "@/lib/supabase/client";
-import CountUp from "@/components/ui/CountUp";
-import { SpotlightCard } from "@/components/ui/SpotlightCard";
 import Grainient from "@/components/ui/Grainient";
 
 const CATEGORIES = ["Semua", "Frontend", "Backend", "UI/UX", "Frontend 3D", "Database"];

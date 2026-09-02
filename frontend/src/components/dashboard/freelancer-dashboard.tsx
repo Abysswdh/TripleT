@@ -4,7 +4,6 @@ import { useState, useMemo, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useCurrency } from "@/context/currency-context";
 import {
-  Flame,
   Zap,
   Briefcase,
   Clock,
@@ -295,7 +294,6 @@ export function FreelancerDashboard() {
     fetchHeatmapData().then((data) => setHeatmapData(data));
   }, []);
 
-  const githubHeatmap = heatmapData.weeks;
   const streakDays = heatmapData.streakDays;
   const totalContributions = heatmapData.totalContributions;
 

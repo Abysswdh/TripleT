@@ -56,7 +56,6 @@ export function Navbar() {
 
   const isFreelancerView = isFreelancerRoute || (!isClientRoute && role === "freelancer");
   const isClientView = isClientRoute || (!isFreelancerRoute && role === "customer");
-  const isClientDashboard = pathname === "/client/dashboard" || (pathname === "/dashboard" && isClientView);
 
   // Sync search query with hero search bar
   useEffect(() => {
@@ -88,10 +87,14 @@ export function Navbar() {
   // Live avatar state synced from database and custom update events
   const DEFAULT_AVATAR = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80";
   const [dbAvatarUrl, setDbAvatarUrl] = useState<string | null>(DEFAULT_AVATAR);
+  const [freelancerOnboarded, setFreelancerOnboarded] = useState<boolean | null>(null);
+  const [clientOnboarded, setClientOnboarded] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!user) {
       setDbAvatarUrl(null);
+      setFreelancerOnboarded(null);
+      setClientOnboarded(null);
       return;
     }
 
@@ -105,27 +108,45 @@ export function Navbar() {
     if (user.user_metadata?.avatar_url) {
       setDbAvatarUrl(cleanUrl(user.user_metadata.avatar_url));
     }
+    if (user.user_metadata?.freelancer_onboarded !== undefined) {
+      setFreelancerOnboarded(Boolean(user.user_metadata.freelancer_onboarded));
+    }
+    if (user.user_metadata?.client_onboarded !== undefined) {
+      setClientOnboarded(Boolean(user.user_metadata.client_onboarded));
+    }
 
     const supabase = createClient();
-    const fetchAvatar = async () => {
+    const fetchUserData = async () => {
       try {
         const { data } = await supabase
           .from("users")
-          .select("avatar_url")
+          .select("avatar_url, freelancer_onboarded, client_onboarded, role, onboarding_completed")
           .eq("id", user.id)
           .single();
-        if (data?.avatar_url !== undefined) {
-          setDbAvatarUrl(cleanUrl(data.avatar_url));
+        if (data) {
+          if (data.avatar_url !== undefined) {
+            setDbAvatarUrl(cleanUrl(data.avatar_url));
+          }
+          const isFlOnboarded = !!data.freelancer_onboarded || (!!data.onboarding_completed && data.role === "freelancer");
+          const isClOnboarded = !!data.client_onboarded || (!!data.onboarding_completed && (data.role === "customer" || data.role === "client"));
+
+          setFreelancerOnboarded(isFlOnboarded);
+          setClientOnboarded(isClOnboarded);
+
+          if (typeof window !== "undefined") {
+            if (isFlOnboarded) localStorage.setItem("triplet_freelancer_onboarded", "true");
+            if (isClOnboarded) localStorage.setItem("triplet_client_onboarded", "true");
+          }
         }
       } catch (err) {
-        console.warn("Could not fetch navbar avatar:", err);
+        console.warn("Could not fetch navbar user data:", err);
       }
     };
 
-    fetchAvatar();
+    fetchUserData();
 
     const handleProfileUpdate = () => {
-      fetchAvatar();
+      fetchUserData();
     };
 
     window.addEventListener("profile-updated", handleProfileUpdate);
@@ -134,9 +155,54 @@ export function Navbar() {
     };
   }, [user]);
 
-  // Seamless 1-click role switcher
-  const handleSwitchRole = () => {
+  // Seamless role switcher with first-time role onboarding detection
+  const handleSwitchRole = async () => {
     const targetRole = isClientView ? "freelancer" : "customer";
+
+    // 1. Determine onboarding status for target role
+    let isTargetOnboarded: boolean = targetRole === "freelancer"
+      ? (freelancerOnboarded ?? (user?.user_metadata?.freelancer_onboarded ?? false))
+      : (clientOnboarded ?? (user?.user_metadata?.client_onboarded ?? false));
+
+    // Also check localStorage cache
+    if (!isTargetOnboarded && typeof window !== "undefined") {
+      const cached = targetRole === "freelancer"
+        ? localStorage.getItem("triplet_freelancer_onboarded") === "true"
+        : localStorage.getItem("triplet_client_onboarded") === "true";
+      if (cached) isTargetOnboarded = true;
+    }
+
+    // Double check with live DB if still not flagged to prevent erroneous redirects
+    if (!isTargetOnboarded && user?.id) {
+      try {
+        const supabase = createClient();
+        const { data } = await supabase
+          .from("users")
+          .select("freelancer_onboarded, client_onboarded, role, onboarding_completed")
+          .eq("id", user.id)
+          .single();
+        if (data) {
+          const isFl = !!data.freelancer_onboarded || (!!data.onboarding_completed && data.role === "freelancer");
+          const isCl = !!data.client_onboarded || (!!data.onboarding_completed && (data.role === "customer" || data.role === "client"));
+          setFreelancerOnboarded(isFl);
+          setClientOnboarded(isCl);
+          isTargetOnboarded = targetRole === "freelancer" ? isFl : isCl;
+        }
+      } catch (err) {
+        console.warn("Error checking target role onboarding status:", err);
+      }
+    }
+
+    // 2. If it's their first time switching to target role, direct to onboarding for that role
+    if (!isTargetOnboarded) {
+      if (typeof window !== "undefined") {
+        localStorage.setItem("triplet_active_dashboard_role", targetRole);
+      }
+      router.push(`/onboarding?role=${targetRole}`);
+      return;
+    }
+
+    // 3. Target role already onboarded: direct seamless navigation
     if (typeof window !== "undefined") {
       localStorage.setItem("triplet_active_dashboard_role", targetRole);
     }

@@ -8,7 +8,7 @@ import { useDashboardRole, DashboardRole } from "@/context/role-context";
 import { useTranslation, type Locale } from "@/context/language-context";
 import { useCurrency, type Currency } from "@/context/currency-context";
 import { createClient } from "@/lib/supabase/client";
-import { uploadProfileMedia, deleteProfileMedia } from "@/lib/services/storage";
+import { uploadProfileMedia } from "@/lib/services/storage";
 import {
   User,
   Image as ImageIcon,

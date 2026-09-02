@@ -1,7 +1,9 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { Loader2, Sparkles } from "lucide-react";
 import logoWithText from "@/assets/logo_with_text.svg";
@@ -50,7 +52,8 @@ const STEP_INFO: Record<number, { title: string; desc: string }> = {
   },
 };
 
-export default function OnboardingPage() {
+function OnboardingContent() {
+  const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const {
     step,
@@ -65,6 +68,7 @@ export default function OnboardingPage() {
     finishAndGoToDashboard,
     loading: submitLoading,
     error,
+    isRoleSwitchMode,
   } = useOnboarding();
 
   const isDev = process.env.NODE_ENV === "development";
@@ -214,9 +218,11 @@ export default function OnboardingPage() {
 
           {/* Sole Bottom Step Progress Indicator */}
           <div className="relative z-20 flex items-center justify-between text-xs text-white/85 pt-2.5 border-t border-white/15">
-            <span className="font-medium text-[11px]">Langkah {step} dari 6</span>
+            <span className="font-medium text-[11px]">
+              {isRoleSwitchMode ? `Langkah ${step - 1} dari 5` : `Langkah ${step} dari 6`}
+            </span>
             <div className="flex items-center gap-1">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
+              {(isRoleSwitchMode ? [2, 3, 4, 5, 6] : [1, 2, 3, 4, 5, 6]).map((i) => (
                 <div
                   key={i}
                   className={`h-1.5 rounded-full transition-all duration-500 ease-out ${
@@ -252,7 +258,7 @@ export default function OnboardingPage() {
                 data={data}
                 onUpdate={updateData}
                 onNext={nextStep}
-                onPrev={prevStep}
+                onPrev={isRoleSwitchMode ? () => router.back() : prevStep}
               />
             )}
 
@@ -294,5 +300,19 @@ export default function OnboardingPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[400px] items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      }
+    >
+      <OnboardingContent />
+    </Suspense>
   );
 }

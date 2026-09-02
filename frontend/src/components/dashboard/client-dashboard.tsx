@@ -145,7 +145,7 @@ export function ClientDashboard() {
 
   // Modal State for Project Creation
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [createModalInitialData, setCreateModalInitialData] = useState<CreateProjectModalProps["initialData"]>(undefined);
+  const [createModalInitialData] = useState<CreateProjectModalProps["initialData"]>(undefined);
 
   // Proposal Review Modal State
   const [selectedProjectForProposals, setSelectedProjectForProposals] = useState<ClientProject | null>(null);
@@ -305,15 +305,6 @@ export function ClientDashboard() {
     } else {
       router.push("/client/market");
     }
-  };
-
-  // Handle Quick Create Project from Hero
-  const handleCreateProjectFromHero = () => {
-    setCreateModalInitialData({
-      title: quickPrompt || "",
-      description: quickPrompt ? `Kebutuhan pengerjaan untuk: ${quickPrompt}` : "",
-    });
-    setIsCreateModalOpen(true);
   };
 
   // Form submit handler (e.g. on Enter key press) -> Search Market
