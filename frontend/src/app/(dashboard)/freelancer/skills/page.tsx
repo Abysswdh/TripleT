@@ -170,34 +170,63 @@ export default function FreelancerSkillsPage() {
         </div>
       </div>
 
-      {/* Search & Filter Bar (Matching Explore Page Style) */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center justify-between">
-        <div className="relative flex-1 max-w-lg">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      {/* Search & Filter Bar (High-Visibility Modern Pills) */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
             type="text"
             placeholder="Cari tes kompetensi, keahlian teknis (React, TypeScript, UI/UX)..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-11 w-full rounded-2xl border border-border/80 bg-card pl-10 pr-4 text-sm transition-colors placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+            className="h-11 w-full rounded-2xl border border-border/80 bg-card pl-11 pr-10 text-sm transition-all placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs"
           />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-xs p-1 rounded-full hover:bg-muted"
+            >
+              ✕
+            </button>
+          )}
         </div>
 
-        {/* Category Chips */}
+        {/* High-Contrast Category Chips with Icon & Badge */}
         <div className="flex flex-wrap items-center gap-2">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`rounded-xl px-3.5 py-2 text-xs font-semibold transition-all ${
-                selectedCategory === cat
-                  ? "bg-primary text-white shadow-sm shadow-primary/30"
-                  : "border border-border/70 bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
+          {CATEGORIES.map((cat) => {
+            const count = categoryCounts[cat] || 0;
+            const isSelected = selectedCategory === cat;
+            const icon =
+              cat === "Semua" ? "✨" :
+              cat === "Frontend" ? "⚛️" :
+              cat === "Backend" ? "⚙️" :
+              cat === "UI/UX" ? "🎨" :
+              cat === "Frontend 3D" ? "🧊" : "🗄️";
+
+            return (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`inline-flex items-center gap-1.5 rounded-2xl px-3.5 py-2 text-xs font-bold transition-all duration-200 cursor-pointer ${
+                  isSelected
+                    ? "bg-primary text-primary-foreground shadow-md shadow-primary/25 ring-2 ring-primary/30 scale-[1.03]"
+                    : "border border-border/80 bg-card text-foreground/80 hover:text-foreground hover:border-primary/50 hover:bg-primary/5 hover:scale-[1.01] shadow-2xs"
+                }`}
+              >
+                <span>{icon}</span>
+                <span>{cat}</span>
+                <span
+                  className={`ml-0.5 rounded-full px-1.5 py-0.2 text-[10px] font-extrabold ${
+                    isSelected
+                      ? "bg-white/20 text-white"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -469,15 +498,15 @@ export default function FreelancerSkillsPage() {
                       {isPassed ? (
                         <Link
                           href={`/freelancer/skills/quiz/${quiz.id}`}
-                          className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-muted/40 hover:bg-muted px-4 py-2 text-xs font-semibold text-foreground transition-all hover:scale-102 shrink-0"
+                          className="inline-flex items-center gap-1.5 rounded-2xl border border-border/80 bg-card hover:bg-muted text-foreground px-4 py-2 text-xs font-bold transition-all hover:scale-105 active:scale-95 shadow-2xs shrink-0"
                         >
                           <RotateCcw className="h-3.5 w-3.5" />
-                          <span>Ulangi</span>
+                          <span>Ulangi Tes</span>
                         </Link>
                       ) : (
                         <Link
                           href={`/freelancer/skills/quiz/${quiz.id}`}
-                          className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary-600 hover:scale-102 transition-all shrink-0"
+                          className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-primary via-blue-600 to-indigo-600 px-5 py-2.5 text-xs font-extrabold text-white shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/35 hover:scale-105 active:scale-95 transition-all shrink-0"
                         >
                           <span>Mulai Kuis</span>
                           <ArrowRight className="h-3.5 w-3.5" />
