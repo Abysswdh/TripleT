@@ -157,17 +157,7 @@ export default function FreelancerSkillsPage() {
         <div className="absolute inset-0 z-[1] bg-black/40 backdrop-blur-[1px] pointer-events-none" />
 
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6 w-full">
-          <div className="space-y-2.5 max-w-2xl">
-            {/* Live Status Beacon Badge */}
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 px-3.5 py-1 text-xs font-bold text-white shadow-xs">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
-              </span>
-              <Award className="h-3.5 w-3.5 text-amber-300" />
-              <span>Skill Verification & Talent Badges</span>
-            </div>
-
+          <div className="space-y-2 max-w-2xl">
             {/* Main Headline */}
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight font-heading leading-tight text-white drop-shadow-sm">
               Verifikasi Skill & Tes Kompetensi
@@ -177,6 +167,37 @@ export default function FreelancerSkillsPage() {
               Selesaikan kuis teknis interaktif untuk memperoleh lencana resmi terverifikasi platform dan menaikkan Match Score profil talent Anda di hadapan Klien.
             </p>
           </div>
+        </div>
+      </div>
+
+      {/* Search & Filter Bar (Matching Explore Page Style) */}
+      <div className="flex flex-col gap-4 md:flex-row md:items-center justify-between">
+        <div className="relative flex-1 max-w-lg">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Cari tes kompetensi, keahlian teknis (React, TypeScript, UI/UX)..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="h-11 w-full rounded-2xl border border-border/80 bg-card pl-10 pr-4 text-sm transition-colors placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+          />
+        </div>
+
+        {/* Category Chips */}
+        <div className="flex flex-wrap items-center gap-2">
+          {CATEGORIES.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setSelectedCategory(cat)}
+              className={`rounded-xl px-3.5 py-2 text-xs font-semibold transition-all ${
+                selectedCategory === cat
+                  ? "bg-primary text-white shadow-sm shadow-primary/30"
+                  : "border border-border/70 bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -309,63 +330,12 @@ export default function FreelancerSkillsPage() {
               })}
             </div>
           </div>
-
-          {/* 4. Quick Filter & Search Card */}
-          <div className="rounded-3xl border border-border/70 bg-card p-4.5 shadow-sm space-y-3">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Cari tes kompetensi..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-8.5 w-full rounded-xl border border-border/80 bg-muted/40 pl-8 pr-3 text-xs placeholder:text-muted-foreground focus:border-primary focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-1.5 pt-0.5">
-              {CATEGORIES.map((cat) => {
-                const count = categoryCounts[cat] || 0;
-                const isSelected = selectedCategory === cat;
-
-                return (
-                  <button
-                    key={cat}
-                    onClick={() => setSelectedCategory(cat)}
-                    className={`flex items-center justify-between rounded-xl px-2.5 py-1.5 text-[11px] font-medium transition-all ${
-                      isSelected
-                        ? "bg-primary text-primary-foreground font-bold shadow-xs"
-                        : "text-muted-foreground hover:bg-muted/60 hover:text-foreground border border-border/40"
-                    }`}
-                  >
-                    <span className="truncate">{cat}</span>
-                    <span className="text-[10px] opacity-75">{count}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
         </aside>
 
         {/* ========================================================================= */}
         {/* RIGHT COLUMN: SCROLLABLE QUIZ CATALOG                                     */}
         {/* ========================================================================= */}
         <main className="lg:col-span-7 xl:col-span-8 space-y-6">
-          {/* Catalog Filter State Bar */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl bg-card border border-border/70 p-4 shadow-xs">
-            <div>
-              <h2 className="text-base font-bold text-foreground font-heading">
-                Katalog Modul Ujian ({selectedCategory})
-              </h2>
-              <p className="text-xs text-muted-foreground">
-                Pilih modul spesialisasi untuk menguji pemahaman arsitektur dan praktik terbaik industri.
-              </p>
-            </div>
-
-            <span className="text-xs font-semibold text-primary bg-primary/10 px-3 py-1 rounded-full whitespace-nowrap">
-              {filteredQuizzes.length} Tes Tersedia
-            </span>
-          </div>
 
           {/* Quizzes Cards Grid */}
           {filteredQuizzes.length === 0 ? (
