@@ -1,3 +1,6 @@
+import { createClient } from "@/lib/supabase/client";
+import { logActivity } from "@/lib/services/activity";
+
 export interface QuizQuestion {
   id: string;
   question: string;
@@ -5,6 +8,13 @@ export interface QuizQuestion {
   options: string[];
   correctIndex: number;
   explanation: string;
+}
+
+export interface LearningResource {
+  title: string;
+  url: string;
+  source: string; // e.g. "MDN", "W3Schools", "CS50", "Official Docs"
+  type: "docs" | "course" | "video" | "guide";
 }
 
 export interface SkillQuizDefinition {
@@ -17,9 +27,11 @@ export interface SkillQuizDefinition {
   timeLimitDisplay: string;
   xpReward: number;
   badgeName: string;
-  badgeIcon: string;
+  badgeIcon?: string;
+  coverImage: string;
   description: string;
   passingScore: number; // e.g. 80 (%)
+  learningResources: LearningResource[];
   questions: QuizQuestion[];
 }
 
@@ -46,9 +58,16 @@ export const SKILL_QUIZZES: SkillQuizDefinition[] = [
     timeLimitDisplay: "5 Menit",
     xpReward: 350,
     badgeName: "Next.js Verified Pro",
-    badgeIcon: "⚡",
+    coverImage: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&auto=format&fit=crop&q=80",
     description: "Evaluasi penguasaan Next.js 14 App Router, Server Actions, Dynamic Streaming, ISR, dan arsitektur Server Components.",
     passingScore: 80,
+    learningResources: [
+      { title: "Next.js App Router Docs", url: "https://nextjs.org/docs/app", source: "Official Docs", type: "docs" },
+      { title: "Server Actions & Mutations", url: "https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations", source: "Official Docs", type: "docs" },
+      { title: "React Server Components Deep Dive", url: "https://react.dev/blog/2023/03/22/react-labs-what-we-have-been-working-on-march-2023", source: "React Blog", type: "guide" },
+      { title: "Next.js 14 Full Course — Traversy Media", url: "https://www.youtube.com/watch?v=wm5gMKuwSYk", source: "YouTube", type: "video" },
+      { title: "Web Dev Simplified — Next.js Tutorial", url: "https://www.youtube.com/watch?v=843nec-IvW0", source: "YouTube", type: "video" },
+    ],
     questions: [
       {
         id: "q-nextjs-1",
@@ -123,9 +142,16 @@ export const SKILL_QUIZZES: SkillQuizDefinition[] = [
     timeLimitDisplay: "5 Menit",
     xpReward: 400,
     badgeName: "FastAPI Certified",
-    badgeIcon: "🐍",
+    coverImage: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&auto=format&fit=crop&q=80",
     description: "Uji keahlian pembuatan API asynchronous performa tinggi, dependency injection, validasi Pydantic v2, dan integrasi database.",
     passingScore: 80,
+    learningResources: [
+      { title: "FastAPI Official Tutorial", url: "https://fastapi.tiangolo.com/tutorial/", source: "Official Docs", type: "docs" },
+      { title: "Python Async/Await Guide — RealPython", url: "https://realpython.com/async-io-python/", source: "Real Python", type: "guide" },
+      { title: "Pydantic v2 Documentation", url: "https://docs.pydantic.dev/latest/", source: "Official Docs", type: "docs" },
+      { title: "CS50's Web Programming with Python — edX", url: "https://cs50.harvard.edu/web/", source: "CS50 Harvard", type: "course" },
+      { title: "FastAPI Full Course — freeCodeCamp", url: "https://www.youtube.com/watch?v=7t2alSnE2-I", source: "YouTube", type: "video" },
+    ],
     questions: [
       {
         id: "q-fastapi-1",
@@ -200,9 +226,16 @@ export const SKILL_QUIZZES: SkillQuizDefinition[] = [
     timeLimitDisplay: "5 Menit",
     xpReward: 300,
     badgeName: "Figma Design Pro",
-    badgeIcon: "🎨",
+    coverImage: "https://images.unsplash.com/photo-1581291518633-83b4ebd1d83e?w=800&auto=format&fit=crop&q=80",
     description: "Evaluasi kemampuan pembuatan Design System skalabel, Figma Variables (Color/Number/String/Boolean), dan Auto-layout responsif.",
     passingScore: 80,
+    learningResources: [
+      { title: "Figma Auto Layout Docs", url: "https://help.figma.com/hc/en-us/articles/5731482952599-Using-auto-layout", source: "Figma Help", type: "docs" },
+      { title: "Figma Variables & Modes", url: "https://help.figma.com/hc/en-us/articles/15339657135383-Guide-to-variables-in-Figma", source: "Figma Help", type: "docs" },
+      { title: "Design Tokens W3C Community Group", url: "https://design-tokens.github.io/community-group/format/", source: "W3C", type: "guide" },
+      { title: "Figma for Beginners — freeCodeCamp", url: "https://www.youtube.com/watch?v=jk1T0CdLxwU", source: "YouTube", type: "video" },
+      { title: "Google Material Design Guidelines", url: "https://m3.material.io/foundations/design-tokens/overview", source: "Google Material", type: "guide" },
+    ],
     questions: [
       {
         id: "q-figma-1",
@@ -276,9 +309,16 @@ export const SKILL_QUIZZES: SkillQuizDefinition[] = [
     timeLimitDisplay: "5 Menit",
     xpReward: 500,
     badgeName: "3D Web Master",
-    badgeIcon: "🌐",
+    coverImage: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80",
     description: "Uji pemahaman rendering WebGL, scene graph Three.js, React Three Fiber (R3F), GLSL vertex/fragment shaders, dan optimasi GPU.",
     passingScore: 80,
+    learningResources: [
+      { title: "Three.js Official Documentation", url: "https://threejs.org/docs/", source: "Official Docs", type: "docs" },
+      { title: "The Book of Shaders — GLSL Guide", url: "https://thebookofshaders.com/", source: "The Book of Shaders", type: "guide" },
+      { title: "React Three Fiber Docs (R3F)", url: "https://docs.pmnd.rs/react-three-fiber/getting-started/introduction", source: "Poimandres", type: "docs" },
+      { title: "WebGL Fundamentals — webglfundamentals.org", url: "https://webglfundamentals.org/", source: "WebGL Fundamentals", type: "guide" },
+      { title: "Three.js Journey Full Course", url: "https://threejs-journey.com/", source: "Three.js Journey", type: "course" },
+    ],
     questions: [
       {
         id: "q-threejs-1",
@@ -352,9 +392,16 @@ export const SKILL_QUIZZES: SkillQuizDefinition[] = [
     timeLimitDisplay: "5 Menit",
     xpReward: 450,
     badgeName: "Supabase Security Specialist",
-    badgeIcon: "🛡️",
+    coverImage: "https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=800&auto=format&fit=crop&q=80",
     description: "Evaluasi penguasaan kebijakan Row Level Security (RLS), relasi PostgreSQL, trigger audit, dan proteksi multi-tenant di Supabase.",
     passingScore: 80,
+    learningResources: [
+      { title: "Supabase Row Level Security Guide", url: "https://supabase.com/docs/guides/database/postgres/row-level-security", source: "Supabase Docs", type: "docs" },
+      { title: "PostgreSQL Tutorial — W3Schools", url: "https://www.w3schools.com/postgresql/", source: "W3Schools", type: "course" },
+      { title: "PostgreSQL Official Documentation", url: "https://www.postgresql.org/docs/current/", source: "Official Docs", type: "docs" },
+      { title: "CS50's Introduction to Databases with SQL", url: "https://cs50.harvard.edu/sql/", source: "CS50 Harvard", type: "course" },
+      { title: "Supabase Auth & RLS Deep Dive — YouTube", url: "https://www.youtube.com/watch?v=Ow_Uzedfohk", source: "YouTube", type: "video" },
+    ],
     questions: [
       {
         id: "q-rls-1",
@@ -476,14 +523,67 @@ export function saveQuizResult(result: QuizAttemptResult): void {
     existing[result.quizId] = result;
     localStorage.setItem(LOCAL_STORAGE_QUIZ_RESULTS_KEY, JSON.stringify(existing));
 
-    // Also sync verified badge into profile skills if passed
+    // 1. Sync directly to Supabase Database (freelancer_profiles & user metadata)
+    syncResultToSupabase(result);
+
+    // 2. Also sync verified badge into local profile skills if passed
     if (result.passed && result.badgeName) {
       syncBadgeToProfile(result.badgeName);
     }
 
+    // 3. Log activity to user_activity_log for real heatmap & streak tracking
+    logActivity(result.passed ? "quiz_completed" : "quiz_attempted", {
+      quiz_id: result.quizId,
+      score: result.score,
+      xp_earned: result.earnedXp,
+      badge_name: result.badgeName,
+    });
+
     window.dispatchEvent(new CustomEvent("quiz-completed", { detail: result }));
   } catch (err) {
     console.warn("Failed to save quiz result:", err);
+  }
+}
+
+async function syncResultToSupabase(result: QuizAttemptResult): Promise<void> {
+  try {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    // 1. Update user metadata XP
+    const currentXp = (user.user_metadata?.xp as number) || 0;
+    const newXp = currentXp + (result.earnedXp || 0);
+    await supabase.auth.updateUser({
+      data: {
+        xp: newXp,
+      },
+    });
+
+    // 2. If passed and has badge, update freelancer_profiles table
+    if (result.passed && result.badgeName) {
+      const { data: profile } = await supabase
+        .from("freelancer_profiles")
+        .select("verified_skills, skills")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (profile) {
+        const existingVerified: string[] = profile.verified_skills || [];
+        if (!existingVerified.includes(result.badgeName)) {
+          const updatedVerified = [...existingVerified, result.badgeName];
+          await supabase
+            .from("freelancer_profiles")
+            .update({
+              verified_skills: updatedVerified,
+              badge_level: "Verified Pro",
+            })
+            .eq("user_id", user.id);
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("Could not sync quiz result to Supabase:", err);
   }
 }
 
@@ -500,3 +600,11 @@ function syncBadgeToProfile(badgeName: string): void {
     console.warn("Could not sync badge to profile:", e);
   }
 }
+
+/**
+ * Find a quiz definition by ID
+ */
+export function getQuizById(id: string): SkillQuizDefinition | undefined {
+  return SKILL_QUIZZES.find((q) => q.id === id);
+}
+

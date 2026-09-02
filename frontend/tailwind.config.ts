@@ -97,10 +97,28 @@ const config: Config = {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        sans: ["var(--font-jakarta)", "sans-serif"],
-        heading: ["var(--font-krona)", "sans-serif"],
-        krona: ["var(--font-krona)", "sans-serif"],
-        jakarta: ["var(--font-jakarta)", "sans-serif"],
+        sans: [
+          "var(--font-jakarta)",
+          "Plus Jakarta Sans",
+          "Segoe UI",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "Roboto",
+          "sans-serif",
+        ],
+        heading: [
+          "var(--font-krona)",
+          "Krona One",
+          "Segoe UI",
+          "sans-serif",
+        ],
+        krona: ["var(--font-krona)", "Krona One", "sans-serif"],
+        jakarta: [
+          "var(--font-jakarta)",
+          "Plus Jakarta Sans",
+          "Segoe UI",
+          "sans-serif",
+        ],
       },
       keyframes: {
         "accordion-down": {

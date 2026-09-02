@@ -291,9 +291,10 @@ export function Navbar() {
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  className="flex items-center gap-2 rounded-xl p-1 hover:bg-muted/60 transition-colors"
+                  className="flex items-center gap-2 rounded-full p-0.5 sm:px-2.5 sm:py-1 hover:bg-muted/80 transition-colors border border-border/50"
+                  aria-expanded={userDropdownOpen}
                 >
-                  <div className="relative flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-xs font-bold text-white shadow-sm overflow-hidden border border-border/40">
+                  <div className="relative flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-xs font-bold text-white shadow-sm overflow-hidden border border-border/40 shrink-0">
                     {dbAvatarUrl ? (
                       <img src={dbAvatarUrl} alt="Avatar" className="h-full w-full object-cover" />
                     ) : (
@@ -304,6 +305,9 @@ export function Navbar() {
                       </span>
                     )}
                   </div>
+                  <span className="text-xs font-bold text-foreground hidden sm:block max-w-[130px] truncate text-left">
+                    {user?.user_metadata?.full_name || "Rania Putri"}
+                  </span>
                   <ChevronDown className="h-3.5 w-3.5 text-muted-foreground hidden sm:block" />
                 </button>
 

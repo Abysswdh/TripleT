@@ -62,7 +62,7 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: var(--font-jakarta), sans-serif;
+    font-family: var(--font-jakarta), "Plus Jakarta Sans", "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
   }
 
   h1,
@@ -73,7 +73,7 @@
   h6,
   .font-heading,
   .font-krona {
-    font-family: var(--font-krona), sans-serif;
+    font-family: var(--font-krona), "Krona One", "Segoe UI", sans-serif;
     letter-spacing: -0.02em;
   }
 
@@ -86,7 +86,7 @@
   label,
   .font-sans,
   .font-jakarta {
-    font-family: var(--font-jakarta), sans-serif;
+    font-family: var(--font-jakarta), "Plus Jakarta Sans", "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
   }
 }
 
@@ -141,6 +141,20 @@ html {
 
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* Shiny Text Animation (ReactBits) */
+@keyframes shiny-text {
+  0%, 100% {
+    background-position: calc(100% + 200px) 0;
+  }
+  50% {
+    background-position: calc(0% - 200px) 0;
+  }
+}
+
+.animate-shiny-text {
+  animation: shiny-text 6s infinite linear;
 }
 
 /* Focus ring */

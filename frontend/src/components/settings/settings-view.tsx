@@ -193,57 +193,18 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
     if (bannerFileInputRef.current) bannerFileInputRef.current.value = "";
   };
 
-  const handleResetBanner = async () => {
-    // 1. Reset local state
+  const handleResetBanner = () => {
     setBannerUrl("");
     setBannerPreviewUrl("");
     setPendingBannerFile(null);
     if (bannerFileInputRef.current) bannerFileInputRef.current.value = "";
-
-    // 2. Erase from database & auth if user is authenticated
-    if (user?.id) {
-      try {
-        await deleteProfileMedia(user.id, "banner");
-        setSaveSuccess(true);
-        setSaveMessage(t("settings.profile.resetBannerSuccess", "Banner profil berhasil dihapus!"));
-        setTimeout(() => setSaveSuccess(false), 3000);
-      } catch (err: unknown) {
-        console.error("Error deleting banner from db:", err);
-      }
-    }
   };
 
-  const handleResetAvatar = async () => {
-    // 1. Reset local state
+  const handleResetAvatar = () => {
     setAvatarUrl("");
     setAvatarPreviewUrl("");
     setPendingAvatarFile(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
-
-    // 2. Erase from database & auth if user is authenticated
-    if (user?.id) {
-      try {
-        const supabase = createClient();
-        await supabase
-          .from("users")
-          .update({ avatar_url: null })
-          .eq("id", user.id);
-
-        await supabase.auth.updateUser({
-          data: { avatar_url: null },
-        });
-
-        if (typeof window !== "undefined") {
-          window.dispatchEvent(new Event("profile-updated"));
-        }
-
-        setSaveSuccess(true);
-        setSaveMessage("Foto profil berhasil dihapus!");
-        setTimeout(() => setSaveSuccess(false), 3000);
-      } catch (err: unknown) {
-        console.error("Error deleting avatar from db:", err);
-      }
-    }
   };
 
   // Freelancer specific fields
@@ -518,8 +479,8 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
               id: user.id,
               email: user.email || email,
               full_name: fullName,
-              avatar_url: finalAvatarUrl || undefined,
-              banner_url: finalBannerUrl || undefined,
+              avatar_url: finalAvatarUrl ? finalAvatarUrl : null,
+              banner_url: finalBannerUrl ? finalBannerUrl : null,
               bio: bio,
               phone: phone,
               location: location,
@@ -542,7 +503,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                 github_url: githubUrl,
                 linkedin_url: linkedinUrl,
                 portfolio_url: portfolioUrl,
-                cover_image: finalBannerUrl || undefined,
+                cover_image: finalBannerUrl ? finalBannerUrl : null,
               },
               { onConflict: "user_id" }
             );
@@ -756,24 +717,6 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
               <ChevronRight className="h-3.5 w-3.5 opacity-60" />
             </button>
           </div>
-
-          {/* Gamified Profile Level Snippet */}
-          <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-tertiary/5 to-card p-4 shadow-sm space-y-2">
-            <div className="flex items-center gap-2 text-xs font-bold text-primary">
-              <Sparkles className="h-4 w-4" />
-              <span>{t("settings.badge", "Status Akun")}</span>
-            </div>
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">{t("settings.profileCompleteness", "Kelengkapan Profil")}</span>
-              <span className="font-bold text-foreground">85%</span>
-            </div>
-            <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-              <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: "85%" }} />
-            </div>
-            <p className="text-[11px] text-muted-foreground">
-              {t("settings.profileCompletenessDesc", "Selesaikan kuis verifikasi dan portofolio untuk membuka lencana Verified Pro.")}
-            </p>
-          </div>
         </div>
 
         {/* Right Content Panels */}
@@ -866,11 +809,14 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                   </div>
                 </div>
 
-                {/* 2. Avatar & Identity Overlay (Exact Layout as Profile View) */}
-                <div className="px-6 pb-6 pt-2">
-                  <div className="flex flex-col sm:flex-row items-center sm:items-end justify-between gap-4 -mt-14 sm:-mt-16 mb-4">
-                    {/* Interactive Avatar Container */}
-                    <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                {/* 2. Avatar & Identity Area (Clear Separation — Name Never Clipped) */}
+                <div className="px-6 pb-6 pt-0">
+                  <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5">
+                    {/* Interactive Avatar Container (Floats over banner edge) */}
+                    <div
+                      className="relative group cursor-pointer shrink-0 -mt-12 sm:-mt-14 z-20"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
                       <div className="h-24 w-24 sm:h-28 sm:w-28 rounded-2xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-3xl font-bold text-white shadow-xl overflow-hidden border-4 border-card bg-muted">
                         {(avatarPreviewUrl || avatarUrl) ? (
                           <img
@@ -890,12 +836,14 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                       </div>
                     </div>
 
-                    {/* Avatar Actions & Help Info */}
-                    <div className="flex-1 text-center sm:text-left space-y-1 sm:pt-4">
+                    {/* User Name, Badges & Upload Actions (Safely below banner) */}
+                    <div className="flex-1 text-center sm:text-left space-y-1.5 pt-1 sm:pt-3">
                       <div className="flex flex-wrap items-center gap-2 justify-center sm:justify-start">
-                        <h4 className="text-base font-bold text-foreground">{fullName || "Nama Profil Anda"}</h4>
+                        <h4 className="text-lg font-bold text-foreground leading-tight">
+                          {fullName || "Nama Profil Anda"}
+                        </h4>
                         {pendingAvatarFile && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/30 px-2.5 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300">
                             <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
                             Pratinjau Foto
                           </span>
@@ -921,15 +869,6 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                         >
                           <Camera className="h-3.5 w-3.5" />
                           <span>{t("settings.profile.uploadPhoto", "Ubah / Unggah Foto")}</span>
-                        </button>
-                        <span className="text-muted-foreground/40 hidden sm:inline">•</span>
-                        <button
-                          type="button"
-                          onClick={() => bannerFileInputRef.current?.click()}
-                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground hover:underline"
-                        >
-                          <ImageIcon className="h-3.5 w-3.5" />
-                          <span>{t("settings.profile.uploadBanner", "Unggah Banner Kustom")}</span>
                         </button>
                       </div>
                     </div>

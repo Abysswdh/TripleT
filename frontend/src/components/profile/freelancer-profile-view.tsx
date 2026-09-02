@@ -26,6 +26,8 @@ import {
 } from "lucide-react";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import { getClientProjects, type ProjectRecord } from "@/lib/services/projects";
+import { fetchHeatmapData, type HeatmapData } from "@/lib/services/activity";
+import { DoableStreakTracker } from "@/components/dashboard/doable-streak-tracker";
 
 export interface TalentProfile {
   id: string;
@@ -316,45 +318,11 @@ export const DEFAULT_PROFILE: TalentProfile = {
   ]
 };
 
-// Generate 16 weeks of GitHub-style contribution data
-function generateGitHubHeatmap() {
-  const weeks = 16;
-  const days = 7;
-  const heatmap: Array<Array<{ level: number; date: string; count: number }>> = [];
-
-  const pattern = [
-    [0, 1, 0, 2, 0, 1, 0],
-    [1, 0, 2, 1, 3, 0, 1],
-    [0, 2, 1, 0, 2, 1, 0],
-    [1, 1, 0, 3, 2, 0, 1],
-    [2, 0, 1, 1, 4, 1, 0],
-    [0, 1, 3, 2, 0, 2, 1],
-    [1, 2, 0, 1, 3, 1, 0],
-    [2, 1, 2, 0, 1, 2, 1],
-    [0, 3, 1, 2, 4, 0, 1],
-    [1, 0, 2, 3, 1, 2, 0],
-    [2, 1, 0, 2, 3, 1, 1],
-    [1, 3, 2, 1, 0, 2, 1],
-    [3, 2, 4, 1, 2, 3, 0],
-    [2, 3, 1, 4, 2, 1, 2],
-    [1, 2, 3, 2, 4, 3, 1],
-    [2, 4, 3, 3, 4, 3, 0],
-  ];
-
-  for (let w = 0; w < weeks; w++) {
-    const weekCol: Array<{ level: number; date: string; count: number }> = [];
-    for (let d = 0; d < days; d++) {
-      const level = pattern[w] ? pattern[w][d] : Math.floor(Math.random() * 3);
-      const count = level === 0 ? 0 : level * 2 + 1;
-      weekCol.push({
-        level,
-        date: `Minggu ${w + 1}, Hari ${d + 1}`,
-        count,
-      });
-    }
-    heatmap.push(weekCol);
-  }
-  return heatmap;
+// Generate empty placeholder heatmap for pre-load state
+function generateEmptyHeatmap(): HeatmapData["weeks"] {
+  return Array.from({ length: 16 }, () =>
+    Array.from({ length: 7 }, () => ({ date: "", count: 0, level: 0 as const }))
+  );
 }
 
 interface FreelancerProfileViewProps {
@@ -366,7 +334,23 @@ export function FreelancerProfileView({ talentId = "tal-1", isOwner = false }: F
   const router = useRouter();
   const { user } = useAuth();
   const [liveProfile, setLiveProfile] = useState<TalentProfile | null>(null);
-  const githubHeatmap = useMemo(() => generateGitHubHeatmap(), []);
+
+  // Real heatmap & streak data from DB
+  const [heatmapData, setHeatmapData] = useState<HeatmapData>({
+    weeks: generateEmptyHeatmap(),
+    totalContributions: 0,
+    streakDays: 0,
+    monthLabels: [],
+    activeDates: [],
+  });
+
+  useEffect(() => {
+    fetchHeatmapData().then((data) => setHeatmapData(data));
+  }, []);
+
+  const githubHeatmap = heatmapData.weeks;
+  const streakDays = heatmapData.streakDays;
+  const totalContributions = heatmapData.totalContributions;
 
   const baseProfile = TALENT_PROFILES[talentId] || DEFAULT_PROFILE;
 
@@ -726,70 +710,14 @@ export function FreelancerProfileView({ talentId = "tal-1", isOwner = false }: F
               </div>
             </div>
 
-            {/* 2. GitHub-Style Green Contribution Heatmap & Streak */}
-            <div className="rounded-3xl border border-border/80 bg-card p-6 sm:p-7 shadow-sm space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-2xl bg-emerald-500/15 text-emerald-600 flex items-center justify-center">
-                    <Flame className="h-5 w-5 fill-emerald-500 text-emerald-500" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-foreground">
-                      6 Hari Streak Konsisten
-                    </h3>
-                    <p className="text-xs text-muted-foreground">
-                      Total 48 kontribusi aktif dalam 4 bulan terakhir
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* True GitHub-Style Contribution Heatmap Matrix */}
-              <div className="rounded-2xl bg-muted/20 border border-border/50 p-4 space-y-2.5">
-                <div className="flex items-center justify-between text-xs text-muted-foreground font-semibold px-1">
-                  <span>Jun</span>
-                  <span>Jul</span>
-                  <span>Agu</span>
-                  <span>Sep</span>
-                </div>
-
-                {/* Heatmap Grid: 16 Week Columns x 7 Day Rows */}
-                <div className="grid grid-flow-col grid-rows-7 gap-1.5 overflow-x-auto pb-1 scrollbar-none justify-between">
-                  {githubHeatmap.map((week, wIdx) =>
-                    week.map((day, dIdx) => (
-                      <div
-                        key={`${wIdx}-${dIdx}`}
-                        title={`${day.count} aktivitas pada ${day.date}`}
-                        className={`h-3 w-3 sm:h-3.5 sm:w-3.5 rounded-[3px] transition-all hover:scale-125 cursor-pointer ${
-                          day.level === 0
-                            ? "bg-muted/60"
-                            : day.level === 1
-                            ? "bg-emerald-500/30"
-                            : day.level === 2
-                            ? "bg-emerald-500/60"
-                            : day.level === 3
-                            ? "bg-emerald-500/85"
-                            : "bg-emerald-600 dark:bg-emerald-400"
-                        }`}
-                      />
-                    ))
-                  )}
-                </div>
-
-                {/* Heatmap Legend */}
-                <div className="flex items-center justify-between pt-2 border-t border-border/40 text-xs text-muted-foreground font-medium">
-                  <span>Kurang</span>
-                  <div className="flex items-center gap-1.5">
-                    <span className="h-2.5 w-2.5 rounded-[2px] bg-muted/60" />
-                    <span className="h-2.5 w-2.5 rounded-[2px] bg-emerald-500/30" />
-                    <span className="h-2.5 w-2.5 rounded-[2px] bg-emerald-500/60" />
-                    <span className="h-2.5 w-2.5 rounded-[2px] bg-emerald-500/85" />
-                    <span className="h-2.5 w-2.5 rounded-[2px] bg-emerald-600 dark:bg-emerald-400" />
-                  </div>
-                  <span>Lebih</span>
-                </div>
-              </div>
-            </div>
+            {/* 2. Doable Streak & Activity Tracker (Seminggu dulu + Expand Sebulan) */}
+            <DoableStreakTracker
+              streakDays={streakDays}
+              streakWeeks={profile.streakWeeks || 12}
+              activeDates={heatmapData.activeDates}
+              totalContributions={totalContributions}
+              isOwner={isOwner}
+            />
 
             {/* 3. Recent Projects Portfolio */}
             <div className="space-y-4">

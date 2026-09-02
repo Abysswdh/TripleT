@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { logActivity } from "@/lib/services/activity";
 
 export interface ProposalItem {
   id: string;
@@ -86,6 +87,12 @@ export async function submitProposal(params: {
   } catch (countErr) {
     console.info("Notice updating proposal count:", countErr);
   }
+
+  // Log activity for heatmap & streak
+  logActivity("proposal_submitted", {
+    project_id: params.projectId,
+    bid_amount: params.bidAmount,
+  });
 
   return { success: true, data };
 }

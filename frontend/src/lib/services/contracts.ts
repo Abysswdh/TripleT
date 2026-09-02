@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { logActivity } from "@/lib/services/activity";
 
 export interface ContractMilestoneItem {
   id: string;
@@ -117,6 +118,12 @@ export async function submitMilestoneDeliverable(params: {
     console.error("Error submitting deliverable:", error);
     return { success: false, error: error.message };
   }
+
+  // Log activity for heatmap & streak + award 150 Work XP
+  logActivity("milestone_delivered", {
+    milestone_id: params.contractMilestoneId,
+    xp_earned: 150,
+  });
 
   return { success: true };
 }

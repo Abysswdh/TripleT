@@ -42,7 +42,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`light ${kronaOne.variable} ${plusJakartaSans.variable}`}>
-      <body className="font-sans bg-background text-foreground antialiased selection:bg-primary/20 selection:text-primary">
+      <body className={`${plusJakartaSans.className} font-sans bg-background text-foreground antialiased selection:bg-primary/20 selection:text-primary`}>
         <AppShell>
           {children}
         </AppShell>

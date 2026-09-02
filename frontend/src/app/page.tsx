@@ -21,6 +21,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 import CountUp from "@/components/ui/CountUp";
+import { DoableStreakTracker } from "@/components/dashboard/doable-streak-tracker";
 
 // Dynamically import GradientWaves with SSR disabled for optimal WebGL performance
 const GradientWaves = dynamic(() => import("@/components/ui/GradientWaves"), {
@@ -1277,22 +1278,23 @@ export default function LandingPage() {
                       </span>
                     </div>
 
-                    <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                      <span className="text-[10px] text-slate-400 block uppercase font-bold mb-1.5">
-                        Work Streak Konsistensi
+                    <div className="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700">
+                      <span className="text-[10px] text-slate-400 block uppercase font-bold mb-2">
+                        Doable Work Streak Konsistensi
                       </span>
-                      <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-                        {Array.from({ length: 14 }).map((_, i) => (
+                      <div className="grid grid-cols-7 gap-1">
+                        {["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"].map((d, i) => (
                           <div
                             key={i}
-                            className={`h-4 w-4 rounded-xs shrink-0 ${
-                              i % 3 === 0
-                                ? "bg-emerald-500"
-                                : i % 2 === 0
-                                ? "bg-emerald-400"
-                                : "bg-slate-700"
+                            className={`p-1.5 rounded-lg text-center transition-all ${
+                              i < 4
+                                ? "bg-amber-500/20 border border-amber-400 text-amber-400 shadow-xs shadow-amber-500/30 font-bold"
+                                : "bg-blue-600/20 border border-blue-500 text-blue-300 font-medium"
                             }`}
-                          />
+                          >
+                            <span className="text-[8px] font-bold block opacity-70">{d}</span>
+                            <span className="text-[10px] font-black">{i + 1}</span>
+                          </div>
                         ))}
                       </div>
                     </div>
@@ -1449,64 +1451,27 @@ export default function LandingPage() {
               </p>
             </motion.div>
 
-            {/* Feature 2: Interactive GitHub Streak Calendar */}
+            {/* Feature 2: Interactive Doable Streak & Activity Tracker */}
             <motion.div
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true, margin: "-40px" }}
               variants={fadeUpVariants}
               custom={0.2}
-              className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between"
+              className="rounded-3xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm hover:shadow-xl transition-all"
             >
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="h-12 w-12 rounded-2xl bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center">
-                    <Flame className="h-6 w-6" />
-                  </div>
-                  <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">
-                    🔥 <CountUp to={18} duration={1.5} /> Day Streak
-                  </span>
-                </div>
-                <h3 className="text-lg font-bold text-slate-900">Gamifikasi Streak ala GitHub</h3>
-                <p className="mt-2 text-xs text-slate-600 leading-relaxed">
-                  Hover pada kotak hijau untuk melihat histori tugas yang diselesaikan:
-                </p>
-              </div>
-
-              {/* Interactive Calendar Grid */}
-              <div className="mt-4 pt-3 border-t border-slate-100">
-                <div className="grid grid-cols-7 gap-1.5">
-                  {streakDays.map((item) => (
-                    <div
-                      key={item.day}
-                      onMouseEnter={() => setHoveredStreakDay(item)}
-                      onMouseLeave={() => setHoveredStreakDay(null)}
-                      className={`h-5 w-5 rounded-xs transition-transform hover:scale-125 cursor-pointer ${
-                        item.intensity === 0
-                          ? "bg-slate-100 hover:bg-slate-300"
-                          : item.intensity === 1
-                          ? "bg-emerald-200"
-                          : item.intensity === 2
-                          ? "bg-emerald-400"
-                          : item.intensity === 3
-                          ? "bg-emerald-600"
-                          : "bg-emerald-700 shadow-sm"
-                      }`}
-                    />
-                  ))}
-                </div>
-
-                {/* Tooltip detail box */}
-                <div className="h-6 mt-2 text-[10px] font-semibold text-slate-500">
-                  {hoveredStreakDay ? (
-                    <span className="text-emerald-700">
-                      📅 {hoveredStreakDay.date}: {hoveredStreakDay.count} Tugas Selesai
-                    </span>
-                  ) : (
-                    <span>Hover kotak untuk detail histori</span>
-                  )}
-                </div>
-              </div>
+              <DoableStreakTracker
+                streakDays={18}
+                totalContributions={42}
+                isOwner={false}
+                activeDates={[
+                  new Date().toISOString().slice(0, 10),
+                  new Date(Date.now() - 86400000).toISOString().slice(0, 10),
+                  new Date(Date.now() - 172800000).toISOString().slice(0, 10),
+                  new Date(Date.now() - 259200000).toISOString().slice(0, 10),
+                  new Date(Date.now() - 345600000).toISOString().slice(0, 10),
+                ]}
+              />
             </motion.div>
 
             {/* Feature 3: KTP / Passport Verification */}

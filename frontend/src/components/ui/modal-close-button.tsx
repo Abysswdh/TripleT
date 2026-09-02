@@ -44,8 +44,8 @@ export function ModalCloseButton({
   const currentSize = sizeMap[size] || sizeMap.md;
 
   const variantStyles = {
-    // Windows OS style tab: flush against top-right corner (no gap, rectangular tab with rounded top-right matching container)
-    corner: `absolute right-0 top-0 z-30 flex ${currentSize.corner} items-center justify-center rounded-tr-[22px] rounded-bl-md text-muted-foreground/75 hover:bg-[#E81123] hover:text-white transition-colors cursor-pointer select-none`,
+    // Windows OS style tab: flush against top-right corner (inherits parent border radius with no gap)
+    corner: `absolute right-0 top-0 z-30 flex ${currentSize.corner} items-center justify-center rounded-tr-[inherit] rounded-bl-2xl text-muted-foreground/75 hover:bg-[#E81123] hover:text-white transition-colors cursor-pointer select-none`,
     pill: `flex ${currentSize.pill} items-center justify-center rounded-full bg-muted/80 text-muted-foreground hover:bg-[#E81123] hover:text-white transition-colors cursor-pointer select-none`,
     inline: `flex ${currentSize.inline} items-center justify-center rounded-md text-muted-foreground hover:bg-[#E81123] hover:text-white transition-colors cursor-pointer select-none`,
   };

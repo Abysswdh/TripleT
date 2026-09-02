@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useCurrency } from "@/context/currency-context";
 import {
@@ -20,13 +20,18 @@ import {
   Send,
   CreditCard,
   ArrowRight,
+  Sparkles,
+  BookOpen,
+  Check,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect } from "react";
 import Grainient from "@/components/ui/Grainient";
 import { getOpenProjects } from "@/lib/services/projects";
 import { getFreelancerContracts, submitMilestoneDeliverable } from "@/lib/services/contracts";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
+import { fetchHeatmapData, fetchUserXPBreakdown, getLearnedResources, type HeatmapData, type XPBreakdown } from "@/lib/services/activity";
+import { getSavedQuizResults, SKILL_QUIZZES, type QuizAttemptResult } from "@/lib/services/quizzes";
+import { DoableStreakTracker } from "@/components/dashboard/doable-streak-tracker";
 
 interface QuestOpportunity {
   id: string;
@@ -80,47 +85,11 @@ const mockQuests: QuestOpportunity[] = [];
 const initialTimelineItems: TimelineActionItem[] = [];
 const initialMissions: DailyMission[] = [];
 
-// Generate 16 weeks of GitHub-style contribution data
-function generateGitHubHeatmap() {
-  const weeks = 16;
-  const days = 7;
-  const heatmap: Array<Array<{ level: number; date: string; count: number }>> = [];
-
-  // Seeded pattern to simulate an active freelancer streak
-  const pattern = [
-    [0, 1, 0, 2, 0, 1, 0],
-    [1, 0, 2, 1, 3, 0, 1],
-    [0, 2, 1, 0, 2, 1, 0],
-    [1, 1, 0, 3, 2, 0, 1],
-    [2, 0, 1, 1, 4, 1, 0],
-    [0, 1, 3, 2, 0, 2, 1],
-    [1, 2, 0, 1, 3, 1, 0],
-    [2, 1, 2, 0, 1, 2, 1],
-    [0, 3, 1, 2, 4, 0, 1],
-    [1, 0, 2, 3, 1, 2, 0],
-    [2, 1, 0, 2, 3, 1, 1],
-    [1, 3, 2, 1, 0, 2, 1],
-    [3, 2, 4, 1, 2, 3, 0],
-    [2, 3, 1, 4, 2, 1, 2],
-    [1, 2, 3, 2, 4, 3, 1],
-    [2, 4, 3, 3, 4, 3, 0], // Most recent week (active streak)
-  ];
-
-  for (let w = 0; w < weeks; w++) {
-    const weekCol: Array<{ level: number; date: string; count: number }> = [];
-    for (let d = 0; d < days; d++) {
-      const level = pattern[w] ? pattern[w][d] : Math.floor(Math.random() * 3);
-      const count = level === 0 ? 0 : level * 2 + 1;
-      weekCol.push({
-        level,
-        date: `Minggu ${w + 1}, Hari ${d + 1}`,
-        count,
-      });
-    }
-    heatmap.push(weekCol);
-  }
-
-  return heatmap;
+// Generate empty placeholder heatmap for pre-load state
+function generateEmptyHeatmap(): HeatmapData["weeks"] {
+  return Array.from({ length: 16 }, () =>
+    Array.from({ length: 7 }, () => ({ date: "", count: 0, level: 0 as const }))
+  );
 }
 
 const CATEGORIES = ["Semua", "Desain Grafis", "Simulasi Portofolio", "Frontend", "Backend", "UI/UX"];
@@ -213,15 +182,122 @@ export function FreelancerDashboard() {
     loadLiveQuests();
   }, []);
 
-  // Gamification Profile State
+  // Gamification Profile State (3-Pillar XP Accumulation: Quiz + Work + Learning)
   const freelancerName = user?.user_metadata?.full_name || "Rania Putri";
-  const [currentXP, setCurrentXP] = useState<number>((user?.user_metadata?.xp as number) || 2450);
   const currentLevel = (user?.user_metadata?.level as number) || 3;
   const nextLevelXP = 3000;
-  const xpPercentage = Math.min(100, Math.round((currentXP / nextLevelXP) * 100));
-  const streakDays = 6;
 
-  const githubHeatmap = useMemo(() => generateGitHubHeatmap(), []);
+  const [xpBreakdown, setXpBreakdown] = useState<XPBreakdown>({
+    quizXP: 750,
+    workXP: 1500,
+    learningXP: 200,
+    totalXP: 2450,
+  });
+
+  const [currentXP, setCurrentXP] = useState<number>(() => {
+    try {
+      const results = getSavedQuizResults();
+      const quizTotal = Object.values(results).reduce((sum, r) => sum + (r.earnedXp || 0), 0);
+      return quizTotal > 0 ? quizTotal + 1700 : ((user?.user_metadata?.xp as number) || 2450);
+    } catch {
+      return (user?.user_metadata?.xp as number) || 2450;
+    }
+  });
+
+  const xpPercentage = Math.min(100, Math.round((currentXP / nextLevelXP) * 100));
+
+  // Load real XP breakdown from Supabase / DB
+  useEffect(() => {
+    fetchUserXPBreakdown().then((data) => {
+      setXpBreakdown(data);
+      if (data.totalXP > 0) {
+        setCurrentXP(data.totalXP);
+      }
+    });
+  }, [user]);
+
+  // Saved quiz results & learned resources tracking
+  const [quizResults, setQuizResults] = useState<Record<string, QuizAttemptResult>>({});
+  const [learnedCount, setLearnedCount] = useState<number>(0);
+
+  useEffect(() => {
+    setQuizResults(getSavedQuizResults());
+    setLearnedCount(getLearnedResources().length);
+  }, []);
+
+  // Listen for live XP events (quizzes, milestones, learning)
+  useEffect(() => {
+    const onQuizCompleted = (e: CustomEvent) => {
+      const earnedXp = (e.detail?.earnedXp as number) || 0;
+      setCurrentXP((prev) => prev + earnedXp);
+      setXpBreakdown((prev) => ({
+        ...prev,
+        quizXP: prev.quizXP + earnedXp,
+        totalXP: prev.totalXP + earnedXp,
+      }));
+      setQuizResults(getSavedQuizResults());
+    };
+
+    const onXpUpdated = (e: CustomEvent) => {
+      const earnedXp = (e.detail?.xpEarned as number) || 0;
+      const type = e.detail?.type;
+      setCurrentXP((prev) => prev + earnedXp);
+      setLearnedCount(getLearnedResources().length);
+      setXpBreakdown((prev) => {
+        const isWork = type === "milestone_delivered" || type === "contract_completed" || type === "proposal_submitted";
+        const isLearning = type === "resource_studied";
+        const isQuiz = type?.startsWith("quiz_");
+
+        return {
+          ...prev,
+          workXP: isWork ? prev.workXP + earnedXp : prev.workXP,
+          learningXP: isLearning ? prev.learningXP + earnedXp : prev.learningXP,
+          quizXP: isQuiz ? prev.quizXP + earnedXp : prev.quizXP,
+          totalXP: prev.totalXP + earnedXp,
+        };
+      });
+    };
+
+    window.addEventListener("quiz-completed", onQuizCompleted as EventListener);
+    window.addEventListener("xp-updated", onXpUpdated as EventListener);
+    return () => {
+      window.removeEventListener("quiz-completed", onQuizCompleted as EventListener);
+      window.removeEventListener("xp-updated", onXpUpdated as EventListener);
+    };
+  }, []);
+
+  // Computed Progress Overall Metrics
+  const passedQuizzes = useMemo(() => {
+    return SKILL_QUIZZES.filter((q) => quizResults[q.id]?.passed);
+  }, [quizResults]);
+
+  const nextQuizToTake = useMemo(() => {
+    return SKILL_QUIZZES.find((q) => !quizResults[q.id]?.passed) || SKILL_QUIZZES[0];
+  }, [quizResults]);
+
+  const verifiedSkillsCount = passedQuizzes.length;
+  const totalSkillsCount = SKILL_QUIZZES.length;
+  const skillProgressPercent = Math.round((verifiedSkillsCount / totalSkillsCount) * 100);
+  const completedMilestonesCount = timelineItems.filter(
+    (i) => i.progress === 100 || i.urgency === "review"
+  ).length;
+
+  // Real heatmap data from DB
+  const [heatmapData, setHeatmapData] = useState<HeatmapData>({
+    weeks: generateEmptyHeatmap(),
+    totalContributions: 0,
+    streakDays: 0,
+    monthLabels: [],
+    activeDates: [],
+  });
+
+  useEffect(() => {
+    fetchHeatmapData().then((data) => setHeatmapData(data));
+  }, []);
+
+  const githubHeatmap = heatmapData.weeks;
+  const streakDays = heatmapData.streakDays;
+  const totalContributions = heatmapData.totalContributions;
 
   const handleOpenSubmit = (item: TimelineActionItem) => {
     setActiveItemToSubmit(item);
@@ -306,29 +382,8 @@ export function FreelancerDashboard() {
 
   return (
     <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8 animate-fade-in font-sans">
-      {/* Role Identity Strip */}
-      <div className="flex items-center justify-between rounded-2xl border border-violet-500/20 bg-gradient-to-r from-violet-500/8 via-transparent to-transparent px-4 py-2.5">
-        <div className="flex items-center gap-2.5">
-          <div className="h-7 w-7 rounded-lg bg-violet-500/15 text-violet-600 dark:text-violet-400 flex items-center justify-center shrink-0">
-            <Briefcase className="h-3.5 w-3.5" />
-          </div>
-          <div>
-            <p className="text-xs font-bold text-foreground leading-none">
-              {freelancerName}
-            </p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">Mode: Freelancer</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-violet-600 dark:text-violet-400 bg-violet-500/10 border border-violet-500/20 rounded-full px-2.5 py-1">
-            <Zap className="h-2.5 w-2.5" />
-            Mode Portofolio Proyek
-          </span>
-        </div>
-      </div>
-
-      {/* 0. Clean Minimalist Hero Greeting (Buttons & Badges Removed as requested) */}
-      <div className="relative overflow-hidden rounded-3xl p-6 md:p-8 text-white shadow-xl border border-white/10">
+      {/* 0. Clean Minimalist Hero Greeting */}
+      <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8 md:p-10 text-white shadow-xl border border-white/10 min-h-[160px] flex items-center">
         <div className="absolute inset-0 z-0 pointer-events-none">
           <Grainient
             color1="#10B981"
@@ -357,12 +412,12 @@ export function FreelancerDashboard() {
         </div>
         <div className="absolute inset-0 z-[1] bg-black/45 backdrop-blur-[1px] pointer-events-none" />
 
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1.5">
-            <h1 className="font-heading text-2xl md:text-3xl lg:text-4xl font-normal tracking-tight leading-snug">
+        <div className="relative z-20 flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
+          <div className="space-y-2 max-w-2xl">
+            <h1 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-normal tracking-tight leading-normal text-white drop-shadow-sm">
               Selamat datang kembali, {freelancerName}!
             </h1>
-            <p className="max-w-2xl text-xs md:text-sm text-slate-200 leading-relaxed font-normal">
+            <p className="text-xs md:text-sm text-slate-200 leading-relaxed font-normal">
               Pantau alur pekerjaan aktifmu, selesaikan misi harian untuk menjaga konsistensi streak, dan bangun portofolio profesionalmu.
             </p>
           </div>
@@ -620,51 +675,138 @@ export function FreelancerDashboard() {
             </div>
           </section>
 
-          {/* 3. RINGKASAN KEAHLIAN & KUIS (Scroll Section 3) */}
+          {/* 3. RINGKASAN PROGRESS KEAHLIAN & VERIFIKASI (Scroll Section 3) */}
           <section className="space-y-4 pt-2">
             <div className="flex items-center justify-between border-b border-border/60 pb-3">
               <div className="flex items-center gap-2">
                 <Award className="h-4 w-4 text-primary" />
                 <h2 className="text-lg font-bold tracking-tight text-foreground font-heading">
-                  Keahlian & Verifikasi
+                  Progress Keahlian & Verifikasi
                 </h2>
               </div>
               <Link
                 href="/freelancer/skills"
                 className="text-xs font-bold text-primary hover:underline inline-flex items-center gap-1"
               >
-                <span>Buka Skill Quizzes</span>
+                <span>Buka Direktori Keahlian</span>
                 <ChevronRight className="h-3.5 w-3.5" />
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              <div className="p-4 rounded-2xl border border-border/70 bg-card space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-foreground">Figma Auto-Layout & UI Kit</span>
-                  <span className="text-[10px] font-bold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-md">
-                    Terverifikasi
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Score: 92/100 &bull; Menambah bobot Match Score di proyek UI/UX sebesar +15%.
-                </p>
-              </div>
-
-              <div className="p-4 rounded-2xl border border-dashed border-border/80 bg-muted/20 flex flex-col justify-between space-y-2">
+            {/* Overall Skill Progress Bar Card */}
+            <div className="rounded-2xl border border-border/70 bg-card p-4 sm:p-5 space-y-3 shadow-xs">
+              <div className="flex items-center justify-between">
                 <div>
-                  <span className="text-xs font-bold text-foreground block">Tantangan Kuis Baru</span>
-                  <p className="text-xs text-muted-foreground">
-                    Selesaikan kuis <strong>Social Media Poster Typography</strong> untuk mendapat badge ekstra.
+                  <span className="text-xs font-bold text-foreground">
+                    Verifikasi Keahlian Portofolio
+                  </span>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    {verifiedSkillsCount} dari {totalSkillsCount} modul keahlian terverifikasi resmi
                   </p>
                 </div>
-                <Link
-                  href="/freelancer/skills"
-                  className="text-xs font-bold text-primary hover:underline inline-flex items-center gap-1 self-start"
-                >
-                  <span>Mulai Kuis (+300 XP)</span>
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </Link>
+                <span className="text-xs font-extrabold text-primary bg-primary/10 px-2.5 py-1 rounded-full">
+                  {skillProgressPercent}% Lengkap
+                </span>
+              </div>
+
+              <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-primary to-indigo-600 rounded-full transition-all duration-500"
+                  style={{ width: `${skillProgressPercent}%` }}
+                />
+              </div>
+
+              {/* Dynamic 2-Column Grid: Verified Modules vs Next Recommendation */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                {/* Column 1: Verified Skills List */}
+                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3.5 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                      <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                      Lencana Terverifikasi ({passedQuizzes.length})
+                    </span>
+                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-500/15 px-2 py-0.5 rounded-full">
+                      Aktif di Profil
+                    </span>
+                  </div>
+
+                  {passedQuizzes.length === 0 ? (
+                    <p className="text-xs text-muted-foreground py-2">
+                      Belum ada kuis yang diselesaikan. Mulai verifikasi keahlian pertamamu untuk meningkatkan match score proyek.
+                    </p>
+                  ) : (
+                    <div className="space-y-2 max-h-44 overflow-y-auto pr-1">
+                      {passedQuizzes.map((pq) => {
+                        const result = quizResults[pq.id];
+                        return (
+                          <div
+                            key={pq.id}
+                            className="rounded-lg border border-border/60 bg-card/80 p-2.5 flex items-center justify-between gap-2"
+                          >
+                            <div className="min-w-0">
+                              <p className="text-xs font-bold text-foreground truncate">{pq.badgeName}</p>
+                              <p className="text-[10px] text-muted-foreground">
+                                Nilai: {result?.score ?? 100}% &bull; +{pq.xpReward} XP
+                              </p>
+                            </div>
+                            <span className="shrink-0 text-[10px] font-bold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-md flex items-center gap-1">
+                              <Check className="h-3 w-3" />
+                              Lulus
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Column 2: Next Recommended Quiz */}
+                <div className="rounded-xl border border-dashed border-primary/30 bg-primary/5 p-3.5 flex flex-col justify-between space-y-3">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-primary uppercase tracking-wider flex items-center gap-1">
+                        <Sparkles className="h-3 w-3 text-amber-500" />
+                        Rekomendasi Kuis Berikutnya
+                      </span>
+                      <span className="text-[10px] font-extrabold text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                        +{nextQuizToTake.xpReward} XP
+                      </span>
+                    </div>
+                    <h3 className="text-xs font-bold text-foreground line-clamp-1">{nextQuizToTake.name}</h3>
+                    <p className="text-[11px] text-muted-foreground line-clamp-2 leading-relaxed">
+                      {nextQuizToTake.description}
+                    </p>
+                  </div>
+
+                  <Link
+                    href={`/freelancer/skills/quiz/${nextQuizToTake.id}`}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white shadow-sm shadow-primary/25 hover:bg-primary/90 transition-all hover:scale-102 active:scale-98 text-center"
+                  >
+                    <span>Mulai Kuis ({nextQuizToTake.timeLimitDisplay})</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
+                </div>
+              </div>
+
+              {/* Bottom Overall Accomplishments Strip */}
+              <div className="pt-2 border-t border-border/40 flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground">
+                <span className="font-semibold text-foreground">Ringkasan Aktivitas:</span>
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex items-center gap-1 font-medium">
+                    <Award className="h-3.5 w-3.5 text-violet-500" />
+                    <strong>{verifiedSkillsCount}</strong> Kuis Lulus
+                  </span>
+                  <span>&bull;</span>
+                  <span className="inline-flex items-center gap-1 font-medium">
+                    <BookOpen className="h-3.5 w-3.5 text-emerald-500" />
+                    <strong>{learnedCount}</strong> Materi Belajar
+                  </span>
+                  <span>&bull;</span>
+                  <span className="inline-flex items-center gap-1 font-medium">
+                    <Briefcase className="h-3.5 w-3.5 text-blue-500" />
+                    <strong>{completedMilestonesCount}</strong> Milestone Selesai
+                  </span>
+                </div>
               </div>
             </div>
           </section>
@@ -687,97 +829,46 @@ export function FreelancerDashboard() {
               </Link>
             </div>
 
-            <div className="rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/5 via-card to-card p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div>
-                <span className="text-[10px] font-bold text-primary uppercase tracking-wider block">Saldo Siap Ditarik</span>
-                <h3 className="text-2xl font-bold text-foreground font-heading mt-0.5">
-                  {formatMoney(14850000, "IDR")}
-                </h3>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Terhubung ke rekening BCA &bull; a.n. {freelancerName}
-                </p>
-              </div>
+            <Link
+              href="/freelancer/earnings"
+              className="group block rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/5 via-card to-card p-5 transition-all hover:border-primary/50 hover:shadow-md hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+            >
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-primary uppercase tracking-wider">
+                    <span>Saldo Siap Ditarik</span>
+                    <ChevronRight className="h-3 w-3 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-foreground font-heading mt-0.5">
+                    {formatMoney(14850000, "IDR")}
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Terhubung ke rekening BCA &bull; a.n. {freelancerName}
+                  </p>
+                </div>
 
-              <Link
-                href="/freelancer/earnings"
-                className="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white shadow-md shadow-primary/20 hover:bg-primary/90 transition-all shrink-0"
-              >
-                Tarik Saldo
-              </Link>
-            </div>
+                <div className="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white shadow-md shadow-primary/20 group-hover:bg-primary/90 transition-all shrink-0">
+                  Tarik Saldo
+                </div>
+              </div>
+            </Link>
           </section>
         </div>
 
         {/* ========================================================================= */}
-        {/* RIGHT COLUMN: STICKY GUIDE (GitHub Streak Heatmap, Misi Harian, Level)    */}
+        {/* RIGHT COLUMN: STICKY GUIDE (Weekly Streak Tracker, Misi Harian, Level)    */}
         {/* ========================================================================= */}
         <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-20">
-          {/* 1. GitHub-Style Green Contribution Heatmap & Streak */}
-          <div className="rounded-3xl border border-border/70 bg-card p-5 sm:p-6 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="h-9 w-9 rounded-xl bg-emerald-500/15 text-emerald-600 flex items-center justify-center">
-                  <Flame className="h-4.5 w-4.5 fill-emerald-500 text-emerald-500" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-foreground font-heading">
-                    {streakDays} Hari Streak Konsisten
-                  </h3>
-                  <p className="text-[11px] text-muted-foreground">
-                    Total 48 kontribusi aktif dalam 4 bulan terakhir
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* True GitHub-Style Contribution Heatmap Matrix */}
-            <div className="rounded-2xl bg-muted/20 border border-border/50 p-3 space-y-2">
-              <div className="flex items-center justify-between text-[10px] text-muted-foreground font-semibold px-1">
-                <span>Jun</span>
-                <span>Jul</span>
-                <span>Agu</span>
-                <span>Sep</span>
-              </div>
-
-              {/* Heatmap Grid: 16 Week Columns x 7 Day Rows */}
-              <div className="grid grid-flow-col grid-rows-7 gap-1 overflow-x-auto pb-1 scrollbar-none">
-                {githubHeatmap.map((week, wIdx) =>
-                  week.map((day, dIdx) => (
-                    <div
-                      key={`${wIdx}-${dIdx}`}
-                      title={`${day.count} aktivitas pada ${day.date}`}
-                      className={`h-2.5 w-2.5 rounded-[2.5px] transition-all hover:scale-125 cursor-pointer ${day.level === 0
-                          ? "bg-muted/60"
-                          : day.level === 1
-                            ? "bg-emerald-500/30"
-                            : day.level === 2
-                              ? "bg-emerald-500/60"
-                              : day.level === 3
-                                ? "bg-emerald-500/85"
-                                : "bg-emerald-600 dark:bg-emerald-400"
-                        }`}
-                    />
-                  ))
-                )}
-              </div>
-
-              {/* Heatmap Legend */}
-              <div className="flex items-center justify-between pt-1 border-t border-border/40 text-[10px] text-muted-foreground font-medium">
-                <span>Kurang</span>
-                <div className="flex items-center gap-1">
-                  <span className="h-2 w-2 rounded-[2px] bg-muted/60" />
-                  <span className="h-2 w-2 rounded-[2px] bg-emerald-500/30" />
-                  <span className="h-2 w-2 rounded-[2px] bg-emerald-500/60" />
-                  <span className="h-2 w-2 rounded-[2px] bg-emerald-500/85" />
-                  <span className="h-2 w-2 rounded-[2px] bg-emerald-600 dark:bg-emerald-400" />
-                </div>
-                <span>Lebih</span>
-              </div>
-            </div>
-          </div>
+          {/* 1. Doable Streak & Activity Tracker (Seminggu dulu + Expand Sebulan) */}
+          <DoableStreakTracker
+            streakDays={streakDays}
+            activeDates={heatmapData.activeDates}
+            totalContributions={totalContributions}
+            isOwner={true}
+          />
 
           {/* 2. Misi Harian / Daily Quest Checklist */}
-          <div className="rounded-3xl border border-border/70 bg-card p-5 sm:p-6 shadow-sm space-y-4">
+          <div id="misi-harian-section" className="rounded-3xl border border-border/70 bg-card p-5 sm:p-6 shadow-sm space-y-4">
             <div className="flex items-center justify-between border-b border-border/40 pb-3">
               <div className="flex items-center gap-2">
                 <Target className="h-4 w-4 text-primary" />
@@ -860,7 +951,7 @@ export function FreelancerDashboard() {
                 </span>
               </div>
               <span className="text-xs font-bold text-foreground font-heading">
-                {currentXP} / {nextLevelXP} XP
+                {currentXP.toLocaleString("id-ID")} / {nextLevelXP.toLocaleString("id-ID")} XP
               </span>
             </div>
 
@@ -875,11 +966,36 @@ export function FreelancerDashboard() {
                   style={{ width: `${xpPercentage}%` }}
                 />
               </div>
+
+              {/* 3-Pillar XP Accumulation Breakdown Pills */}
+              <div className="grid grid-cols-3 gap-1.5 pt-1.5 text-[10px]">
+                <div className="rounded-lg bg-blue-500/10 border border-blue-500/20 px-2 py-1 text-center">
+                  <span className="text-blue-600 block font-bold leading-none">{xpBreakdown.workXP.toLocaleString("id-ID")} XP</span>
+                  <span className="text-[9px] text-muted-foreground mt-0.5 block">💼 Pekerjaan</span>
+                </div>
+                <div className="rounded-lg bg-violet-500/10 border border-violet-500/20 px-2 py-1 text-center">
+                  <span className="text-violet-600 block font-bold leading-none">{xpBreakdown.quizXP.toLocaleString("id-ID")} XP</span>
+                  <span className="text-[9px] text-muted-foreground mt-0.5 block">🧪 Kuis</span>
+                </div>
+                <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 text-center">
+                  <span className="text-emerald-600 block font-bold leading-none">{xpBreakdown.learningXP.toLocaleString("id-ID")} XP</span>
+                  <span className="text-[9px] text-muted-foreground mt-0.5 block">📖 Belajar</span>
+                </div>
+              </div>
             </div>
 
-            <p className="text-[11px] text-muted-foreground leading-relaxed">
-              Tinggal <strong className="text-foreground">{nextLevelXP - currentXP} XP lagi</strong> untuk membuka lencana <strong>Verified Pro</strong> dan prioritas rekomendasi di pencarian klien UMKM.
-            </p>
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-[11px] text-muted-foreground leading-relaxed flex-1">
+                Tinggal <strong className="text-foreground">{Math.max(0, nextLevelXP - currentXP).toLocaleString("id-ID")} XP lagi</strong> untuk membuka lencana <strong>Verified Pro</strong> dan prioritas rekomendasi di pencarian klien UMKM.
+              </p>
+              <Link
+                href="/freelancer/skills"
+                className="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-2 text-[11px] font-bold text-white shadow-md shadow-primary/20 hover:bg-primary/90 transition-all hover:scale-105 active:scale-95"
+              >
+                <Zap className="h-3.5 w-3.5" />
+                Earn XP
+              </Link>
+            </div>
           </div>
         </div>
       </div>
