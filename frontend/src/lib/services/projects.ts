@@ -103,22 +103,6 @@ export async function getClientProjects(userId?: string): Promise<ProjectRecord[
     }
   }
 
-  // Fallback to active projects if client has not posted one yet
-  const { data: allProjs } = await supabase
-    .from("projects")
-    .select(`
-      *,
-      owner:users!owner_id(id, full_name, avatar_url, location),
-      milestones(*),
-      project_tasks(*)
-    `)
-    .limit(5)
-    .order("created_at", { ascending: false });
-
-  if (allProjs && allProjs.length > 0) {
-    return allProjs.map((p) => formatProjectRecord(p));
-  }
-
   return [];
 }
 

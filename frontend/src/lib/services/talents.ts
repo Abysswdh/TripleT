@@ -43,14 +43,14 @@ export async function getTalents(filters?: TalentFilterOptions): Promise<TalentR
     .from("freelancer_profiles")
     .select(`
       *,
-      user:users!user_id(id, full_name, avatar_url, banner_url, location, is_verified, bio, email)
+      user:users!user_id(id, full_name, avatar_url, location, is_verified, bio, email, role, freelancer_onboarded)
     `);
 
-  if (filters?.level && filters.level !== "All") {
+  if (filters?.level && filters.level !== "All" && filters.level !== "Semua Level") {
     query = query.eq("badge_level", filters.level);
   }
 
-  if (filters?.category && filters.category !== "All" && filters.category !== "Semua") {
+  if (filters?.category && filters.category !== "All" && filters.category !== "Semua" && filters.category !== "Semua Kategori") {
     query = query.eq("category", filters.category);
   }
 
@@ -61,25 +61,41 @@ export async function getTalents(filters?: TalentFilterOptions): Promise<TalentR
     return [];
   }
 
-  let results: TalentRecord[] = data.map((item) => {
+  // Filter only profiles whose user is actually a freelancer or has onboarded as freelancer
+  const activeFreelancers = data.filter((item) => {
+    const user = item.user;
+    if (!user) return false;
+    if (user.role === "customer" && !user.freelancer_onboarded) {
+      return false;
+    }
+    return true;
+  });
+
+  let results: TalentRecord[] = activeFreelancers.map((item) => {
     const user = item.user || {};
-    const rateNum = Number(item.hourly_rate) || 35;
+    const rateNum = Number(item.hourly_rate) || 150000;
+    const formattedPrice = item.starting_price
+      ? item.starting_price
+      : rateNum > 1000
+      ? `Rp ${rateNum.toLocaleString("id-ID")}/jam`
+      : `$${rateNum}/hr`;
+
     return {
       id: user.id || item.id,
       userId: user.id || item.user_id,
       name: user.full_name || "Specialist Talent",
       title: item.headline || "Digital Specialist",
       avatar: user.avatar_url || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
-      coverImage: user.banner_url || item.cover_image || "https://images.unsplash.com/photo-1557683316-973673baf926?w=1200&auto=format&fit=crop&q=80",
+      coverImage: item.cover_image || "https://images.unsplash.com/photo-1557683316-973673baf926?w=1200&auto=format&fit=crop&q=80",
       rating: Number(item.rating) || 5.0,
       reviewsCount: item.reviews_count || 0,
-      hourlyRate: item.starting_price || `$${rateNum}/hr`,
+      hourlyRate: formattedPrice,
       hourlyRateNumeric: rateNum,
       location: user.location || "Indonesia",
       verified: user.is_verified ?? true,
       badgeLevel: item.badge_level || "Verified Pro",
-      skills: item.skills || [],
-      bio: user.bio || item.headline || "",
+      skills: item.skills && item.skills.length > 0 ? item.skills : ["UI/UX Design", "Web Development"],
+      bio: user.bio || item.headline || "Siap berkolaborasi dan mengerjakan proyek berkualitas tinggi.",
       responseTime: item.response_time || "< 1 jam",
       completedProjects: item.completed_projects || 0,
       totalEarnings: item.total_earnings || 0,
@@ -104,14 +120,14 @@ export async function getTalents(filters?: TalentFilterOptions): Promise<TalentR
 
   if (filters?.rateTier && filters.rateTier !== "all") {
     if (filters.rateTier === "tier-1") {
-      // Under $25 / 150k
-      results = results.filter((t) => t.hourlyRateNumeric < 25);
+      results = results.filter((t) => t.hourlyRateNumeric < 25 || (t.hourlyRateNumeric >= 1000 && t.hourlyRateNumeric < 150000));
     } else if (filters.rateTier === "tier-2") {
-      // $25 - $40 / 150k - 300k
-      results = results.filter((t) => t.hourlyRateNumeric >= 25 && t.hourlyRateNumeric <= 40);
+      results = results.filter(
+        (t) => (t.hourlyRateNumeric >= 25 && t.hourlyRateNumeric <= 40) ||
+               (t.hourlyRateNumeric >= 150000 && t.hourlyRateNumeric <= 300000)
+      );
     } else if (filters.rateTier === "tier-3") {
-      // Above $40 / > 300k
-      results = results.filter((t) => t.hourlyRateNumeric > 40);
+      results = results.filter((t) => (t.hourlyRateNumeric > 40 && t.hourlyRateNumeric < 1000) || t.hourlyRateNumeric > 300000);
     }
   }
 

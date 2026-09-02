@@ -3,8 +3,8 @@
 import { useState, useEffect, useMemo, Suspense } from "react";
 import { createPortal } from "react-dom";
 import { useSearchParams } from "next/navigation";
-import { Search, Star, ShieldCheck, CheckCircle2, SlidersHorizontal, Briefcase, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { Search, Star, ShieldCheck, CheckCircle2, SlidersHorizontal, Briefcase } from "lucide-react";
 import { getTalents, inviteTalentToProject, type TalentRecord } from "@/lib/services/talents";
 import { getClientProjects, type ProjectRecord } from "@/lib/services/projects";
 import { useTranslation } from "@/context/language-context";
@@ -95,9 +95,9 @@ function ClientTalentContent() {
         // 4. Rate Tier
         const rateNum = talent.hourlyRateNumeric || 35;
         let matchesRate = true;
-        if (selectedRateTier === "< 150k") matchesRate = rateNum < 25;
-        else if (selectedRateTier === "150k - 300k") matchesRate = rateNum >= 25 && rateNum <= 40;
-        else if (selectedRateTier === "> 300k") matchesRate = rateNum > 40;
+        if (selectedRateTier === "< 150k") matchesRate = rateNum < 25 || (rateNum >= 1000 && rateNum < 150000);
+        else if (selectedRateTier === "150k - 300k") matchesRate = (rateNum >= 25 && rateNum <= 40) || (rateNum >= 150000 && rateNum <= 300000);
+        else if (selectedRateTier === "> 300k") matchesRate = (rateNum > 40 && rateNum < 1000) || rateNum > 300000;
 
         return matchesSearch && matchesCategory && matchesLevel && matchesRate;
       })
@@ -132,66 +132,14 @@ function ClientTalentContent() {
 
   return (
     <div className="animate-fade-in space-y-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-10 pb-16">
-      {/* 1. Header & Target Project Banner */}
-      <div className="space-y-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight md:text-3xl text-foreground">
-            {t("talent.title", "Cari Talenta Terverifikasi")}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {t("talent.subtitle", "Temukan freelancer terbaik dengan keahlian yang telah diuji dan diverifikasi.")}
-          </p>
-        </div>
-
-        {/* Target Project Selection Banner */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4.5 rounded-2xl border border-primary/25 bg-gradient-to-r from-primary/10 via-primary/5 to-card shadow-xs">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shrink-0 shadow-sm shadow-primary/25">
-              <Briefcase className="h-5 w-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-primary">
-                  Target Proyek Perekrutan:
-                </span>
-                {activeProject && (
-                  <span className="text-[10px] font-bold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                    {activeProject.budget}
-                  </span>
-                )}
-              </div>
-
-              {clientProjects.length > 0 ? (
-                <div className="flex items-center gap-2 mt-1">
-                  <select
-                    value={selectedProjectId}
-                    onChange={(e) => setSelectedProjectId(e.target.value)}
-                    aria-label="Pilih target proyek"
-                    className="font-bold text-xs sm:text-sm text-foreground bg-transparent border-b border-primary/40 focus:outline-none cursor-pointer pr-4"
-                  >
-                    {clientProjects.map((p) => (
-                      <option key={p.id} value={p.id} className="bg-card text-foreground">
-                        {p.title} ({p.budget}) — {p.category}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ) : (
-                <p className="text-xs font-semibold text-muted-foreground mt-0.5">
-                  Belum ada proyek terpilih. Anda dapat langsung mengundang atau membuat proyek baru.
-                </p>
-              )}
-            </div>
-          </div>
-
-          <Link
-            href="/dashboard"
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold px-4 py-2.5 shadow-sm shadow-primary/20 transition-all hover:scale-102 shrink-0"
-          >
-            <span>+ Buat Proyek Baru</span>
-            <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
-        </div>
+      {/* 1. Header */}
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight md:text-3xl text-foreground">
+          {t("talent.title", "Cari Talenta Terverifikasi")}
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {t("talent.subtitle", "Temukan freelancer terbaik dengan keahlian yang telah diuji dan diverifikasi.")}
+        </p>
       </div>
 
       {/* 2. SEARCH & FILTER CONTROLS */}
