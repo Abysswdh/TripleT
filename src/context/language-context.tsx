@@ -130,3 +130,6 @@ export function useTranslation() {
   }
   return context;
 }
+
+export const useLanguage = useTranslation;
+

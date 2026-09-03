@@ -635,7 +635,7 @@ export function FreelancerDashboard() {
                         </div>
 
                         <Link
-                          href="/client/projects/proj-1"
+                          href="/freelancer/projects/proj-1"
                           className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white shadow-md shadow-primary/20 hover:bg-primary/90 hover:scale-[1.02] active:scale-[0.98] transition-all"
                         >
                           <FileText className="h-3.5 w-3.5" />

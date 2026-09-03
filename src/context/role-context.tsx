@@ -81,3 +81,6 @@ export function useDashboardRole() {
   }
   return context;
 }
+
+export const useRole = useDashboardRole;
+

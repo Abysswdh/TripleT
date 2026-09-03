@@ -184,32 +184,41 @@ export default function FreelancerMyWorkPage() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center justify-end gap-3 pt-2 border-t border-border/40">
-                  {contract.status === "active" && currentMs && currentMs.status === "in_progress" && (
-                    <button
-                      onClick={() =>
-                        setSelectedMilestoneContract({
-                          contractId: contract.id,
-                          milestoneId: currentMs.id,
-                          title: currentMs.title,
-                        })
-                      }
-                      className="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground shadow-sm shadow-primary/20 hover:bg-primary/90 transition-all hover:scale-102"
-                    >
-                      Serahkan Hasil Kerja (Submit)
-                    </button>
-                  )}
-                  {currentMs && currentMs.status === "submitted" && (
-                    <span className="text-xs text-amber-600 font-medium">
-                      Menunggu review dan persetujuan dari klien
-                    </span>
-                  )}
-                  {contract.status === "completed" && (
-                    <span className="inline-flex items-center gap-1 text-xs text-emerald-600 font-medium">
-                      <CheckCircle2 className="h-3.5 w-3.5" />
-                      Semua milestone telah disetujui & dibayar penuh
-                    </span>
-                  )}
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-border/40">
+                  <Link
+                    href={`/freelancer/projects/${contract.projectId}`}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+                  >
+                    Buka Workspace & Gantt Proyek →
+                  </Link>
+
+                  <div className="flex items-center gap-2">
+                    {contract.status === "active" && currentMs && currentMs.status === "in_progress" && (
+                      <button
+                        onClick={() =>
+                          setSelectedMilestoneContract({
+                            contractId: contract.id,
+                            milestoneId: currentMs.id,
+                            title: currentMs.title,
+                          })
+                        }
+                        className="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground shadow-sm shadow-primary/20 hover:bg-primary/90 transition-all hover:scale-102"
+                      >
+                        Serahkan Hasil Kerja (Submit)
+                      </button>
+                    )}
+                    {currentMs && currentMs.status === "submitted" && (
+                      <span className="text-xs text-amber-600 font-medium">
+                        Menunggu review dan persetujuan dari klien
+                      </span>
+                    )}
+                    {contract.status === "completed" && (
+                      <span className="inline-flex items-center gap-1 text-xs text-emerald-600 font-medium">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        Semua milestone telah disetujui & dibayar penuh
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             );

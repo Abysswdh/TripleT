@@ -18,10 +18,9 @@ import {
   SKILL_QUIZZES,
   type SkillQuizDefinition,
   type QuizAttemptResult,
-  getSavedQuizResults,
   fetchUserQuizResults,
 } from "@/lib/services/quizzes";
-import { fetchHeatmapData, fetchUserXPBreakdown, type XPBreakdown } from "@/lib/services/activity";
+import { fetchHeatmapData, fetchUserXPBreakdown } from "@/lib/services/activity";
 import { useAuth } from "@/hooks/use-auth";
 import { createClient } from "@/lib/supabase/client";
 import Grainient from "@/components/ui/Grainient";
@@ -39,12 +38,7 @@ export default function FreelancerSkillsPage() {
   // Live database gamification state
   const [streakDays, setStreakDays] = useState<number>(0);
   const [totalXP, setTotalXP] = useState<number>(0);
-  const [xpBreakdown, setXpBreakdown] = useState<XPBreakdown>({
-    quizXP: 0,
-    workXP: 0,
-    learningXP: 0,
-    totalXP: 0,
-  });
+
 
   const loadResults = async () => {
     const data = await fetchUserQuizResults();
@@ -69,7 +63,6 @@ export default function FreelancerSkillsPage() {
   // Fetch real XP and day streak from Supabase database
   useEffect(() => {
     fetchUserXPBreakdown().then((data) => {
-      setXpBreakdown(data);
       setTotalXP(data.totalXP);
     });
 
