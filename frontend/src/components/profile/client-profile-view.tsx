@@ -224,7 +224,7 @@ export function ClientProfileView({ clientId, isOwner = true }: ClientProfileVie
 
         const totalSpentText = totalBudgetCalc > 0
           ? `Rp ${totalBudgetCalc.toLocaleString("id-ID")}`
-          : (cData?.total_spent ? `Rp ${cData.total_spent.toLocaleString("id-ID")}` : "Rp 0");
+          : (cData?.total_spent ? `Rp ${Number(cData.total_spent).toLocaleString("id-ID")}` : "Rp 0");
 
         const activeCount = projectsList.filter((p) => p.status === "In Progress" || p.status === "Hiring" || p.status === "Open").length;
         const hireRateText = projectsList.length > 0
@@ -236,9 +236,9 @@ export function ClientProfileView({ clientId, isOwner = true }: ClientProfileVie
           new Set(projectsList.flatMap((p) => p.skills))
         ).slice(0, 6);
 
-        const hiringInterests = extractedSkills.length > 0
+        const hiringInterests: string[] = extractedSkills.length > 0
           ? extractedSkills
-          : (cData?.hiring_needs && cData.hiring_needs.length > 0 ? cData.hiring_needs : ["Web Development", "UI/UX Design", "Mobile App"]);
+          : (Array.isArray(cData?.hiring_needs) && (cData.hiring_needs as string[]).length > 0 ? (cData.hiring_needs as string[]) : ["Web Development", "UI/UX Design", "Mobile App"]);
 
         const reviewsList: ClientReviewItem[] = ((rData as Array<Record<string, unknown>>) || []).map((r) => {
           const rev = r.reviewer as Record<string, unknown> | undefined;
@@ -256,7 +256,7 @@ export function ClientProfileView({ clientId, isOwner = true }: ClientProfileVie
         });
 
         const joinedYear = u?.created_at
-          ? new Date(u.created_at).getFullYear().toString()
+          ? new Date(String(u.created_at)).getFullYear().toString()
           : "2025";
 
         const DEFAULT_AVATAR = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80";
@@ -291,7 +291,7 @@ export function ClientProfileView({ clientId, isOwner = true }: ClientProfileVie
             ? Number((reviewsList.reduce((a, b) => a + b.rating, 0) / reviewsList.length).toFixed(1))
             : 5.0,
           reviewsCount: reviewsList.length,
-          about: (isActualOwner && meta.bio) ? [meta.bio] : (u.bio ? [u.bio] : [
+          about: (isActualOwner && meta.bio) ? [meta.bio] : (u.bio ? [String(u.bio)] : [
             "Perusahaan pemberi kerja terdaftar di ekosistem TripleT. Mengutamakan kolaborasi profesional, scope kerja terdefinisi jelas, dan pencairan milestone tepat waktu."
           ]),
           hiringInterests: hiringInterests,

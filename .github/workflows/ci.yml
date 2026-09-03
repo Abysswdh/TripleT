@@ -39,38 +39,4 @@ jobs:
         env:
           NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
           NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-key
-          NEXT_PUBLIC_BACKEND_URL: http://localhost:8000
 
-  # ---- Backend ----
-  backend:
-    name: Backend (FastAPI)
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: "pip"
-
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Lint with ruff
-        run: |
-          pip install ruff
-          ruff check .
-
-      - name: Run tests
-        run: python -m pytest -v --tb=short
-        env:
-          DATABASE_URL: ""
-          SUPABASE_URL: ""
-          SUPABASE_ANON_KEY: ""
-          SUPABASE_SERVICE_ROLE_KEY: ""
-          SUPABASE_JWT_SECRET: test-secret

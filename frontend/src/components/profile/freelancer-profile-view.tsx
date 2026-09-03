@@ -532,35 +532,35 @@ export function FreelancerProfileView({
           const fp = profileData || {};
 
           const rawAboutMe = Array.isArray(fp.about_me) && fp.about_me.length > 0
-            ? fp.about_me
-            : (fp.bio ? [fp.bio] : (u.bio ? [u.bio] : (isOwner && meta.bio ? [meta.bio] : ["Freelancer spesialis terdaftar di platform TripleT."])));
+            ? (fp.about_me as string[])
+            : (fp.bio ? [String(fp.bio)] : (u.bio ? [String(u.bio)] : (isOwner && meta.bio ? [meta.bio] : ["Freelancer spesialis terdaftar di platform TripleT."])));
 
           const displayName = isOwner
-            ? (meta.full_name || meta.name || u.full_name || (u.email ? u.email.split("@")[0] : (user?.email ? user.email.split("@")[0] : "Freelancer")))
-            : (u.full_name || (u.email ? u.email.split("@")[0] : "Talenta Spesialis"));
+            ? (meta.full_name || meta.name || (u.full_name as string) || (u.email ? String(u.email).split("@")[0] : (user?.email ? user.email.split("@")[0] : "Freelancer")))
+            : ((u.full_name as string) || (u.email ? String(u.email).split("@")[0] : "Talenta Spesialis"));
 
           const displayAvatar = cleanAvatar(
-            isOwner ? (meta.avatar_url || u.avatar_url) : (u.avatar_url || fp.avatar_url)
+            isOwner ? (meta.avatar_url || (u.avatar_url as string)) : ((u.avatar_url as string) || (fp.avatar_url as string))
           );
 
           const displayBanner = cleanBanner(
-            isOwner ? (meta.banner_url || meta.cover_image || fp.cover_image || u.banner_url) : (fp.cover_image || u.banner_url)
+            isOwner ? (meta.banner_url || meta.cover_image || (fp.cover_image as string) || (u.banner_url as string)) : ((fp.cover_image as string) || (u.banner_url as string))
           );
 
           const displayRole = isOwner
-            ? (meta.headline || fp.headline || "Digital Specialist")
-            : (fp.headline || "Digital Specialist");
+            ? (meta.headline || (fp.headline as string) || "Digital Specialist")
+            : ((fp.headline as string) || "Digital Specialist");
 
           const displayLocation = isOwner
-            ? (meta.location || u.location || "Indonesia")
-            : (u.location || "Indonesia");
+            ? (meta.location || (u.location as string) || "Indonesia")
+            : ((u.location as string) || "Indonesia");
 
           const displaySkills = Array.isArray(fp.skills) && fp.skills.length > 0
-            ? fp.skills
+            ? (fp.skills as string[])
             : (isOwner && meta.skills && meta.skills.length > 0 ? meta.skills : ["UI/UX Design", "Web Development"]);
 
           const displayVerifiedSkills = Array.isArray(fp.verified_skills) && fp.verified_skills.length > 0
-            ? fp.verified_skills
+            ? (fp.verified_skills as string[])
             : displaySkills;
 
           const rateNum = Number(fp.hourly_rate) || (isOwner && Number(meta.hourly_rate)) || 0;
@@ -575,17 +575,17 @@ export function FreelancerProfileView({
             coverImage: displayBanner,
             role: displayRole,
             location: displayLocation,
-            organization: fp.organization || "Member Terdaftar TripleT",
+            organization: (fp.organization as string) || "Member Terdaftar TripleT",
             level: (fp.badge_level as string) || "Verified Pro",
-            category: fp.category || "Full-Stack Web & Next.js",
+            category: (fp.category as string) || "Full-Stack Web & Next.js",
             projectsCount: Number(fp.completed_projects) || 0,
             rating: Number(fp.rating) || 5.0,
             reviewsCount: Number(fp.reviews_count) || 0,
-            responseTime: fp.response_time || "< 2 Jam",
+            responseTime: (fp.response_time as string) || "< 2 Jam",
             earnings: formattedEarnings,
-            availability: fp.starting_price?.includes("Jam")
+            availability: typeof fp.starting_price === "string" && fp.starting_price.includes("Jam")
               ? fp.starting_price.split("(")[0].trim()
-              : fp.availability || (isOwner && meta.weekly_availability === "part_time"
+              : (fp.availability as string) || (isOwner && meta.weekly_availability === "part_time"
               ? "< 15 Jam / Mgg"
               : isOwner && meta.weekly_availability === "full_time"
               ? "> 30 Jam / Mgg"

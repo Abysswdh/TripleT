@@ -464,8 +464,6 @@ export function CreateProjectModal({
 
   const handleSelectCategory = (catName: string) => {
     setCategory(catName);
-    setShowCategoryPicker(false);
-    setCategorySearchQuery("");
     const parsed = parseInt(durationDays || "3", 10);
     setGanttTasks(computeSprintTasks(catName, parsed));
 
