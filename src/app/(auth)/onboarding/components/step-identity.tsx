@@ -1,7 +1,7 @@
 "use client";
 
 import { OnboardingData } from "@/hooks/use-onboarding";
-import { ArrowLeft, ArrowRight, MapPin, User, Building2, AtSign } from "lucide-react";
+import { ArrowLeft, ArrowRight, MapPin, User, Building2, AtSign, Briefcase } from "lucide-react";
 import { useState } from "react";
 
 interface StepIdentityProps {
@@ -268,63 +268,89 @@ export function StepIdentity({ data, onUpdate, onNext, onPrev }: StepIdentityPro
 
   return (
     <div className="flex h-full flex-col justify-between">
-      {/* Scaled-up Form Content (No redundant header/badge pill) */}
-      <div className="my-auto space-y-6">
-        {/* Full Name */}
-        <div>
-          <label htmlFor="fullName" className="mb-2 block text-sm font-bold text-foreground">
-            {isFreelancer ? "Nama Lengkap / Nama Panggilan" : "Nama PIC / Penanggung Jawab"}
-          </label>
-          <div className="relative">
-            <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <input
-              id="fullName"
-              type="text"
-              value={data.fullName}
-              onChange={(e) => onUpdate({ fullName: e.target.value })}
-              placeholder={isFreelancer ? "Contoh: Budi Santoso" : "Contoh: Hendra Wijaya"}
-              className="h-12 w-full rounded-2xl border border-border bg-card pl-12 pr-4 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-xs"
-            />
+      {/* Form Content: Compact & Unscrollable */}
+      <div className="my-auto space-y-3 sm:space-y-3.5">
+        {/* Row 1: Full Name & Username in 2 Columns */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Full Name */}
+          <div>
+            <label htmlFor="fullName" className="mb-1.5 block text-xs sm:text-sm font-bold text-foreground">
+              {isFreelancer ? "Nama Lengkap / Panggilan" : "Nama PIC / Penanggung Jawab"}
+            </label>
+            <div className="relative">
+              <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                id="fullName"
+                type="text"
+                value={data.fullName}
+                onChange={(e) => onUpdate({ fullName: e.target.value })}
+                placeholder={isFreelancer ? "Contoh: Budi Santoso" : "Contoh: Hendra Wijaya"}
+                className="h-10 sm:h-11 w-full rounded-xl border border-border bg-card pl-10 pr-3 text-xs sm:text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-xs"
+              />
+            </div>
+          </div>
+
+          {/* Username */}
+          <div>
+            <label htmlFor="username" className="mb-1.5 block text-xs sm:text-sm font-bold text-foreground">
+              {isFreelancer ? "Username Freelancer" : "Username Akun Bisnis"}
+            </label>
+            <div className="relative">
+              <AtSign className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                id="username"
+                type="text"
+                value={data.username || ""}
+                onChange={(e) =>
+                  onUpdate({
+                    username: e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, ""),
+                  })
+                }
+                placeholder={isFreelancer ? "budisantoso / budi_dev" : "inovasi_digital"}
+                className="h-10 sm:h-11 w-full rounded-xl border border-border bg-card pl-10 pr-3 text-xs sm:text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-xs"
+              />
+            </div>
           </div>
         </div>
 
-        {/* Username */}
-        <div>
-          <label htmlFor="username" className="mb-2 block text-sm font-bold text-foreground">
-            Username Akun
-          </label>
-          <div className="relative">
-            <AtSign className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <input
-              id="username"
-              type="text"
-              value={data.username || ""}
-              onChange={(e) =>
-                onUpdate({
-                  username: e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, ""),
-                })
-              }
-              placeholder={isFreelancer ? "budisantoso atau budi_design" : "inovasi_digital"}
-              className="h-12 w-full rounded-2xl border border-border bg-card pl-12 pr-4 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-xs"
-            />
+        {/* Row 2: Headline / Spesialisasi Profesional (Freelancer Only) */}
+        {isFreelancer && (
+          <div>
+            <label htmlFor="headline" className="mb-1.5 block text-xs sm:text-sm font-bold text-foreground">
+              Spesialisasi / Headline Profesional
+            </label>
+            <div className="relative">
+              <Briefcase className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                id="headline"
+                type="text"
+                value={data.headline || ""}
+                onChange={(e) => onUpdate({ headline: e.target.value })}
+                placeholder="Contoh: Frontend Developer & UI/UX Designer"
+                className="h-10 sm:h-11 w-full rounded-xl border border-border bg-card pl-10 pr-3 text-xs sm:text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-xs"
+              />
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-1 ml-1">
+              Fokus keahlian yang akan tampil di kartu profil dan pencarian talenta klien UMKM.
+            </p>
           </div>
-        </div>
+        )}
 
-        {/* 2-Tier Location Selector */}
+        {/* Row 3: 2-Tier Location Selector */}
         <div>
-          <label className="mb-2 block text-sm font-bold text-foreground">
+          <label className="mb-1.5 block text-xs sm:text-sm font-bold text-foreground">
             Domisili Wilayah Operasional
           </label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
             {/* Province Selector */}
             <div>
               <div className="relative">
-                <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-primary" />
+                <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
                 <select
                   id="provinceSelect"
                   value={selectedProvince}
                   onChange={handleProvinceChange}
-                  className="h-12 w-full rounded-2xl border border-border bg-card pl-12 pr-4 text-sm font-medium focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none transition-all cursor-pointer shadow-xs"
+                  className="h-10 sm:h-11 w-full rounded-xl border border-border bg-card pl-10 pr-3 text-xs sm:text-sm font-medium focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none transition-all cursor-pointer shadow-xs"
                 >
                   {PROVINCE_LIST.map((prov) => (
                     <option key={prov} value={prov}>
@@ -333,18 +359,18 @@ export function StepIdentity({ data, onUpdate, onNext, onPrev }: StepIdentityPro
                   ))}
                 </select>
               </div>
-              <p className="text-[11px] text-muted-foreground mt-1.5 ml-1">Pilih Provinsi</p>
+              <p className="text-[10px] text-muted-foreground mt-1 ml-1">Provinsi</p>
             </div>
 
             {/* City / Regency Selector */}
             <div>
               <div className="relative">
-                <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <select
                   id="citySelect"
                   value={selectedCity}
                   onChange={handleCityChange}
-                  className="h-12 w-full rounded-2xl border border-border bg-card pl-12 pr-4 text-sm font-medium focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none transition-all cursor-pointer shadow-xs"
+                  className="h-10 sm:h-11 w-full rounded-xl border border-border bg-card pl-10 pr-3 text-xs sm:text-sm font-medium focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none transition-all cursor-pointer shadow-xs"
                 >
                   {availableCities.map((city) => (
                     <option key={city} value={city}>
@@ -353,30 +379,30 @@ export function StepIdentity({ data, onUpdate, onNext, onPrev }: StepIdentityPro
                   ))}
                 </select>
               </div>
-              <p className="text-[11px] text-muted-foreground mt-1.5 ml-1">Pilih Kota / Kabupaten</p>
+              <p className="text-[10px] text-muted-foreground mt-1 ml-1">Kota / Kabupaten</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Navigation Footer */}
-      <div className="flex items-center justify-end gap-3 pt-4 border-t border-border/40">
+      <div className="flex items-center justify-end gap-3 pt-3 border-t border-border/40">
         <button
           type="button"
           onClick={onPrev}
-          className="inline-flex items-center gap-2 rounded-2xl border border-border bg-card px-5 py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-3.5 w-3.5" />
           <span>Kembali</span>
         </button>
 
         <button
           type="button"
           onClick={onNext}
-          className="inline-flex items-center gap-2 rounded-2xl bg-primary px-6 py-2.5 text-xs font-semibold text-white shadow-lg shadow-primary/25 hover:bg-primary-600 transition-all active:scale-[0.98]"
+          className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-5 py-2 text-xs font-semibold text-white shadow-md shadow-primary/25 hover:bg-primary-600 transition-all active:scale-[0.98]"
         >
           <span>Lanjutkan</span>
-          <ArrowRight className="h-4 w-4" />
+          <ArrowRight className="h-3.5 w-3.5" />
         </button>
       </div>
     </div>

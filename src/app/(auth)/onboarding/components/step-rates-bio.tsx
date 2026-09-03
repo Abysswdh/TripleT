@@ -51,10 +51,10 @@ export function StepRatesBio({
 
   return (
     <div className="flex h-full flex-col justify-between">
-      {/* Scaled-up Form Content (No redundant header/badge pill) */}
-      <div className="my-auto space-y-4">
+      {/* Form Content: Compact & Unscrollable */}
+      <div className="my-auto space-y-3 sm:space-y-3.5">
         {error && (
-          <div className="rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-2.5 text-xs text-destructive">
+          <div className="rounded-xl border border-destructive/20 bg-destructive/5 px-3 py-1.5 text-xs text-destructive">
             {error}
           </div>
         )}
@@ -63,24 +63,53 @@ export function StepRatesBio({
           <>
             {/* Weekly Availability Options */}
             <div>
-              <label className="mb-2 block text-xs sm:text-sm font-bold text-foreground">
+              <label className="mb-1 block text-xs sm:text-sm font-bold text-foreground">
                 Ketersediaan Waktu & Kapasitas Mingguan
               </label>
-              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {AVAILABILITY_OPTIONS.map((opt) => (
                   <button
                     key={opt.id}
                     type="button"
                     onClick={() => onUpdate({ weeklyAvailability: opt.id as WeeklyAvailability })}
-                    className={`rounded-2xl border p-3 text-left transition-all ${
+                    className={`rounded-xl border p-2 sm:p-2.5 text-left transition-all ${
                       data.weeklyAvailability === opt.id
                         ? "border-primary bg-primary/5 ring-2 ring-primary shadow-xs"
                         : "border-border/70 bg-card hover:border-border hover:bg-muted/40"
                     }`}
                   >
-                    <p className="text-xs sm:text-sm font-bold text-foreground">{opt.label}</p>
+                    <p className="text-xs font-bold text-foreground">{opt.label}</p>
                     <p className="text-xs font-bold text-primary mt-0.5">{opt.hours}</p>
-                    <p className="text-[10px] text-muted-foreground mt-1 leading-tight">{opt.desc}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{opt.desc}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Expected Starting Project Rate */}
+            <div>
+              <label className="mb-1 block text-xs sm:text-sm font-bold text-foreground">
+                Ekspektasi Tarif Mulai per Proyek
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {[
+                  { price: 300000, label: "Rp 300 Rb", sub: "Tugas Ringan / Edit" },
+                  { price: 500000, label: "Rp 500 Rb", sub: "Desain Sederhana" },
+                  { price: 1000000, label: "Rp 1 Juta", sub: "Proyek Standar" },
+                  { price: 2500000, label: "Rp 2.5 Jt+", sub: "Proyek Kompleks" },
+                ].map((item) => (
+                  <button
+                    key={item.price}
+                    type="button"
+                    onClick={() => onUpdate({ startingPrice: item.price })}
+                    className={`rounded-xl border p-2 text-left transition-all ${
+                      data.startingPrice === item.price
+                        ? "border-primary bg-primary/5 ring-2 ring-primary shadow-xs"
+                        : "border-border/70 bg-card hover:border-border hover:bg-muted/40"
+                    }`}
+                  >
+                    <p className="text-xs font-bold text-foreground">{item.label}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{item.sub}</p>
                   </button>
                 ))}
               </div>
@@ -88,16 +117,16 @@ export function StepRatesBio({
 
             {/* Bio / Headline */}
             <div>
-              <label htmlFor="bio" className="mb-1.5 block text-xs sm:text-sm font-bold text-foreground">
-                Headline & Bio Profil Singkat
+              <label htmlFor="bio" className="mb-1 block text-xs sm:text-sm font-bold text-foreground">
+                Bio & Deskripsi Singkat untuk Klien
               </label>
               <textarea
                 id="bio"
                 rows={2}
                 value={data.bio}
                 onChange={(e) => onUpdate({ bio: e.target.value })}
-                placeholder="Contoh: UI/UX designer berfokus pada pengalaman pengguna yang intuitif, prototipe cepat di Figma, dan siap mendukung UMKM naik kelas."
-                className="w-full rounded-2xl border border-border bg-card p-3.5 text-xs sm:text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all leading-relaxed shadow-xs"
+                placeholder="Contoh: UI/UX designer & developer siap membantu UMKM membuat website dan visual profesional."
+                className="w-full h-14 sm:h-16 rounded-xl border border-border bg-card p-2.5 text-xs sm:text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all leading-relaxed shadow-xs resize-none"
               />
             </div>
           </>

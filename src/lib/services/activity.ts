@@ -37,7 +37,43 @@ export interface XPBreakdown {
   totalXP: number;
 }
 
-const LOCAL_STORAGE_LEARNED_RESOURCES_KEY = "doable_learned_resources";
+// Auto-clean any legacy unscoped caches from previous accounts
+if (typeof window !== "undefined") {
+  try {
+    localStorage.removeItem("doable_learned_resources");
+    localStorage.removeItem("doable_local_active_dates");
+    localStorage.removeItem("doable_quiz_results");
+    localStorage.removeItem("doable_freelancer_quiz_results");
+  } catch {
+    // ignore
+  }
+}
+
+export function getCurrentUserId(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const cached = localStorage.getItem("doable_current_user_id");
+    if (cached) return cached;
+
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith("sb-") && key.endsWith("-auth-token")) {
+        const item = localStorage.getItem(key);
+        if (item) {
+          const parsed = JSON.parse(item);
+          const userId = parsed?.user?.id;
+          if (userId) {
+            localStorage.setItem("doable_current_user_id", userId);
+            return userId;
+          }
+        }
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}
 
 export function formatLocalDateKey(d: Date | string = new Date()): string {
   const dateObj = typeof d === "string" ? new Date(d) : d;
@@ -47,26 +83,28 @@ export function formatLocalDateKey(d: Date | string = new Date()): string {
   return `${year}-${month}-${day}`;
 }
 
-const LOCAL_ACTIVITY_DATES_KEY = "doable_local_active_dates";
-
-export function getLocalActiveDates(): string[] {
+export function getLocalActiveDates(userId?: string): string[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = localStorage.getItem(LOCAL_ACTIVITY_DATES_KEY);
+    const uid = userId || getCurrentUserId();
+    if (!uid) return [];
+    const raw = localStorage.getItem(`doable_local_active_dates_${uid}`);
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
   }
 }
 
-export function recordLocalActiveDate(dateStr?: string): void {
+export function recordLocalActiveDate(dateStr?: string, userId?: string): void {
   if (typeof window === "undefined") return;
   try {
+    const uid = userId || getCurrentUserId();
+    if (!uid) return;
     const target = dateStr || formatLocalDateKey(new Date());
-    const dates = getLocalActiveDates();
+    const dates = getLocalActiveDates(uid);
     if (!dates.includes(target)) {
       dates.push(target);
-      localStorage.setItem(LOCAL_ACTIVITY_DATES_KEY, JSON.stringify(dates));
+      localStorage.setItem(`doable_local_active_dates_${uid}`, JSON.stringify(dates));
     }
   } catch {
     // ignore
@@ -81,13 +119,17 @@ export async function logActivity(
   metadata: Record<string, unknown> = {}
 ): Promise<void> {
   try {
-    // 1. Immediately cache local active date for real-time streak responsiveness
-    recordLocalActiveDate();
-
     const supabase = createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
+
+    const uid = user?.id || getCurrentUserId();
+
+    // 1. Immediately cache local active date for this user for real-time streak responsiveness
+    if (uid) {
+      recordLocalActiveDate(undefined, uid);
+    }
 
     if (user) {
       // 2. Insert activity log row to database
@@ -132,10 +174,12 @@ export async function logActivity(
 // ============================================================================
 // LEARNING RESOURCES REWARD SYSTEM (+25 XP per material)
 // ============================================================================
-export function getLearnedResources(): string[] {
+export function getLearnedResources(userId?: string): string[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = localStorage.getItem(LOCAL_STORAGE_LEARNED_RESOURCES_KEY);
+    const uid = userId || getCurrentUserId();
+    if (!uid) return [];
+    const raw = localStorage.getItem(`doable_learned_resources_${uid}`);
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
@@ -145,11 +189,17 @@ export function getLearnedResources(): string[] {
 export async function markResourceStudied(
   quizId: string,
   resourceUrl: string,
-  resourceTitle: string
+  resourceTitle: string,
+  userId?: string
 ): Promise<{ success: boolean; earnedXp: number }> {
   if (typeof window === "undefined") return { success: false, earnedXp: 0 };
   try {
-    const learned = getLearnedResources();
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    const uid = userId || user?.id || getCurrentUserId();
+    if (!uid) return { success: false, earnedXp: 0 };
+
+    const learned = getLearnedResources(uid);
     const resourceKey = `${quizId}:${resourceUrl}`;
 
     // If already claimed, don't double count XP
@@ -158,7 +208,7 @@ export async function markResourceStudied(
     }
 
     learned.push(resourceKey);
-    localStorage.setItem(LOCAL_STORAGE_LEARNED_RESOURCES_KEY, JSON.stringify(learned));
+    localStorage.setItem(`doable_learned_resources_${uid}`, JSON.stringify(learned));
 
     const XP_PER_RESOURCE = 25;
 
@@ -180,46 +230,93 @@ export async function markResourceStudied(
 // ============================================================================
 // CALCULATE XP ACCUMULATION BREAKDOWN (Quiz + Work + Learning)
 // ============================================================================
-export async function fetchUserXPBreakdown(): Promise<XPBreakdown> {
+export async function fetchUserXPBreakdown(userId?: string): Promise<XPBreakdown> {
   try {
     const supabase = createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
-    // Default for new users is 0
+    const currentUid = userId || user?.id || getCurrentUserId();
+
+    // Default for unauthenticated or new users is 0
+    if (!currentUid) {
+      return {
+        quizXP: 0,
+        workXP: 0,
+        learningXP: 0,
+        totalXP: 0,
+      };
+    }
+
     let quizXP = 0;
     let workXP = 0;
     let learningXP = 0;
 
-    if (user) {
+    // 1. Calculate from user-scoped local quiz storage
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem(`doable_freelancer_quiz_results_${currentUid}`);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          for (const res of Object.values(parsed)) {
+            const item = res as { earnedXp?: number; passed?: boolean };
+            quizXP += (item.earnedXp || 0);
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    // 2. Calculate from user-scoped learned resources
+    const localLearningXP = getLearnedResources(currentUid).length * 25;
+    learningXP = Math.max(learningXP, localLearningXP);
+
+    if (user && user.id === currentUid) {
+      // 3. Query user_activity_log from database specifically for THIS user
       const { data: logs } = await supabase
         .from("user_activity_log")
         .select("activity_type, metadata")
-        .eq("user_id", user.id);
+        .eq("user_id", currentUid);
+
+      let logQuizXP = 0;
+      let logWorkXP = 0;
+      let logLearningXP = 0;
 
       if (logs && logs.length > 0) {
         for (const log of logs) {
           const xp = (log.metadata as { xp_earned?: number })?.xp_earned || 0;
           if (log.activity_type.startsWith("quiz_")) {
-            quizXP += xp;
+            logQuizXP += xp;
           } else if (
             log.activity_type === "milestone_delivered" ||
             log.activity_type === "contract_completed" ||
             log.activity_type === "proposal_submitted"
           ) {
-            workXP += xp;
+            logWorkXP += xp;
           } else if (log.activity_type === "resource_studied") {
-            learningXP += xp;
+            logLearningXP += xp;
           }
         }
       }
 
-      // Also check user_metadata.xp if present
+      quizXP = Math.max(quizXP, logQuizXP);
+      workXP = Math.max(workXP, logWorkXP);
+      learningXP = Math.max(learningXP, logLearningXP);
+
+      // 4. Also check user_metadata.xp if present
       const metadataXp = Number(user.user_metadata?.xp) || 0;
       const currentSum = quizXP + workXP + learningXP;
+
       if (metadataXp > currentSum) {
-        workXP += (metadataXp - currentSum);
+        const remainder = metadataXp - currentSum;
+        // If user has not performed work activities, surplus XP belongs to Kuis (Quiz)!
+        if (workXP === 0) {
+          quizXP += remainder;
+        } else {
+          workXP += remainder;
+        }
       }
     }
 
@@ -239,20 +336,25 @@ export async function fetchUserXPBreakdown(): Promise<XPBreakdown> {
 // ============================================================================
 // FETCH HEATMAP — returns 16 weeks of contribution data for the dashboard
 // ============================================================================
-export async function fetchHeatmapData(): Promise<HeatmapData> {
+export async function fetchHeatmapData(userId?: string): Promise<HeatmapData> {
   try {
     const supabase = createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
-    // Query: group by date for last 16 weeks
+    const currentUid = userId || user?.id || getCurrentUserId();
+    if (!currentUid) {
+      return buildEmptyHeatmap();
+    }
+
+    // Query: group by date for last 16 weeks strictly for current user
     let data: Array<{ occurred_at: string }> = [];
-    if (user) {
+    if (user && user.id === currentUid) {
       const res = await supabase
         .from("user_activity_log")
         .select("occurred_at")
-        .eq("user_id", user.id)
+        .eq("user_id", currentUid)
         .gte(
           "occurred_at",
           new Date(Date.now() - 16 * 7 * 24 * 60 * 60 * 1000).toISOString()
@@ -270,8 +372,8 @@ export async function fetchHeatmapData(): Promise<HeatmapData> {
       }
     }
 
-    // Merge with local active dates cache
-    const localDates = getLocalActiveDates();
+    // Merge ONLY with this user's local active dates cache
+    const localDates = getLocalActiveDates(currentUid);
     for (const ld of localDates) {
       countByDate[ld] = (countByDate[ld] || 0) + 1;
     }
@@ -364,15 +466,6 @@ function buildHeatmapFromCounts(
 }
 
 function buildEmptyHeatmap(): HeatmapData {
-  const localDates = getLocalActiveDates();
-  if (localDates.length > 0) {
-    const countByDate: Record<string, number> = {};
-    for (const ld of localDates) {
-      countByDate[ld] = (countByDate[ld] || 0) + 1;
-    }
-    return buildHeatmapFromCounts(countByDate);
-  }
-
   const NUM_WEEKS = 16;
   const weeks: HeatmapData["weeks"] = [];
   const today = new Date();
@@ -393,10 +486,11 @@ function buildEmptyHeatmap(): HeatmapData {
   const seen = new Set<string>();
   weeks.forEach((week, wi) => {
     week.forEach((day) => {
-      const mk = day.date.slice(0, 7);
-      if (!seen.has(mk)) {
-        seen.add(mk);
-        const d = new Date(day.date);
+      const mKey = day.date.slice(0, 7);
+      if (!seen.has(mKey)) {
+        seen.add(mKey);
+        const [y, m] = mKey.split("-");
+        const d = new Date(Number(y), Number(m) - 1, 1);
         monthLabels.push({
           label: d.toLocaleDateString("id-ID", { month: "short" }),
           weekIndex: wi,
@@ -405,5 +499,11 @@ function buildEmptyHeatmap(): HeatmapData {
     });
   });
 
-  return { weeks, totalContributions: 0, streakDays: 0, monthLabels, activeDates: [] };
+  return {
+    weeks,
+    totalContributions: 0,
+    streakDays: 0,
+    monthLabels,
+    activeDates: [],
+  };
 }

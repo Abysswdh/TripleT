@@ -21,14 +21,12 @@ export default function DashboardRedirectPage() {
 
     const isFlOnboarded =
       !!user?.user_metadata?.freelancer_onboarded ||
-      (!!user?.user_metadata?.onboarding_completed && user?.user_metadata?.role === "freelancer") ||
-      (typeof window !== "undefined" && localStorage.getItem("triplet_freelancer_onboarded") === "true");
+      (!!user?.user_metadata?.onboarding_completed && user?.user_metadata?.role === "freelancer");
 
     const isClOnboarded =
       !!user?.user_metadata?.client_onboarded ||
       (!!user?.user_metadata?.onboarding_completed &&
-        (user?.user_metadata?.role === "customer" || user?.user_metadata?.role === "client")) ||
-      (typeof window !== "undefined" && localStorage.getItem("triplet_client_onboarded") === "true");
+        (user?.user_metadata?.role === "customer" || user?.user_metadata?.role === "client"));
 
     if (saved === "customer") {
       if (isClOnboarded) {
@@ -52,8 +50,7 @@ export default function DashboardRedirectPage() {
     const isClOnboarded =
       !!user?.user_metadata?.client_onboarded ||
       (!!user?.user_metadata?.onboarding_completed &&
-        (user?.user_metadata?.role === "customer" || user?.user_metadata?.role === "client")) ||
-      (typeof window !== "undefined" && localStorage.getItem("triplet_client_onboarded") === "true");
+        (user?.user_metadata?.role === "customer" || user?.user_metadata?.role === "client"));
 
     if (!isClOnboarded) {
       router.push("/onboarding?role=customer");
@@ -66,8 +63,7 @@ export default function DashboardRedirectPage() {
     setRole("freelancer");
     const isFlOnboarded =
       !!user?.user_metadata?.freelancer_onboarded ||
-      (!!user?.user_metadata?.onboarding_completed && user?.user_metadata?.role === "freelancer") ||
-      (typeof window !== "undefined" && localStorage.getItem("triplet_freelancer_onboarded") === "true");
+      (!!user?.user_metadata?.onboarding_completed && user?.user_metadata?.role === "freelancer");
 
     if (!isFlOnboarded) {
       router.push("/onboarding?role=freelancer");

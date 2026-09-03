@@ -24,26 +24,49 @@ const Silk = dynamic(() => import("@/components/ui/silk"), {
   ),
 });
 
-const STEP_INFO: Record<number, { title: string; desc: string }> = {
+const CLIENT_STEP_INFO: Record<number, { title: string; desc: string }> = {
   1: {
-    title: "Identitas Diri",
-    desc: "Tuliskan nama lengkap atau nama narahubung dan tentukan domisili operasional akunmu.",
+    title: "Identitas Bisnis & Narahubung",
+    desc: "Tuliskan nama penanggung jawab atau PIC dan tentukan domisili operasional bisnismu.",
   },
   2: {
-    title: "Latar Belakang",
-    desc: "Tentukan tipe usaha bisnismu atau tingkat pengalaman profesionalmu.",
+    title: "Profil & Skala Usaha",
+    desc: "Tentukan tipe usaha bisnismu (UMKM, Startup, Agensi) dan nama brand usahamu.",
   },
   3: {
-    title: "Kebutuhan & Kategori",
-    desc: "Pilih kategori proyek yang dibutuhkan atau keahlian utama yang relevan.",
+    title: "Kebutuhan Proyek",
+    desc: "Pilih kategori layanan yang paling sering dibutuhkan oleh usahamu di platform Doable!.",
   },
   4: {
-    title: "Anggaran & Bio",
-    desc: "Tentukan kisaran anggaran proyek atau kapasitas kerja serta bio perkenalan.",
+    title: "Preferensi Anggaran & Bio",
+    desc: "Tentukan estimasi anggaran per proyek dan deskripsikan profil singkat bisnismu.",
   },
   5: {
-    title: "Selamat Datang!",
-    desc: "Profilmu telah selesai! Mulai jelajahi fitur dan peluang di Doable! sekarang.",
+    title: "Selamat Datang, Klien!",
+    desc: "Profil bisnismu telah siap! Mulai posting proyek dan rekrut talenta muda terbaik.",
+  },
+};
+
+const FREELANCER_STEP_INFO: Record<number, { title: string; desc: string }> = {
+  1: {
+    title: "Identitas & Spesialisasi",
+    desc: "Tuliskan nama profil profesional, spesialisasi keahlian, dan domisili aktivitas freelancemu.",
+  },
+  2: {
+    title: "Latar Belakang & Pengalaman",
+    desc: "Tentukan status edukasi atau karirmu serta tingkat pengalaman komersial yang kamu miliki.",
+  },
+  3: {
+    title: "Keahlian & Skill Utama",
+    desc: "Pilih keahlian teknis dan keterampilan unggulan yang kamu kuasai untuk ditawarkan ke klien.",
+  },
+  4: {
+    title: "Kapasitas Waktu & Bio",
+    desc: "Tentukan jam kerja per minggu, ekspektasi rate, dan tuliskan bio singkat yang memikat calon klien.",
+  },
+  5: {
+    title: "Selamat Datang, Talenta!",
+    desc: "Profil freelancermu telah aktif! Siap mengerjakan quest proyek, kuis keahlian, dan raih cuan.",
   },
 };
 
@@ -118,7 +141,10 @@ function OnboardingContent() {
     );
   }
 
-  const currentInfo = STEP_INFO[step] || STEP_INFO[1];
+  const isFreelancer = data.role === "freelancer";
+  const currentInfo = isFreelancer
+    ? FREELANCER_STEP_INFO[step] || FREELANCER_STEP_INFO[1]
+    : CLIENT_STEP_INFO[step] || CLIENT_STEP_INFO[1];
 
   return (
     <div className="w-full max-w-[1040px] mx-auto h-full max-h-[100dvh] sm:max-h-[640px] flex flex-col justify-center overflow-hidden py-0 sm:py-2">
@@ -197,7 +223,7 @@ function OnboardingContent() {
 
             <span className="rounded-full bg-white/10 backdrop-blur-md px-3 py-1 text-xs font-bold text-white/90 border border-white/15 flex items-center gap-1.5 shadow-xs select-none">
               <Sparkles className="h-3.5 w-3.5 text-blue-300" />
-              <span>Onboarding</span>
+              <span>{isFreelancer ? "Onboarding Freelancer" : "Onboarding Klien"}</span>
             </span>
           </div>
 
@@ -245,7 +271,7 @@ function OnboardingContent() {
                 data={data}
                 onUpdate={updateData}
                 onNext={nextStep}
-                onPrev={isRoleSwitchMode ? () => router.back() : () => router.push("/login")}
+                onPrev={isRoleSwitchMode ? () => router.push("/client/dashboard") : () => router.push("/login")}
               />
             )}
 

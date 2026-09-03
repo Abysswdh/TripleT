@@ -74,19 +74,35 @@ export function useOnboarding() {
   const [error, setError] = useState<string | null>(null);
   const supabase = createClient();
 
-  // Load from sessionStorage if available, but respect roleParam override
+  // Load from role-scoped sessionStorage if available, but respect roleParam override
   useEffect(() => {
     try {
-      const saved = sessionStorage.getItem(STORAGE_KEY);
+      const storageKey = roleParam === "freelancer" ? "doable_onboarding_freelancer" : "doable_onboarding_client";
+      const saved = sessionStorage.getItem(storageKey);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (roleParam === "freelancer") {
-          setData({ ...parsed, role: "freelancer" });
-        } else {
-          setData({ ...parsed, role: "customer" });
-        }
-      } else if (roleParam === "freelancer") {
-        setData((prev) => ({ ...prev, role: "freelancer" }));
+        setData((prev) => ({
+          ...prev,
+          ...parsed,
+          role: roleParam === "freelancer" ? "freelancer" : "customer",
+        }));
+      } else {
+        setData((prev) => ({
+          ...prev,
+          role: roleParam === "freelancer" ? "freelancer" : "customer",
+          // Reset role-specific fields for clean onboarding if switching
+          ...(roleParam === "freelancer"
+            ? {
+                skills: [],
+                headline: "",
+                bio: "",
+                experienceLevel: "starter",
+                backgroundType: "mahasiswa",
+                weeklyAvailability: "semi_full",
+                startingPrice: 500000,
+              }
+            : {}),
+        }));
       }
     } catch {
       // Ignore sessionStorage errors
@@ -132,12 +148,13 @@ export function useOnboarding() {
     loadExistingUserProfile();
   }, [supabase, roleParam]);
 
-  // Save to sessionStorage whenever data changes
+  // Save to role-scoped sessionStorage whenever data changes
   const updateData = useCallback((updates: Partial<OnboardingData>) => {
     setData((prev) => {
       const next = { ...prev, ...updates };
       try {
-        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        const storageKey = next.role === "freelancer" ? "doable_onboarding_freelancer" : "doable_onboarding_client";
+        sessionStorage.setItem(storageKey, JSON.stringify(next));
       } catch {
         // Ignore
       }
@@ -232,25 +249,46 @@ export function useOnboarding() {
       const userBanner = DEFAULT_BANNER_URL;
 
       // 1. Update/Upsert public.users table with independent role onboarding flags
-      await supabase.from("users").upsert(
-        {
-          id: user.id,
-          email: user.email,
-          full_name: displayName,
-          username: cleanUsername || null,
-          role: data.role,
-          bio: data.bio || (data.role === "freelancer" ? "Siap mengerjakan proyek desain & teknologi." : "Klien pemberi kerja di platform Doable!"),
-          avatar_url: userAvatar,
-          banner_url: userBanner,
-          location: data.locationCity || "Jakarta, Indonesia",
-          onboarding_completed: true,
-          freelancer_onboarded: newFreelancerOnboarded,
-          client_onboarded: newClientOnboarded,
-          is_active: true,
-          is_verified: false,
-        },
-        { onConflict: "id" }
-      );
+      try {
+        await supabase.from("users").upsert(
+          {
+            id: user.id,
+            email: user.email,
+            full_name: displayName,
+            username: cleanUsername || null,
+            role: data.role,
+            bio: data.bio || (data.role === "freelancer" ? "Siap mengerjakan proyek desain & teknologi." : "Klien pemberi kerja di platform Doable!"),
+            avatar_url: userAvatar,
+            banner_url: userBanner,
+            location: data.locationCity || "Jakarta, Indonesia",
+            onboarding_completed: true,
+            freelancer_onboarded: newFreelancerOnboarded,
+            client_onboarded: newClientOnboarded,
+            is_active: true,
+            is_verified: false,
+          },
+          { onConflict: "id" }
+        );
+      } catch (upsertErr) {
+        console.warn("Could not upsert users table with role flags, attempting base upsert:", upsertErr);
+        await supabase.from("users").upsert(
+          {
+            id: user.id,
+            email: user.email,
+            full_name: displayName,
+            username: cleanUsername || null,
+            role: data.role,
+            bio: data.bio || (data.role === "freelancer" ? "Siap mengerjakan proyek desain & teknologi." : "Klien pemberi kerja di platform Doable!"),
+            avatar_url: userAvatar,
+            banner_url: userBanner,
+            location: data.locationCity || "Jakarta, Indonesia",
+            onboarding_completed: true,
+            is_active: true,
+            is_verified: false,
+          },
+          { onConflict: "id" }
+        );
+      }
 
       // 2. Dual-Role Profile Initializations
       if (data.role === "freelancer") {
@@ -266,7 +304,7 @@ export function useOnboarding() {
             ? "Fleksibel (Malam & Weekend)"
             : "15 – 30 Jam / Minggu (Part-Time)";
 
-        // Primary: Freelancer Profile with user-customized inputs
+        // Primary: Freelancer Profile with user's genuine custom inputs
         await supabase.from("freelancer_profiles").upsert(
           {
             user_id: user.id,
@@ -274,7 +312,7 @@ export function useOnboarding() {
             bio: data.bio || `Halo! Saya ${displayName}, ${headlineText}. Siap berkolaborasi dalam proyek.`,
             skills: data.skills.length > 0 ? data.skills : ["UI/UX Design", "Figma"],
             hourly_rate: data.weeklyAvailability === "full_time" ? 250000 : data.weeklyAvailability === "semi_full" ? 200000 : 150000,
-            starting_price: availLabel,
+            starting_price: String(data.startingPrice || 500000),
             availability: data.weeklyAvailability,
             experience_level: data.experienceLevel,
             category: data.projectCategories[0] || "Web & Fullstack",
@@ -287,32 +325,6 @@ export function useOnboarding() {
           },
           { onConflict: "user_id" }
         );
-
-        // Secondary: Client Profile baseline fallback ONLY if client profile does not exist yet
-        if (!wasClientOnboarded) {
-          const { data: existingCl } = await supabase
-            .from("client_profiles")
-            .select("id")
-            .eq("user_id", user.id)
-            .maybeSingle();
-
-          if (!existingCl) {
-            await supabase.from("client_profiles").upsert(
-              {
-                user_id: user.id,
-                company_name: data.businessName || displayName,
-                company_size: "1-10 Karyawan (UMKM)",
-                client_type: "individual",
-                industry: data.projectCategories[0] || "Desain & Branding",
-                project_categories: data.projectCategories.length > 0 ? data.projectCategories : ["Desain & Branding"],
-                budget_preference: data.budgetPreference || "umkm",
-                banner_url: userBanner,
-                is_verified: false,
-              },
-              { onConflict: "user_id" }
-            );
-          }
-        }
       } else {
         // Primary: Client Profile with user-customized inputs
         await supabase.from("client_profiles").upsert(
@@ -329,38 +341,6 @@ export function useOnboarding() {
           },
           { onConflict: "user_id" }
         );
-
-        // Secondary: Freelancer Profile baseline fallback ONLY if freelancer profile does not exist yet
-        if (!wasFreelancerOnboarded) {
-          const { data: existingFl } = await supabase
-            .from("freelancer_profiles")
-            .select("id")
-            .eq("user_id", user.id)
-            .maybeSingle();
-
-          if (!existingFl) {
-            await supabase.from("freelancer_profiles").upsert(
-              {
-                user_id: user.id,
-                headline: "Digital & Tech Specialist",
-                bio: data.bio || `Halo! Saya ${displayName}. Siap berkolaborasi dalam proyek profesional.`,
-                skills: ["UI/UX Design", "Web Development"],
-                hourly_rate: 200000,
-                starting_price: "15 – 30 Jam / Minggu (Part-Time)",
-                availability: "semi_full",
-                experience_level: "intermediate",
-                category: "Web & Fullstack",
-                badge_level: "Verified Pro",
-                organization: "Profesional",
-                cover_image: userBanner,
-                completed_projects: 0,
-                rating: 5.0,
-                reviews_count: 0,
-              },
-              { onConflict: "user_id" }
-            );
-          }
-        }
       }
 
       // 3. Update Supabase Auth user metadata
@@ -381,6 +361,8 @@ export function useOnboarding() {
           weekly_availability: data.weeklyAvailability,
           availability: data.weeklyAvailability,
           willing_to_verify_ktp: data.willingToVerifyKtp,
+          headline: data.headline,
+          starting_price: data.startingPrice,
         },
       });
 
@@ -394,8 +376,10 @@ export function useOnboarding() {
         window.dispatchEvent(new CustomEvent("doable-preferences-updated", { detail: { categories: data.projectCategories } }));
       }
 
-      // Clear session storage
+      // Clear session storage drafts
       try {
+        sessionStorage.removeItem("doable_onboarding_freelancer");
+        sessionStorage.removeItem("doable_onboarding_client");
         sessionStorage.removeItem(STORAGE_KEY);
       } catch {}
 

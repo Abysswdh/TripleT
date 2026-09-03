@@ -22,6 +22,38 @@ interface AuthState {
  * Usage:
  *   const { user, signIn, signOut, loading } = useAuth();
  */
+export function clearAllUserLocalCaches(): void {
+  if (typeof window === "undefined") return;
+  try {
+    const keysToRemove = [
+      "doable_current_user_id",
+      "doable_local_active_dates",
+      "doable_learned_resources",
+      "doable_freelancer_quiz_results",
+      "doable_quiz_results",
+      "triplet_freelancer_onboarded",
+      "triplet_client_onboarded",
+      "triplet_active_dashboard_role",
+      "doable_onboarding_freelancer",
+      "doable_onboarding_client",
+      "doable_onboarding_data",
+    ];
+    keysToRemove.forEach((k) => {
+      localStorage.removeItem(k);
+      sessionStorage.removeItem(k);
+    });
+
+    const allKeys = Object.keys(localStorage);
+    for (const key of allKeys) {
+      if (key.startsWith("doable_") || key.startsWith("triplet_")) {
+        localStorage.removeItem(key);
+      }
+    }
+  } catch {
+    // ignore
+  }
+}
+
 export function useAuth() {
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
@@ -37,6 +69,19 @@ export function useAuth() {
       const {
         data: { session },
       } = await supabase.auth.getSession();
+
+      if (typeof window !== "undefined") {
+        if (session?.user?.id) {
+          const storedId = localStorage.getItem("doable_current_user_id");
+          if (storedId && storedId !== session.user.id) {
+            clearAllUserLocalCaches();
+          }
+          localStorage.setItem("doable_current_user_id", session.user.id);
+        } else {
+          clearAllUserLocalCaches();
+        }
+      }
+
       setAuthState({
         user: session?.user ?? null,
         session,
@@ -49,7 +94,19 @@ export function useAuth() {
     // Listen for auth state changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (typeof window !== "undefined") {
+        if (session?.user?.id) {
+          const storedId = localStorage.getItem("doable_current_user_id");
+          if (storedId && storedId !== session.user.id) {
+            clearAllUserLocalCaches();
+          }
+          localStorage.setItem("doable_current_user_id", session.user.id);
+        } else if (event === "SIGNED_OUT") {
+          clearAllUserLocalCaches();
+        }
+      }
+
       setAuthState({
         user: session?.user ?? null,
         session,
@@ -69,6 +126,14 @@ export function useAuth() {
       });
 
       if (error) throw error;
+
+      if (typeof window !== "undefined" && data.user?.id) {
+        const storedId = localStorage.getItem("doable_current_user_id");
+        if (storedId && storedId !== data.user.id) {
+          clearAllUserLocalCaches();
+        }
+        localStorage.setItem("doable_current_user_id", data.user.id);
+      }
 
       router.push("/dashboard");
       router.refresh();
@@ -94,6 +159,9 @@ export function useAuth() {
 
   const signUp = useCallback(
     async (email: string, password: string, fullName?: string) => {
+      // Clear previous caches before creating new account so user starts completely fresh
+      clearAllUserLocalCaches();
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -113,6 +181,8 @@ export function useAuth() {
   );
 
   const signOut = useCallback(async () => {
+    clearAllUserLocalCaches();
+
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
 

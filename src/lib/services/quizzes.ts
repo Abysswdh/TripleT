@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
-import { logActivity } from "@/lib/services/activity";
+import { logActivity, getCurrentUserId } from "@/lib/services/activity";
 
 export interface QuizQuestion {
   id: string;
@@ -36,6 +36,7 @@ export interface SkillQuizDefinition {
 }
 
 export interface QuizAttemptResult {
+  userId?: string;
   quizId: string;
   score: number;
   passed: boolean;
@@ -468,28 +469,19 @@ export const SKILL_QUIZZES: SkillQuizDefinition[] = [
   }
 ];
 
-const LOCAL_STORAGE_QUIZ_RESULTS_KEY = "doable_freelancer_quiz_results";
-
 /**
  * Get all completed quiz results for current user (from localStorage, defaulting to empty for new users)
  */
-export function getSavedQuizResults(): Record<string, QuizAttemptResult> {
+export function getSavedQuizResults(userId?: string): Record<string, QuizAttemptResult> {
   if (typeof window === "undefined") return {};
   try {
-    const raw = localStorage.getItem(LOCAL_STORAGE_QUIZ_RESULTS_KEY);
+    const uid = userId || getCurrentUserId();
+    if (!uid) return {};
+    const raw = localStorage.getItem(`doable_freelancer_quiz_results_${uid}`);
     if (!raw) {
       return {};
     }
     const parsed = JSON.parse(raw);
-    // Clear legacy mock seed if present so new users start at 0
-    if (
-      parsed["q-nextjs"]?.earnedXp === 350 &&
-      parsed["q-fastapi"]?.earnedXp === 400 &&
-      Object.keys(parsed).length === 2
-    ) {
-      localStorage.removeItem(LOCAL_STORAGE_QUIZ_RESULTS_KEY);
-      return {};
-    }
     return parsed;
   } catch (err) {
     console.warn("Failed to read quiz results:", err);
@@ -500,25 +492,27 @@ export function getSavedQuizResults(): Record<string, QuizAttemptResult> {
 /**
  * Fetch verified skill quiz results directly from Supabase database
  */
-export async function fetchUserQuizResults(): Promise<Record<string, QuizAttemptResult>> {
-  const local = getSavedQuizResults();
+export async function fetchUserQuizResults(userId?: string): Promise<Record<string, QuizAttemptResult>> {
   try {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return local;
+    const currentUid = userId || user?.id || getCurrentUserId();
+    if (!currentUid) return {};
 
-    // 1. Fetch from user_activity_log
+    const local = getSavedQuizResults(currentUid);
+
+    // 1. Fetch from user_activity_log for THIS USER ONLY
     const { data: logs } = await supabase
       .from("user_activity_log")
       .select("metadata, occurred_at")
-      .eq("user_id", user.id)
+      .eq("user_id", currentUid)
       .eq("activity_type", "quiz_completed");
 
-    // 2. Fetch verified_skills from freelancer_profiles
+    // 2. Fetch verified_skills from freelancer_profiles for THIS USER ONLY
     const { data: profile } = await supabase
       .from("freelancer_profiles")
       .select("verified_skills")
-      .eq("user_id", user.id)
+      .eq("user_id", currentUid)
       .maybeSingle();
 
     const merged: Record<string, QuizAttemptResult> = {};
@@ -530,6 +524,7 @@ export async function fetchUserQuizResults(): Promise<Record<string, QuizAttempt
         if (quizId) {
           const quizDef = SKILL_QUIZZES.find((q) => q.id === quizId);
           merged[quizId] = {
+            userId: currentUid,
             quizId,
             score: Number(meta.score) || 100,
             passed: true,
@@ -549,6 +544,7 @@ export async function fetchUserQuizResults(): Promise<Record<string, QuizAttempt
         const quizDef = SKILL_QUIZZES.find((q) => q.badgeName === badge);
         if (quizDef && !merged[quizDef.id]) {
           merged[quizDef.id] = {
+            userId: currentUid,
             quizId: quizDef.id,
             score: 100,
             passed: true,
@@ -563,7 +559,7 @@ export async function fetchUserQuizResults(): Promise<Record<string, QuizAttempt
       }
     }
 
-    // Keep any user-completed quizzes in current session
+    // Keep any user-completed quizzes in current session for this user
     for (const [k, v] of Object.entries(local)) {
       if (v?.passed && !merged[k]) {
         merged[k] = v;
@@ -571,25 +567,31 @@ export async function fetchUserQuizResults(): Promise<Record<string, QuizAttempt
     }
 
     if (typeof window !== "undefined" && Object.keys(merged).length > 0) {
-      localStorage.setItem(LOCAL_STORAGE_QUIZ_RESULTS_KEY, JSON.stringify(merged));
+      localStorage.setItem(`doable_freelancer_quiz_results_${currentUid}`, JSON.stringify(merged));
     }
 
     return merged;
   } catch (err) {
     console.warn("Failed to fetch quiz results from database:", err);
-    return local;
+    return {};
   }
 }
 
 /**
  * Save or update a quiz completion attempt and broadcast update event
  */
-export async function saveQuizResult(result: QuizAttemptResult): Promise<void> {
+export async function saveQuizResult(result: QuizAttemptResult, userId?: string): Promise<void> {
   if (typeof window === "undefined") return;
   try {
-    const existing = getSavedQuizResults();
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    const currentUid = userId || user?.id || getCurrentUserId();
+    if (!currentUid) return;
+
+    result.userId = currentUid;
+    const existing = getSavedQuizResults(currentUid);
     existing[result.quizId] = result;
-    localStorage.setItem(LOCAL_STORAGE_QUIZ_RESULTS_KEY, JSON.stringify(existing));
+    localStorage.setItem(`doable_freelancer_quiz_results_${currentUid}`, JSON.stringify(existing));
 
     // 1. Sync directly to Supabase Database (freelancer_profiles & user metadata)
     await syncResultToSupabase(result);
@@ -619,16 +621,7 @@ async function syncResultToSupabase(result: QuizAttemptResult): Promise<void> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // 1. Update user metadata XP
-    const currentXp = (user.user_metadata?.xp as number) || 0;
-    const newXp = currentXp + (result.earnedXp || 0);
-    await supabase.auth.updateUser({
-      data: {
-        xp: newXp,
-      },
-    });
-
-    // 2. If passed and has badge, update freelancer_profiles table
+    // If passed and has badge, update freelancer_profiles table
     if (result.passed && result.badgeName) {
       const { data: profile } = await supabase
         .from("freelancer_profiles")

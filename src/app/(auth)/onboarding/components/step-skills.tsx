@@ -42,17 +42,11 @@ const POPULAR_SKILLS = [
   "TypeScript",
   "Tailwind CSS",
   "Python",
-  "FastAPI",
   "AI & ML",
   "Flutter",
-  "Photoshop",
-  "Canva",
-  "Brand Identity",
-  "PostgreSQL",
-  "Docker",
+  "Photoshop / Canva",
   "SEO & Copywriting",
   "Video Editing",
-  "Laravel / PHP",
 ];
 
 export function StepSkills({
@@ -75,13 +69,13 @@ export function StepSkills({
 
   return (
     <div className="flex h-full flex-col justify-between">
-      {/* Scaled-up Form Content (No redundant header/badge pill) */}
-      <div className="my-auto space-y-5">
+      {/* Form Content: Compact & Unscrollable */}
+      <div className="my-auto space-y-3.5 sm:space-y-4">
         {isFreelancer ? (
           <>
             {/* Skill Selector */}
             <div>
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-2">
                 <label className="text-xs sm:text-sm font-bold text-foreground">
                   Pilih Keahlian Utama
                 </label>
@@ -90,7 +84,7 @@ export function StepSkills({
                 </span>
               </div>
 
-              <div className="flex flex-wrap gap-2.5">
+              <div className="flex flex-wrap gap-2">
                 {POPULAR_SKILLS.map((skill) => {
                   const isSelected = data.skills.includes(skill);
                   return (
@@ -98,16 +92,16 @@ export function StepSkills({
                       key={skill}
                       type="button"
                       onClick={() => onToggleSkill(skill)}
-                      className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs sm:text-sm font-medium transition-all ${
+                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
                         isSelected
-                          ? "bg-primary text-white shadow-sm ring-2 ring-primary/20 scale-[1.02]"
+                          ? "bg-primary text-white shadow-xs ring-2 ring-primary/20 scale-[1.02]"
                           : "border border-border/70 bg-card text-foreground hover:border-primary/50 hover:bg-muted/50"
                       }`}
                     >
                       {isSelected ? (
-                        <Check className="h-4 w-4 stroke-[3]" />
+                        <Check className="h-3.5 w-3.5 stroke-[3]" />
                       ) : (
-                        <Plus className="h-4 w-4" />
+                        <Plus className="h-3.5 w-3.5" />
                       )}
                       <span>{skill}</span>
                     </button>
@@ -117,24 +111,24 @@ export function StepSkills({
             </div>
 
             {/* Custom Skill Input */}
-            <div className="pt-2">
-              <label className="mb-2 block text-xs sm:text-sm font-bold text-foreground">
+            <div className="pt-1">
+              <label className="mb-1.5 block text-xs sm:text-sm font-bold text-foreground">
                 Punya Skill Lain yang Belum Terdaftar?
               </label>
-              <form onSubmit={handleAddCustomSkill} className="flex gap-2.5">
+              <form onSubmit={handleAddCustomSkill} className="flex gap-2">
                 <input
                   type="text"
                   value={customSkill}
                   onChange={(e) => setCustomSkill(e.target.value)}
-                  placeholder="Ketik skill (misal: Midtrans, Golang, Blender)..."
-                  className="h-12 flex-1 rounded-2xl border border-border bg-card px-4 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-xs"
+                  placeholder="Ketik skill (misal: Golang, Blender, Copywriting)..."
+                  className="h-10 sm:h-11 flex-1 rounded-xl border border-border bg-card px-3.5 text-xs sm:text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-xs"
                 />
                 <button
                   type="submit"
                   disabled={!customSkill.trim()}
-                  className="h-12 rounded-2xl bg-secondary px-5 text-xs sm:text-sm font-semibold text-foreground hover:bg-secondary/80 transition-colors disabled:opacity-50"
+                  className="h-10 sm:h-11 rounded-xl bg-secondary px-4 text-xs font-semibold text-foreground hover:bg-secondary/80 transition-colors disabled:opacity-50 shrink-0"
                 >
-                  Tambah Skill
+                  Tambah
                 </button>
               </form>
             </div>

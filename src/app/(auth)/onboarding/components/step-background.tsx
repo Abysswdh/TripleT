@@ -25,16 +25,16 @@ export function StepBackground({
 
   return (
     <div className="flex h-full flex-col justify-between">
-      {/* Scaled-up Form Content (No redundant header/badge pill) */}
-      <div className="my-auto space-y-5">
+      {/* Form Content: Compact & Unscrollable */}
+      <div className="my-auto space-y-3.5 sm:space-y-4">
         {isFreelancer ? (
           <>
             {/* Status / Background */}
             <div>
-              <label className="mb-2 block text-xs sm:text-sm font-bold text-foreground">
+              <label className="mb-1.5 block text-xs sm:text-sm font-bold text-foreground">
                 Status / Latar Belakang
               </label>
-              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {(
                   [
                     { id: "mahasiswa", label: "Mahasiswa / Pelajar", desc: "Sedang studi aktif" },
@@ -47,14 +47,14 @@ export function StepBackground({
                     key={bg.id}
                     type="button"
                     onClick={() => onUpdate({ backgroundType: bg.id as FreelancerBackground })}
-                    className={`rounded-2xl border p-3.5 text-left transition-all ${
+                    className={`rounded-xl border p-2.5 sm:p-3 text-left transition-all ${
                       data.backgroundType === bg.id
                         ? "border-primary bg-primary/5 ring-2 ring-primary shadow-xs"
                         : "border-border/70 bg-card hover:border-border hover:bg-muted/40"
                     }`}
                   >
-                    <p className="text-xs sm:text-sm font-bold text-foreground">{bg.label}</p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">{bg.desc}</p>
+                    <p className="text-xs font-bold text-foreground">{bg.label}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{bg.desc}</p>
                   </button>
                 ))}
               </div>
@@ -62,10 +62,10 @@ export function StepBackground({
 
             {/* Experience Level */}
             <div>
-              <label className="mb-2 block text-xs sm:text-sm font-bold text-foreground">
+              <label className="mb-1.5 block text-xs sm:text-sm font-bold text-foreground">
                 Tingkat Pengalaman Komersial
               </label>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
                 {(
                   [
                     {
@@ -92,7 +92,7 @@ export function StepBackground({
                     key={item.level}
                     type="button"
                     onClick={() => onUpdate({ experienceLevel: item.level as ExperienceLevel })}
-                    className={`rounded-2xl border p-4 text-left transition-all ${
+                    className={`rounded-xl border p-2.5 sm:p-3 text-left transition-all ${
                       data.experienceLevel === item.level
                         ? "border-primary bg-primary/5 ring-2 ring-primary shadow-xs"
                         : "border-border/70 bg-card hover:border-border hover:bg-muted/40"
@@ -102,7 +102,7 @@ export function StepBackground({
                       <p className="text-xs sm:text-sm font-bold text-foreground">{item.label}</p>
                       <span className="text-[10px] font-semibold text-primary">{item.sub}</span>
                     </div>
-                    <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
+                    <p className="text-[10px] text-muted-foreground mt-1 leading-relaxed">
                       {item.desc}
                     </p>
                   </button>

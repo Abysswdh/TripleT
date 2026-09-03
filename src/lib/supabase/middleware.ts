@@ -119,7 +119,7 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Role Dashboard Route Protection: ensure user has completed onboarding for the accessed role
-  if (request.nextUrl.pathname.startsWith("/freelancer") && user && !isDev) {
+  if (request.nextUrl.pathname.startsWith("/freelancer") && user) {
     const isFreelancerOnboarded =
       !!user.user_metadata?.freelancer_onboarded ||
       (!!user.user_metadata?.onboarding_completed && user.user_metadata?.role === "freelancer");
@@ -128,7 +128,7 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
-  if (request.nextUrl.pathname.startsWith("/client") && user && !isDev) {
+  if (request.nextUrl.pathname.startsWith("/client") && user) {
     const isClientOnboarded =
       !!user.user_metadata?.client_onboarded ||
       (!!user.user_metadata?.onboarding_completed &&

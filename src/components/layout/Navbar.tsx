@@ -158,41 +158,42 @@ export function Navbar() {
   const handleSwitchRole = async () => {
     const targetRole = isClientView ? "freelancer" : "customer";
 
-    // 1. Determine onboarding status for target role
-    let isTargetOnboarded: boolean = targetRole === "freelancer"
-      ? (freelancerOnboarded ?? (user?.user_metadata?.freelancer_onboarded ?? false))
-      : (clientOnboarded ?? (user?.user_metadata?.client_onboarded ?? false));
+    let isTargetOnboarded = false;
 
-    // Also check localStorage cache
-    if (!isTargetOnboarded && typeof window !== "undefined") {
-      const cached = targetRole === "freelancer"
-        ? localStorage.getItem("triplet_freelancer_onboarded") === "true"
-        : localStorage.getItem("triplet_client_onboarded") === "true";
-      if (cached) isTargetOnboarded = true;
-    }
-
-    // Double check with live DB if still not flagged to prevent erroneous redirects
-    if (!isTargetOnboarded && user?.id) {
+    // Check with live DB first
+    if (user?.id) {
       try {
         const supabase = createClient();
         const { data } = await supabase
           .from("users")
           .select("freelancer_onboarded, client_onboarded, role, onboarding_completed")
           .eq("id", user.id)
-          .single();
+          .maybeSingle();
+
         if (data) {
-          const isFl = !!data.freelancer_onboarded || (!!data.onboarding_completed && data.role === "freelancer");
-          const isCl = !!data.client_onboarded || (!!data.onboarding_completed && (data.role === "customer" || data.role === "client"));
+          const isFl = Boolean(data.freelancer_onboarded || (data.onboarding_completed && data.role === "freelancer"));
+          const isCl = Boolean(data.client_onboarded || (data.onboarding_completed && (data.role === "customer" || data.role === "client")));
           setFreelancerOnboarded(isFl);
           setClientOnboarded(isCl);
           isTargetOnboarded = targetRole === "freelancer" ? isFl : isCl;
+        } else {
+          isTargetOnboarded = targetRole === "freelancer"
+            ? Boolean(user.user_metadata?.freelancer_onboarded)
+            : Boolean(user.user_metadata?.client_onboarded || user.user_metadata?.onboarding_completed);
         }
       } catch (err) {
         console.warn("Error checking target role onboarding status:", err);
+        isTargetOnboarded = targetRole === "freelancer"
+          ? Boolean(user.user_metadata?.freelancer_onboarded)
+          : Boolean(user.user_metadata?.client_onboarded || user.user_metadata?.onboarding_completed);
       }
+    } else {
+      isTargetOnboarded = targetRole === "freelancer"
+        ? Boolean(user?.user_metadata?.freelancer_onboarded)
+        : Boolean(user?.user_metadata?.client_onboarded || user?.user_metadata?.onboarding_completed);
     }
 
-    // 2. If it's their first time switching to target role, direct to onboarding for that role
+    // If it's their first time switching to target role, direct to onboarding for that role
     if (!isTargetOnboarded) {
       if (typeof window !== "undefined") {
         localStorage.setItem("triplet_active_dashboard_role", targetRole);
