@@ -61,13 +61,19 @@ export async function getTalents(filters?: TalentFilterOptions): Promise<TalentR
     return [];
   }
 
-  // Filter only profiles whose user is actually a freelancer or has onboarded as freelancer
+  // Filter only profiles whose user is actually a freelancer or has onboarded as freelancer, and deduplicate by user ID
+  const seenUserIds = new Set<string>();
   const activeFreelancers = data.filter((item) => {
     const user = item.user;
     if (!user) return false;
     if (user.role === "customer" && !user.freelancer_onboarded) {
       return false;
     }
+    const uid = user.id || item.user_id;
+    if (!uid || seenUserIds.has(uid)) {
+      return false;
+    }
+    seenUserIds.add(uid);
     return true;
   });
 

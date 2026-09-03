@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -324,13 +324,24 @@ function generateEmptyHeatmap(): HeatmapData["weeks"] {
   );
 }
 
+function isValidUuid(id?: string): boolean {
+  if (!id) return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+}
+
 interface FreelancerProfileViewProps {
   talentId?: string;
   isOwner?: boolean;
+  showBackButton?: boolean;
 }
 
-export function FreelancerProfileView({ talentId = "tal-1", isOwner = false }: FreelancerProfileViewProps) {
+export function FreelancerProfileView({
+  talentId = "tal-1",
+  isOwner = false,
+  showBackButton,
+}: FreelancerProfileViewProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const { user } = useAuth();
   const [liveProfile, setLiveProfile] = useState<TalentProfile | null>(null);
 
@@ -350,14 +361,36 @@ export function FreelancerProfileView({ talentId = "tal-1", isOwner = false }: F
   const streakDays = heatmapData.streakDays;
   const totalContributions = heatmapData.totalContributions;
 
-  const baseProfile = TALENT_PROFILES[talentId] || DEFAULT_PROFILE;
-
-  // If viewing own profile, initialize with the current user's actual profile details
-  const meta = user?.user_metadata || {};
   const DEFAULT_AVATAR = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80";
   const DEFAULT_BANNER = "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1200&auto=format&fit=crop&q=80";
   const cleanAvatar = (url?: string | null) => (url && typeof url === "string" && url.startsWith("http")) ? url : DEFAULT_AVATAR;
   const cleanBanner = (url?: string | null) => (url && typeof url === "string" && url.startsWith("http")) ? url : DEFAULT_BANNER;
+
+  const meta = user?.user_metadata || {};
+
+  const neutralPlaceholder: TalentProfile = {
+    id: talentId || "profile",
+    name: "Talenta Spesialis",
+    avatar: DEFAULT_AVATAR,
+    coverImage: DEFAULT_BANNER,
+    role: "Digital Specialist",
+    location: "Indonesia",
+    organization: "Member Terdaftar TripleT",
+    level: "Verified Pro",
+    category: "Full-Stack Web & Next.js",
+    projectsCount: 0,
+    rating: 5.0,
+    reviewsCount: 0,
+    responseTime: "< 2 Jam",
+    earnings: "Rp 0",
+    aboutMe: ["Freelancer spesialis terdaftar di platform TripleT. Berpengalaman mengerjakan proyek pengembangan teknologi dan desain modern."],
+    streakWeeks: 1,
+    verifiedSkills: ["UI/UX Design", "Web Development"],
+    otherSkills: ["Git", "REST API"],
+    recentProjects: [],
+  };
+
+  const baseProfile = TALENT_PROFILES[talentId] || (talentId === "tal-1" ? DEFAULT_PROFILE : neutralPlaceholder);
 
   const localProfile: TalentProfile = isOwner && user
     ? {
@@ -401,61 +434,168 @@ export function FreelancerProfileView({ talentId = "tal-1", isOwner = false }: F
         const targetUserId = isOwner ? user?.id : talentId;
         if (!targetUserId) return;
 
-        // 1. Fetch freelancer profile & user data
-        const { data, error } = await supabase
-          .from("freelancer_profiles")
-          .select(`
-            *,
-            user:users!user_id(id, full_name, avatar_url, banner_url, location, is_verified, bio, email)
-          `)
-          .or(`user_id.eq.${targetUserId},id.eq.${targetUserId}`)
-          .maybeSingle();
+        let profileData: Record<string, unknown> | null = null;
+        let userData: Record<string, unknown> | null = null;
 
-        // 2. Fetch portfolio projects if any
-        const { data: portData } = await supabase
-          .from("portfolio_projects")
-          .select("*")
-          .eq("freelancer_id", targetUserId);
+        if (isValidUuid(targetUserId)) {
+          // 1. Fetch freelancer profile & user data
+          try {
+            const { data: fpData, error: fpErr } = await supabase
+              .from("freelancer_profiles")
+              .select(`
+                *,
+                user:users!user_id(id, full_name, avatar_url, location, is_verified, bio, email)
+              `)
+              .or(`user_id.eq.${targetUserId},id.eq.${targetUserId}`)
+              .maybeSingle();
 
-        if (data && !error) {
-          const u = data.user || user?.user_metadata || {};
-          const mappedPortfolio = ((portData as Array<Record<string, unknown>>) || []).map((p) => ({
-            id: String(p.id || ""),
-            title: String(p.title || "Proyek Portofolio"),
-            category: String(p.category || "PROJECT"),
-            description: String(p.description || ""),
-            image: String(p.image_url || "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop&q=80"),
-            tags: (p.technologies as string[]) || ["TECH"]
-          }));
+            if (fpData && !fpErr) {
+              profileData = fpData;
+              userData = Array.isArray(fpData.user) ? fpData.user[0] : fpData.user;
+            }
+          } catch (e) {
+            console.warn("Could not query freelancer_profiles join:", e);
+          }
+
+          // 2. If user data not retrieved through relation, fetch from users directly
+          if (!userData) {
+            try {
+              const { data: uData } = await supabase
+                .from("users")
+                .select("id, full_name, avatar_url, location, is_verified, bio, email")
+                .eq("id", targetUserId)
+                .maybeSingle();
+
+              if (uData) {
+                userData = uData;
+              }
+            } catch (e) {
+              console.warn("Could not query users table directly:", e);
+            }
+          }
+
+          // 3. If profile data not retrieved, try query freelancer_profiles by user_id
+          if (!profileData && (userData?.id || targetUserId)) {
+            try {
+              const uid = userData?.id || targetUserId;
+              const { data: fpByUid } = await supabase
+                .from("freelancer_profiles")
+                .select("*")
+                .eq("user_id", uid)
+                .maybeSingle();
+
+              if (fpByUid) {
+                profileData = fpByUid;
+              }
+            } catch (e) {
+              console.warn("Could not query freelancer_profiles by user_id:", e);
+            }
+          }
+        }
+
+        // 4. Fetch portfolio projects if any
+        let mappedPortfolio: Array<{
+          id: string;
+          title: string;
+          category: string;
+          description: string;
+          image: string;
+          tags: string[];
+          isFeatured?: boolean;
+        }> = [];
+
+        if (isValidUuid(targetUserId)) {
+          try {
+            const targetFreelancerId = profileData?.id || userData?.id || targetUserId;
+            const { data: portData } = await supabase
+              .from("portfolio_projects")
+              .select("*")
+              .or(`freelancer_id.eq.${targetFreelancerId},freelancer_id.eq.${targetUserId}`);
+
+            if (portData && Array.isArray(portData)) {
+              mappedPortfolio = portData.map((p) => ({
+                id: String(p.id || ""),
+                title: String(p.title || "Proyek Portofolio"),
+                category: String(p.category || "PROJECT"),
+                description: String(p.description || ""),
+                image: String(p.image_url || "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop&q=80"),
+                tags: (p.technologies as string[]) || ["TECH"]
+              }));
+            }
+          } catch (e) {
+            console.warn("Could not query portfolio projects:", e);
+          }
+        }
+
+        if (userData || profileData) {
+          const u = userData || {};
+          const fp = profileData || {};
+
+          const rawAboutMe = Array.isArray(fp.about_me) && fp.about_me.length > 0
+            ? fp.about_me
+            : (fp.bio ? [fp.bio] : (u.bio ? [u.bio] : (isOwner && meta.bio ? [meta.bio] : ["Freelancer spesialis terdaftar di platform TripleT."])));
+
+          const displayName = isOwner
+            ? (meta.full_name || meta.name || u.full_name || (u.email ? u.email.split("@")[0] : (user?.email ? user.email.split("@")[0] : "Freelancer")))
+            : (u.full_name || (u.email ? u.email.split("@")[0] : "Talenta Spesialis"));
+
+          const displayAvatar = cleanAvatar(
+            isOwner ? (meta.avatar_url || u.avatar_url) : (u.avatar_url || fp.avatar_url)
+          );
+
+          const displayBanner = cleanBanner(
+            isOwner ? (meta.banner_url || meta.cover_image || fp.cover_image || u.banner_url) : (fp.cover_image || u.banner_url)
+          );
+
+          const displayRole = isOwner
+            ? (meta.headline || fp.headline || "Digital Specialist")
+            : (fp.headline || "Digital Specialist");
+
+          const displayLocation = isOwner
+            ? (meta.location || u.location || "Indonesia")
+            : (u.location || "Indonesia");
+
+          const displaySkills = Array.isArray(fp.skills) && fp.skills.length > 0
+            ? fp.skills
+            : (isOwner && meta.skills && meta.skills.length > 0 ? meta.skills : ["UI/UX Design", "Web Development"]);
+
+          const displayVerifiedSkills = Array.isArray(fp.verified_skills) && fp.verified_skills.length > 0
+            ? fp.verified_skills
+            : displaySkills;
+
+          const rateNum = Number(fp.hourly_rate) || (isOwner && Number(meta.hourly_rate)) || 0;
+          const formattedEarnings = rateNum > 0
+            ? (rateNum > 1000 ? `Rp ${(rateNum * 20).toLocaleString("id-ID")}` : `$${rateNum * 20}`)
+            : "Rp 0";
 
           setLiveProfile({
-            id: data.id || targetUserId,
-            name: u.full_name || meta.full_name || (u.email ? u.email.split("@")[0] : baseProfile.name),
-            avatar: cleanAvatar(u.avatar_url || meta.avatar_url || baseProfile.avatar),
-            coverImage: cleanBanner(u.banner_url || data.cover_image || meta.banner_url || meta.cover_image || baseProfile.coverImage),
-            role: data.headline || meta.headline || baseProfile.role,
-            location: u.location || meta.location || "Indonesia",
-            organization: data.education || baseProfile.organization,
-            level: (data.badge_level as string) || "Verified Pro",
-            category: data.category || baseProfile.category,
-            projectsCount: data.completed_projects_count || 0,
-            rating: Number(data.average_rating) || 5.0,
-            reviewsCount: data.total_reviews_count || 0,
-            responseTime: "< 2 Jam",
-            earnings: data.hourly_rate ? `Rp ${(data.hourly_rate * 20).toLocaleString("id-ID")}` : "Rp 0",
-            availability: data.starting_price?.includes("Jam")
-              ? data.starting_price.split("(")[0].trim()
-              : data.availability || (meta.weekly_availability === "part_time"
+            id: targetUserId,
+            name: displayName,
+            avatar: displayAvatar,
+            coverImage: displayBanner,
+            role: displayRole,
+            location: displayLocation,
+            organization: fp.organization || "Member Terdaftar TripleT",
+            level: (fp.badge_level as string) || "Verified Pro",
+            category: fp.category || "Full-Stack Web & Next.js",
+            projectsCount: Number(fp.completed_projects) || 0,
+            rating: Number(fp.rating) || 5.0,
+            reviewsCount: Number(fp.reviews_count) || 0,
+            responseTime: fp.response_time || "< 2 Jam",
+            earnings: formattedEarnings,
+            availability: fp.starting_price?.includes("Jam")
+              ? fp.starting_price.split("(")[0].trim()
+              : fp.availability || (isOwner && meta.weekly_availability === "part_time"
               ? "< 15 Jam / Mgg"
-              : meta.weekly_availability === "full_time"
+              : isOwner && meta.weekly_availability === "full_time"
               ? "> 30 Jam / Mgg"
-              : meta.weekly_availability === "flexible"
+              : isOwner && meta.weekly_availability === "flexible"
               ? "Fleksibel"
               : "15–30 Jam / Mgg"),
-            aboutMe: data.bio ? [data.bio] : (u.bio ? [u.bio] : baseProfile.aboutMe),
-            streakWeeks: data.streak_weeks || 1,
-            verifiedSkills: data.skills && data.skills.length > 0 ? data.skills : (meta.skills || baseProfile.verifiedSkills),
-            otherSkills: data.other_skills || baseProfile.otherSkills,
+            aboutMe: rawAboutMe,
+            streakWeeks: Number(fp.streak_weeks) || 1,
+            verifiedSkills: displayVerifiedSkills,
+            otherSkills: displaySkills,
             recentProjects: mappedPortfolio.length > 0 ? mappedPortfolio : (isOwner ? [] : baseProfile.recentProjects),
           });
         }
@@ -465,7 +605,7 @@ export function FreelancerProfileView({ talentId = "tal-1", isOwner = false }: F
     }
 
     fetchFromSupabase();
-  }, [talentId, isOwner, user?.id, baseProfile]);
+  }, [talentId, isOwner, user?.id, baseProfile, meta]);
 
   const [isSaved, setIsSaved] = useState(false);
   const [isHireModalOpen, setIsHireModalOpen] = useState(false);
@@ -509,15 +649,18 @@ export function FreelancerProfileView({ talentId = "tal-1", isOwner = false }: F
   const featuredProject = profile.recentProjects.find((p) => p.isFeatured) || profile.recentProjects[0];
   const otherProjects = profile.recentProjects.filter((p) => p.id !== featuredProject?.id);
 
+  const isStandaloneProfile = pathname === "/freelancer/profile";
+  const shouldShowBack = showBackButton !== undefined ? showBackButton : !isStandaloneProfile;
+
   return (
     <div className="min-h-screen bg-background pb-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 space-y-6">
-        {/* Top Back Navigation for Visitor */}
-        {!isOwner && (
+        {/* Top Back Navigation */}
+        {shouldShowBack && (
           <div className="flex items-center justify-between">
             <button
               onClick={() => router.back()}
-              className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors group"
+              className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors group cursor-pointer"
             >
               <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
               <span>Kembali ke Cari Talenta</span>

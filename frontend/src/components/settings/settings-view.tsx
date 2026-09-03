@@ -9,6 +9,7 @@ import { useTranslation, type Locale } from "@/context/language-context";
 import { useCurrency, type Currency } from "@/context/currency-context";
 import { createClient } from "@/lib/supabase/client";
 import { uploadProfileMedia } from "@/lib/services/storage";
+import { UNIFIED_PROJECT_CATEGORIES } from "@/lib/constants/categories";
 import {
   User,
   Image as ImageIcon,
@@ -40,8 +41,19 @@ import {
   Mail,
   Phone,
   Link as LinkIcon,
-  ChevronRight
+  ChevronRight,
+  Palette,
+  TrendingUp,
 } from "lucide-react";
+
+const CATEGORY_ICON_MAP: Record<string, React.ElementType> = {
+  "Desain & Branding": Palette,
+  "Foto & Video Kreatif": Camera,
+  "Tugas Lokal / On-Site": MapPin,
+  "Web & IT Engineering": Globe,
+  "Penulisan & Admin": FileText,
+  "Marketing & Promosi": TrendingUp,
+};
 
 type SettingsTab = "profile" | "work" | "security" | "notifications" | "billing" | "preferences";
 
@@ -227,6 +239,12 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
   const [companyWebsite, setCompanyWebsite] = useState("https://");
   const [companySize, setCompanySize] = useState(COMPANY_SIZES[0]);
   const [industry, setIndustry] = useState(INDUSTRIES[0]);
+  const [clientType, setClientType] = useState<"umkm" | "startup" | "agency" | "individual">("umkm");
+  const [projectCategories, setProjectCategories] = useState<string[]>([
+    "Desain & Branding",
+    "Web & IT Engineering"
+  ]);
+  const [budgetPreference, setBudgetPreference] = useState<"umkm" | "standard" | "enterprise">("umkm");
   const [billingAddress, setBillingAddress] = useState("");
   const [taxId, setTaxId] = useState("");
 
@@ -339,6 +357,11 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
           if (clProfile.company_website) setCompanyWebsite(clProfile.company_website);
           if (clProfile.company_size) setCompanySize(clProfile.company_size);
           if (clProfile.industry) setIndustry(clProfile.industry);
+          if (clProfile.client_type) setClientType(clProfile.client_type as "umkm" | "startup" | "agency" | "individual");
+          if (clProfile.project_categories && Array.isArray(clProfile.project_categories) && clProfile.project_categories.length > 0) {
+            setProjectCategories(clProfile.project_categories);
+          }
+          if (clProfile.budget_preference) setBudgetPreference(clProfile.budget_preference as "umkm" | "standard" | "enterprise");
           if (clProfile.billing_address) setBillingAddress(clProfile.billing_address);
           if (clProfile.tax_id) setTaxId(clProfile.tax_id);
         }
@@ -346,6 +369,11 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
         console.warn("Could not fetch profile from tables:", err);
       }
 
+      if (meta.client_type && !clientType) setClientType(meta.client_type);
+      if (meta.project_categories && Array.isArray(meta.project_categories) && meta.project_categories.length > 0) {
+        setProjectCategories(meta.project_categories);
+      }
+      if (meta.budget_preference && !budgetPreference) setBudgetPreference(meta.budget_preference);
       if (meta.company_name && !companyName) setCompanyName(meta.company_name);
       if (meta.hourly_rate && !hourlyRate) setHourlyRate(String(meta.hourly_rate));
       if (meta.preferred_language && (meta.preferred_language === "id" || meta.preferred_language === "en")) {
@@ -457,6 +485,9 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
         updateData.company_website = companyWebsite;
         updateData.company_size = companySize;
         updateData.industry = industry;
+        updateData.client_type = clientType;
+        updateData.project_categories = projectCategories;
+        updateData.budget_preference = budgetPreference;
         updateData.billing_address = billingAddress;
         updateData.tax_id = taxId;
       }
@@ -510,16 +541,20 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
           }
 
           // 3. Client profile upsert
-          if (currentRole === "customer" || companyName || companySize) {
+          if (currentRole === "customer" || companyName || companySize || clientType) {
             await supabase.from("client_profiles").upsert(
               {
                 user_id: user.id,
                 company_name: companyName || fullName,
                 company_website: companyWebsite,
                 company_size: companySize,
+                client_type: clientType,
                 industry: industry,
+                project_categories: projectCategories,
+                budget_preference: budgetPreference,
                 billing_address: billingAddress,
                 tax_id: taxId,
+                updated_at: new Date().toISOString(),
               },
               { onConflict: "user_id" }
             );
@@ -529,8 +564,21 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
         }
       }
 
+      // Sync global language & currency contexts immediately
+      setLocale(language);
+      setGlobalCurrency(currency);
+
       if (typeof window !== "undefined") {
         window.dispatchEvent(new Event("profile-updated"));
+        window.dispatchEvent(new CustomEvent("doable-preferences-updated", { 
+          detail: { categories: projectCategories, clientType, budgetPreference } 
+        }));
+        window.dispatchEvent(new CustomEvent("doable-locale-updated", { 
+          detail: { locale: language } 
+        }));
+        window.dispatchEvent(new CustomEvent("doable-currency-updated", { 
+          detail: { currency } 
+        }));
       }
 
       setSaveSuccess(true);
@@ -1323,16 +1371,45 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    {/* Tipe Usaha / Skala Organisasi */}
+                    <div className="space-y-2 sm:col-span-2">
+                      <label className="text-xs font-semibold text-foreground">
+                        Tipe Usaha / Skala Organisasi
+                      </label>
+                      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                        {[
+                          { type: "umkm", label: "UMKM / Bisnis Lokal", desc: "Kedai, Toko, Retail & F&B" },
+                          { type: "startup", label: "Startup Teknologi", desc: "Produk & platform digital" },
+                          { type: "agency", label: "Agensi / Studio", desc: "Eksekusi proyek klien" },
+                          { type: "individual", label: "Individu / Personal", desc: "Proyek personal mandiri" },
+                        ].map((item) => (
+                          <button
+                            key={item.type}
+                            type="button"
+                            onClick={() => setClientType(item.type as "umkm" | "startup" | "agency" | "individual")}
+                            className={`rounded-2xl border p-3.5 text-left transition-all cursor-pointer ${
+                              clientType === item.type
+                                ? "border-primary bg-primary/5 ring-2 ring-primary shadow-xs"
+                                : "border-border/70 bg-card hover:border-border hover:bg-muted/40"
+                            }`}
+                          >
+                            <p className="text-xs sm:text-sm font-bold text-foreground">{item.label}</p>
+                            <p className="text-[11px] text-muted-foreground mt-1 leading-tight">{item.desc}</p>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                         <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                        {t("settings.work.companyName", "Nama Perusahaan / Organisasi")}
+                        {t("settings.work.companyName", "Nama Usaha / Perusahaan")}
                       </label>
                       <input
                         type="text"
                         value={companyName}
                         onChange={(e) => setCompanyName(e.target.value)}
-                        placeholder="e.g. Acme Studio Inc."
+                        placeholder="Contoh: Kopi Seduh Kenari, PT Inovasi..."
                         className="h-10 w-full rounded-xl border border-border bg-background px-3.5 text-xs text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                       />
                     </div>
@@ -1340,7 +1417,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                         <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
-                        {t("settings.work.companyWebsite", "Website Perusahaan")}
+                        {t("settings.work.companyWebsite", "Website / Tautan Usaha")}
                       </label>
                       <input
                         type="url"
@@ -1351,37 +1428,96 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                       />
                     </div>
 
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-foreground">
-                        {t("settings.work.industry", "Industri")}
-                      </label>
-                      <select
-                        value={industry}
-                        onChange={(e) => setIndustry(e.target.value)}
-                        className="h-10 w-full rounded-xl border border-border bg-background px-3.5 text-xs text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                      >
-                        {INDUSTRIES.map((ind) => (
-                          <option key={ind} value={ind}>{ind}</option>
-                        ))}
-                      </select>
+                    {/* Kategori Kebutuhan Proyek & Filter Utama */}
+                    <div className="space-y-3 sm:col-span-2 pt-2 border-t border-border/50">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                            <Layers className="h-3.5 w-3.5 text-primary" />
+                            Kategori Kebutuhan Proyek (Preferensi Filter Dashboard)
+                          </label>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">
+                            Pilihan kategori di sini otomatis menjadi filter utama yang muncul di Dashboard dan Cari Talenta Anda.
+                          </p>
+                        </div>
+                        <span className="text-xs font-semibold text-primary">
+                          {projectCategories.length} kategori dipilih
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+                        {UNIFIED_PROJECT_CATEGORIES.map((cat) => {
+                          const isSelected = projectCategories.includes(cat.id);
+                          const Icon = CATEGORY_ICON_MAP[cat.id] || Globe;
+                          return (
+                            <button
+                              key={cat.id}
+                              type="button"
+                              onClick={() => {
+                                setProjectCategories((prev) =>
+                                  isSelected ? prev.filter((c) => c !== cat.id) : [...prev, cat.id]
+                                );
+                              }}
+                              className={`flex items-start gap-3 rounded-2xl border p-3 text-left transition-all cursor-pointer ${
+                                isSelected
+                                  ? "border-primary bg-primary/5 ring-2 ring-primary shadow-xs"
+                                  : "border-border/70 bg-card hover:border-border hover:bg-muted/40"
+                              }`}
+                            >
+                              <div
+                                className={`p-2 rounded-xl shrink-0 ${
+                                  isSelected ? "bg-primary text-white" : "bg-muted text-muted-foreground"
+                                }`}
+                              >
+                                <Icon className="h-4 w-4" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between">
+                                  <p className="text-xs font-bold text-foreground truncate">{cat.shortLabel}</p>
+                                  {isSelected && (
+                                    <div className="h-4 w-4 rounded-full bg-primary text-white flex items-center justify-center shrink-0">
+                                      <Check className="h-2.5 w-2.5 stroke-[3]" />
+                                    </div>
+                                  )}
+                                </div>
+                                <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">{cat.desc}</p>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
 
-                    <div className="space-y-1.5">
+                    {/* Kisaran Budget Proyek */}
+                    <div className="space-y-2 sm:col-span-2 pt-2 border-t border-border/50">
                       <label className="text-xs font-semibold text-foreground">
-                        {t("settings.work.companySize", "Ukuran Perusahaan")}
+                        Kisaran Budget Proyek Utama
                       </label>
-                      <select
-                        value={companySize}
-                        onChange={(e) => setCompanySize(e.target.value)}
-                        className="h-10 w-full rounded-xl border border-border bg-background px-3.5 text-xs text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                      >
-                        {COMPANY_SIZES.map((size) => (
-                          <option key={size} value={size}>{size}</option>
+                      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+                        {[
+                          { pref: "umkm", label: "Ramah UMKM", range: "< Rp 2 Juta", note: "Untuk kebutuhan esensial & cepat" },
+                          { pref: "standard", label: "Standar Bisnis", range: "Rp 2jt - Rp 10jt", note: "Untuk web, aplikasi & modul lengkap" },
+                          { pref: "enterprise", label: "Enterprise", range: "> Rp 10 Juta", note: "Untuk skala besar & modul custom" },
+                        ].map((item) => (
+                          <button
+                            key={item.pref}
+                            type="button"
+                            onClick={() => setBudgetPreference(item.pref as "umkm" | "standard" | "enterprise")}
+                            className={`rounded-2xl border p-3.5 text-left transition-all cursor-pointer ${
+                              budgetPreference === item.pref
+                                ? "border-primary bg-primary/5 ring-2 ring-primary shadow-xs"
+                                : "border-border/70 bg-card hover:border-border hover:bg-muted/40"
+                            }`}
+                          >
+                            <p className="text-xs font-bold text-foreground">{item.label}</p>
+                            <p className="text-xs font-bold text-primary mt-1">{item.range}</p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{item.note}</p>
+                          </button>
                         ))}
-                      </select>
+                      </div>
                     </div>
 
-                    <div className="space-y-1.5 sm:col-span-2">
+                    <div className="space-y-1.5 sm:col-span-2 pt-2 border-t border-border/50">
                       <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                         <FileText className="h-3.5 w-3.5 text-muted-foreground" />
                         {t("settings.work.billingAddress", "Alamat Penagihan Resmi")}
@@ -1855,7 +1991,11 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                   </label>
                   <select
                     value={language}
-                    onChange={(e) => setLanguage(e.target.value as Locale)}
+                    onChange={(e) => {
+                      const next = e.target.value as Locale;
+                      setLanguage(next);
+                      setLocale(next);
+                    }}
                     className="h-10 w-full rounded-xl border border-border bg-background px-3.5 text-xs text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                   >
                     <option value="id">{t("settings.preferences.languageId", "Bahasa Indonesia (Default)")}</option>
@@ -1875,7 +2015,11 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                   </label>
                   <select
                     value={currency}
-                    onChange={(e) => setCurrency(e.target.value as Currency)}
+                    onChange={(e) => {
+                      const next = e.target.value as Currency;
+                      setCurrency(next);
+                      setGlobalCurrency(next);
+                    }}
                     className="h-10 w-full rounded-xl border border-border bg-background px-3.5 text-xs text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                   >
                     <option value="IDR">{t("settings.preferences.currencyIdr", "IDR (Rp - Rupiah)")}</option>

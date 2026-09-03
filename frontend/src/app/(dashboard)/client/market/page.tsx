@@ -18,13 +18,17 @@ import {
 import Link from "next/link";
 import { getOpenProjects } from "@/lib/services/projects";
 import { useTranslation } from "@/context/language-context";
+import { useCurrency } from "@/context/currency-context";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
+import { createClient } from "@/lib/supabase/client";
+import { matchCategory, DEFAULT_CLIENT_CATEGORIES } from "@/lib/constants/categories";
 
 interface Milestone {
   phase: string;
   title: string;
   percentage: number;
   amount: string;
+  amountNumeric?: number;
   deliverables: string[];
 }
 
@@ -35,7 +39,7 @@ interface MarketProject {
   clientType: "Enterprise" | "Scale-Up" | "Startup" | "Agensi";
   clientLocation: string;
   clientVerified: boolean;
-  category: "Web & Fullstack" | "Mobile Apps" | "UI/UX & Design" | "AI & Machine Learning" | "Backend & Cloud" | "DevOps & Data";
+  category: string;
   budget: string;
   rawBudget: number;
   budgetType: "Fixed Scope" | "Hourly Milestone";
@@ -52,21 +56,12 @@ interface MarketProject {
   benchmarkNote: string;
 }
 
-const CATEGORY_TABS = [
-  "Semua Kategori",
-  "Web & Fullstack",
-  "Mobile Apps",
-  "UI/UX & Design",
-  "AI & Machine Learning",
-  "Backend & Cloud",
-  "DevOps & Data"
-] as const;
-
 function ProjectMarketContent() {
   const searchParams = useSearchParams();
   const [marketProjects, setMarketProjects] = useState<MarketProject[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("Semua Kategori");
+  const [preferredCategories, setPreferredCategories] = useState<string[]>([]);
   const [selectedStatus, setSelectedStatus] = useState<string>("Semua Status");
   const [selectedBudgetTier, setSelectedBudgetTier] = useState<string>("Semua");
   const [sortBy, setSortBy] = useState<"newest" | "budget_high" | "proposals" | "name">("newest");
@@ -75,6 +70,7 @@ function ProjectMarketContent() {
   const [activeProject, setActiveProject] = useState<MarketProject | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const { t } = useTranslation();
+  const { formatMoney } = useCurrency();
 
   // Sync with search parameter in URL
   useEffect(() => {
@@ -84,7 +80,7 @@ function ProjectMarketContent() {
     }
   }, [searchParams]);
 
-  // Sync with live navbar custom event
+  // Sync with live navbar custom event and preferences
   useEffect(() => {
     const handleSync = (e: Event) => {
       const customEvent = e as CustomEvent<string>;
@@ -93,11 +89,43 @@ function ProjectMarketContent() {
       }
     };
     window.addEventListener("doable-search-sync", handleSync);
-    return () => window.removeEventListener("doable-search-sync", handleSync);
+
+    const handlePref = (e: Event) => {
+      const customEvent = e as CustomEvent<{ categories?: string[] }>;
+      if (customEvent.detail?.categories && Array.isArray(customEvent.detail.categories)) {
+        setPreferredCategories(customEvent.detail.categories);
+      }
+    };
+    window.addEventListener("doable-preferences-updated", handlePref);
+
+    return () => {
+      window.removeEventListener("doable-search-sync", handleSync);
+      window.removeEventListener("doable-preferences-updated", handlePref);
+    };
   }, []);
 
   useEffect(() => {
     async function loadMarket() {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          if (Array.isArray(user.user_metadata?.project_categories) && user.user_metadata.project_categories.length > 0) {
+            setPreferredCategories(user.user_metadata.project_categories);
+          }
+          const { data: clProf } = await supabase
+            .from("client_profiles")
+            .select("project_categories")
+            .eq("user_id", user.id)
+            .maybeSingle();
+          if (clProf?.project_categories && Array.isArray(clProf.project_categories) && clProf.project_categories.length > 0) {
+            setPreferredCategories(clProf.project_categories);
+          }
+        }
+      } catch (err) {
+        console.warn("Could not load market client preferences:", err);
+      }
+
       const data = await getOpenProjects();
       if (data && data.length > 0) {
         const mapped: MarketProject[] = data.map((p) => ({
@@ -107,15 +135,7 @@ function ProjectMarketContent() {
           clientType: "Startup",
           clientLocation: p.owner?.location || "Indonesia",
           clientVerified: true,
-          category: p.category.includes("Mobile")
-            ? "Mobile Apps"
-            : p.category.includes("UI/UX")
-            ? "UI/UX & Design"
-            : p.category.includes("AI")
-            ? "AI & Machine Learning"
-            : p.category.includes("Backend")
-            ? "Backend & Cloud"
-            : "Web & Fullstack",
+          category: p.category || "Desain & Branding",
           budget: p.budget,
           rawBudget: p.budgetNumeric,
           budgetType: "Fixed Scope",
@@ -132,6 +152,7 @@ function ProjectMarketContent() {
             title: m.title,
             percentage: 50,
             amount: m.amount,
+            amountNumeric: m.amountNumeric || (p.budgetNumeric * 0.5),
             deliverables: m.deliverables && m.deliverables.length > 0 ? m.deliverables : ["Source Code", "Dokumentasi"],
           })),
           benchmarkScore: "Benchmark Terverifikasi",
@@ -144,6 +165,13 @@ function ProjectMarketContent() {
     loadMarket();
   }, []);
 
+  const categoryTabs = useMemo(() => {
+    if (preferredCategories.length > 0) {
+      return ["Semua Kategori", ...preferredCategories];
+    }
+    return ["Semua Kategori", ...DEFAULT_CLIENT_CATEGORIES];
+  }, [preferredCategories]);
+
   // Filtered & Sorted Projects
   const filteredProjects = useMemo(() => {
     return marketProjects.filter((proj) => {
@@ -154,9 +182,11 @@ function ProjectMarketContent() {
         proj.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
         proj.skills.some((s) => s.toLowerCase().includes(searchQuery.toLowerCase()));
 
-      // Category
+      // Category using smart matching
       const matchesCategory =
-        selectedCategory === "Semua Kategori" || proj.category === selectedCategory;
+        selectedCategory === "Semua Kategori" ||
+        matchCategory(proj.category, selectedCategory) ||
+        proj.skills.some((s) => matchCategory(s, selectedCategory));
 
       // Status
       const matchesStatus =
@@ -264,7 +294,7 @@ function ProjectMarketContent() {
 
         {/* Category Pill Tabs */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-          {CATEGORY_TABS.map((cat) => {
+          {categoryTabs.map((cat) => {
             const isActive = selectedCategory === cat;
             return (
               <button
@@ -383,7 +413,7 @@ function ProjectMarketContent() {
                     <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                       Estimasi Budget
                     </p>
-                    <p className="text-sm font-bold text-foreground">{proj.budget}</p>
+                    <p className="text-sm font-bold text-foreground">{formatMoney(proj.rawBudget)}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -485,7 +515,7 @@ function ProjectMarketContent() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="rounded-xl border border-border/60 bg-muted/20 p-3">
                   <p className="text-[11px] text-muted-foreground">Anggaran Total</p>
-                  <p className="text-sm font-bold text-foreground mt-0.5">{activeProject.budget}</p>
+                  <p className="text-sm font-bold text-foreground mt-0.5">{formatMoney(activeProject.rawBudget)}</p>
                 </div>
                 <div className="rounded-xl border border-border/60 bg-muted/20 p-3">
                   <p className="text-[11px] text-muted-foreground">Model Kontrak</p>
@@ -551,7 +581,9 @@ function ProjectMarketContent() {
                           <span className="text-xs font-bold text-foreground">{ms.title}</span>
                         </div>
                         <div className="text-right">
-                          <span className="text-xs font-bold text-primary">{ms.amount}</span>
+                          <span className="text-xs font-bold text-primary">
+                            {formatMoney(ms.amountNumeric || (activeProject.rawBudget * ms.percentage) / 100)}
+                          </span>
                           <span className="text-[10px] text-muted-foreground ml-1">({ms.percentage}%)</span>
                         </div>
                       </div>

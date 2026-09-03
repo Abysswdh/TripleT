@@ -8,16 +8,10 @@ import { Search, Star, ShieldCheck, CheckCircle2, SlidersHorizontal, Briefcase }
 import { getTalents, inviteTalentToProject, type TalentRecord } from "@/lib/services/talents";
 import { getClientProjects, type ProjectRecord } from "@/lib/services/projects";
 import { useTranslation } from "@/context/language-context";
+import { useCurrency } from "@/context/currency-context";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
-
-const CATEGORY_TABS = [
-  "Semua Kategori",
-  "Full-Stack Web & Next.js",
-  "Backend & Cloud Systems",
-  "UI/UX & Product Design",
-  "Mobile App Development",
-  "AI & Machine Learning"
-] as const;
+import { createClient } from "@/lib/supabase/client";
+import { matchCategory, DEFAULT_CLIENT_CATEGORIES } from "@/lib/constants/categories";
 
 function ClientTalentContent() {
   const [mounted, setMounted] = useState(false);
@@ -29,6 +23,7 @@ function ClientTalentContent() {
   const [selectedProjectId, setSelectedProjectId] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("Semua Kategori");
+  const [preferredCategories, setPreferredCategories] = useState<string[]>([]);
   const [selectedLevel, setSelectedLevel] = useState<string>("Semua Level");
   const [selectedRateTier, setSelectedRateTier] = useState<string>("Semua");
   const [sortBy, setSortBy] = useState<"rating" | "reviews" | "rate_low" | "rate_high" | "name">("rating");
@@ -37,10 +32,20 @@ function ClientTalentContent() {
   const [inviteMessage, setInviteMessage] = useState("");
   const [inviteSuccess, setInviteSuccess] = useState(false);
   const [isSubmittingInvite, setIsSubmittingInvite] = useState(false);
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
+  const { formatMoney } = useCurrency();
 
   useEffect(() => {
     setMounted(true);
+
+    const handlePref = (e: Event) => {
+      const customEvent = e as CustomEvent<{ categories?: string[] }>;
+      if (customEvent.detail?.categories && Array.isArray(customEvent.detail.categories)) {
+        setPreferredCategories(customEvent.detail.categories);
+      }
+    };
+    window.addEventListener("doable-preferences-updated", handlePref);
+
     async function loadData() {
       const [talentData, projData] = await Promise.all([
         getTalents(),
@@ -57,9 +62,40 @@ function ClientTalentContent() {
           setSelectedProjectId(projData[0].id);
         }
       }
+
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          if (Array.isArray(user.user_metadata?.project_categories) && user.user_metadata.project_categories.length > 0) {
+            setPreferredCategories(user.user_metadata.project_categories);
+          }
+          const { data: clProf } = await supabase
+            .from("client_profiles")
+            .select("project_categories")
+            .eq("user_id", user.id)
+            .maybeSingle();
+          if (clProf?.project_categories && Array.isArray(clProf.project_categories) && clProf.project_categories.length > 0) {
+            setPreferredCategories(clProf.project_categories);
+          }
+        }
+      } catch (prefErr) {
+        console.warn("Could not load client preferences:", prefErr);
+      }
     }
     loadData();
+
+    return () => {
+      window.removeEventListener("doable-preferences-updated", handlePref);
+    };
   }, [urlProjectId]);
+
+  const categoryTabs = useMemo(() => {
+    if (preferredCategories.length > 0) {
+      return ["Semua Kategori", ...preferredCategories];
+    }
+    return ["Semua Kategori", ...DEFAULT_CLIENT_CATEGORIES];
+  }, [preferredCategories]);
 
   const activeProject = useMemo(() => {
     return clientProjects.find(p => p.id === selectedProjectId) || clientProjects[0] || null;
@@ -77,14 +113,13 @@ function ClientTalentContent() {
           (talent.location && talent.location.toLowerCase().includes(q)) ||
           talent.skills.some((s) => s.toLowerCase().includes(q));
 
-        // 2. Category
+        // 2. Category using smart matching
         let matchesCategory = selectedCategory === "Semua Kategori";
         if (!matchesCategory) {
-          const cat = selectedCategory.toLowerCase();
           matchesCategory =
-            (talent.category && talent.category.toLowerCase().includes(cat)) ||
-            talent.title.toLowerCase().includes(cat) ||
-            talent.skills.some((s) => s.toLowerCase().includes(cat));
+            matchCategory(talent.category, selectedCategory) ||
+            matchCategory(talent.title, selectedCategory) ||
+            talent.skills.some((s) => matchCategory(s, selectedCategory));
         }
 
         // 3. Level / Badge
@@ -210,7 +245,7 @@ function ClientTalentContent() {
 
         {/* Category Pill Tabs */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-          {CATEGORY_TABS.map((cat) => {
+          {categoryTabs.map((cat) => {
             const isActive = selectedCategory === cat;
             return (
               <button
@@ -299,7 +334,9 @@ function ClientTalentContent() {
                     <span>{talent.rating}</span>
                     <span className="text-muted-foreground font-normal">({talent.reviewsCount})</span>
                   </div>
-                  <span className="font-extrabold text-foreground">{talent.hourlyRate}</span>
+                  <span className="font-extrabold text-foreground">
+                    {formatMoney(talent.hourlyRateNumeric || 150000)} {locale === "en" ? "/ hr" : "/ jam"}
+                  </span>
                 </div>
 
                 {/* Skills Tags */}

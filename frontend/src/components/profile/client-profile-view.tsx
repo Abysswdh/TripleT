@@ -120,19 +120,71 @@ export function ClientProfileView({ clientId, isOwner = true }: ClientProfileVie
 
       try {
         const supabase = createClient();
+        let clientData: Record<string, unknown> | null = null;
+        let userData: Record<string, unknown> | null = null;
 
-        // 1. Ambil data dari tabel client_profiles & users di Supabase berdasarkan UUID atau ID
-        const { data: cData } = await supabase
-          .from("client_profiles")
-          .select(`
-            *,
-            user:users!user_id(id, full_name, avatar_url, banner_url, location, bio, created_at, email)
-          `)
-          .or(`user_id.eq.${targetId},id.eq.${targetId}`)
-          .maybeSingle();
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId);
+
+        if (isUuid) {
+          // 1. Ambil data dari tabel client_profiles & users di Supabase
+          try {
+            const { data: cData } = await supabase
+              .from("client_profiles")
+              .select(`
+                *,
+                user:users!user_id(id, full_name, avatar_url, location, bio, created_at, email)
+              `)
+              .or(`user_id.eq.${targetId},id.eq.${targetId}`)
+              .maybeSingle();
+
+            if (cData) {
+              clientData = cData;
+              userData = Array.isArray(cData.user) ? cData.user[0] : cData.user;
+            }
+          } catch (e) {
+            console.warn("Could not query client_profiles join:", e);
+          }
+
+          // 2. Jika user data belum ditemukan, ambil langsung dari tabel users
+          if (!userData) {
+            try {
+              const { data: uData } = await supabase
+                .from("users")
+                .select("id, full_name, avatar_url, location, bio, created_at, email")
+                .eq("id", targetId)
+                .maybeSingle();
+
+              if (uData) {
+                userData = uData;
+              }
+            } catch (e) {
+              console.warn("Could not query users table directly:", e);
+            }
+          }
+
+          // 3. Jika clientData belum ditemukan, query client_profiles berdasarkan user_id
+          if (!clientData && (userData?.id || targetId)) {
+            try {
+              const uid = userData?.id || targetId;
+              const { data: cpByUid } = await supabase
+                .from("client_profiles")
+                .select("*")
+                .eq("user_id", uid)
+                .maybeSingle();
+
+              if (cpByUid) {
+                clientData = cpByUid;
+              }
+            } catch (e) {
+              console.warn("Could not query client_profiles by user_id:", e);
+            }
+          }
+        }
+
+        const cData = clientData;
+        const actualOwnerId = cData?.user_id || userData?.id || targetId;
 
         // 2. Ambil proyek nyata yang dibuat oleh user client ini
-        const actualOwnerId = cData?.user_id || targetId;
         const { data: pData } = await supabase
           .from("projects")
           .select("*")
@@ -149,7 +201,7 @@ export function ClientProfileView({ clientId, isOwner = true }: ClientProfileVie
           `)
           .eq("reviewee_id", actualOwnerId);
 
-        const u = cData?.user || (isActualOwner ? user?.user_metadata : {}) || {};
+        const u = userData || (isActualOwner ? user?.user_metadata : {}) || {};
 
         // Hitung statistik riil dari database
         const projectsList: ClientProjectItem[] = ((pData as Array<Record<string, unknown>>) || []).map((p) => ({
@@ -203,8 +255,8 @@ export function ClientProfileView({ clientId, isOwner = true }: ClientProfileVie
           };
         });
 
-        const joinedYear = cData?.user?.created_at
-          ? new Date(cData.user.created_at).getFullYear().toString()
+        const joinedYear = u?.created_at
+          ? new Date(u.created_at).getFullYear().toString()
           : "2025";
 
         const DEFAULT_AVATAR = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80";
@@ -212,16 +264,24 @@ export function ClientProfileView({ clientId, isOwner = true }: ClientProfileVie
         const cleanAvatar = (url?: string | null) => (url && typeof url === "string" && url.startsWith("http")) ? url : DEFAULT_AVATAR;
         const cleanBanner = (url?: string | null) => (url && typeof url === "string" && url.startsWith("http")) ? url : DEFAULT_BANNER;
 
+        const companyDisplayName = isActualOwner
+          ? (meta.company_name || meta.full_name || u.full_name || (u.email ? u.email.split("@")[0] : (user?.email ? user.email.split("@")[0] : "Perusahaan Klien")))
+          : (cData?.company_name || u.full_name || (u.email ? u.email.split("@")[0] : "Perusahaan Klien"));
+
+        const companyTagline = isActualOwner
+          ? (meta.tagline || meta.bio || (cData?.industry ? `Perusahaan di bidang ${cData.industry}` : "Pemberi kerja terdaftar di platform TripleT"))
+          : (cData?.tagline || u.bio || (cData?.industry ? `Perusahaan di bidang ${cData.industry}` : "Pemberi kerja terdaftar di platform TripleT"));
+
         setProfile({
           id: targetId,
-          companyName: cData?.company_name || u.full_name || meta.company_name || meta.full_name || (u.email ? u.email.split("@")[0] : (user?.email ? user.email.split("@")[0] : "Perusahaan Klien")),
-          tagline: meta.tagline || (meta.bio ? meta.bio : (cData?.industry ? `Perusahaan di bidang ${cData.industry}` : "Pemberi kerja terdaftar di platform TripleT")),
-          avatar: cleanAvatar(u.avatar_url || meta.avatar_url),
-          coverImage: cleanBanner(u.banner_url || cData?.banner_url || meta.banner_url || meta.cover_image),
-          industry: cData?.industry || meta.industry || "Teknologi & Bisnis",
-          companySize: cData?.company_size || meta.company_size || "1-10 Karyawan (Startup)",
-          location: meta.location || cData?.user?.location || "Jakarta, Indonesia",
-          website: cData?.company_website || meta.company_website || meta.website || "",
+          companyName: companyDisplayName,
+          tagline: companyTagline,
+          avatar: cleanAvatar(isActualOwner ? (meta.avatar_url || u.avatar_url) : u.avatar_url),
+          coverImage: cleanBanner(isActualOwner ? (meta.banner_url || meta.cover_image || cData?.banner_url || u.banner_url) : (cData?.banner_url || u.banner_url)),
+          industry: cData?.industry || (isActualOwner && meta.industry) || "Teknologi & Bisnis",
+          companySize: cData?.company_size || (isActualOwner && meta.company_size) || "1-10 Karyawan (Startup)",
+          location: (isActualOwner && meta.location) || u.location || "Jakarta, Indonesia",
+          website: cData?.company_website || (isActualOwner && (meta.company_website || meta.website)) || "",
           foundedYear: joinedYear,
           totalSpent: totalSpentText,
           projectsPosted: projectsList.length,
@@ -231,9 +291,9 @@ export function ClientProfileView({ clientId, isOwner = true }: ClientProfileVie
             ? Number((reviewsList.reduce((a, b) => a + b.rating, 0) / reviewsList.length).toFixed(1))
             : 5.0,
           reviewsCount: reviewsList.length,
-          about: meta.bio ? [meta.bio] : [
+          about: (isActualOwner && meta.bio) ? [meta.bio] : (u.bio ? [u.bio] : [
             "Perusahaan pemberi kerja terdaftar di ekosistem TripleT. Mengutamakan kolaborasi profesional, scope kerja terdefinisi jelas, dan pencairan milestone tepat waktu."
-          ],
+          ]),
           hiringInterests: hiringInterests,
           recentProjects: projectsList,
           reviews: reviewsList
@@ -244,7 +304,7 @@ export function ClientProfileView({ clientId, isOwner = true }: ClientProfileVie
     }
 
     loadClientData();
-  }, [user]);
+  }, [user, targetId, isActualOwner, meta]);
 
   const handleCopyLink = () => {
     if (typeof window !== "undefined") {

@@ -10,7 +10,6 @@ import logoWithText from "@/assets/logo_with_text.svg";
 import logoWithoutText from "@/assets/logo_wo_text.svg";
 import { useAuth } from "@/hooks/use-auth";
 import { useOnboarding } from "@/hooks/use-onboarding";
-import { StepRole } from "./components/step-role";
 import { StepIdentity } from "./components/step-identity";
 import { StepBackground } from "./components/step-background";
 import { StepSkills } from "./components/step-skills";
@@ -27,28 +26,24 @@ const Silk = dynamic(() => import("@/components/ui/silk"), {
 
 const STEP_INFO: Record<number, { title: string; desc: string }> = {
   1: {
-    title: "Pilih Role",
-    desc: "Tentukan peran utamamu untuk mempersonalisasi pengalaman di Doable!.",
+    title: "Identitas Diri",
+    desc: "Tuliskan nama lengkap atau nama narahubung dan tentukan domisili operasional akunmu.",
   },
   2: {
-    title: "Identitas Diri",
-    desc: "Tuliskan nama lengkap dan tentukan domisili wilayah akunmu.",
+    title: "Latar Belakang",
+    desc: "Tentukan tipe usaha bisnismu atau tingkat pengalaman profesionalmu.",
   },
   3: {
-    title: "Latar Belakang",
-    desc: "Tentukan tingkat pengalaman dan status profesional atau bisnis usahamu.",
+    title: "Kebutuhan & Kategori",
+    desc: "Pilih kategori proyek yang dibutuhkan atau keahlian utama yang relevan.",
   },
   4: {
-    title: "Keahlian & Kategori",
-    desc: "Pilih keahlian utama atau kategori proyek yang relevan.",
+    title: "Anggaran & Bio",
+    desc: "Tentukan kisaran anggaran proyek atau kapasitas kerja serta bio perkenalan.",
   },
   5: {
-    title: "Kapasitas & Bio",
-    desc: "Tentukan ketersediaan waktu mingguan atau anggaran dan tulis bio perkenalan.",
-  },
-  6: {
     title: "Selamat Datang!",
-    desc: "Profilmu telah selesai! Mulai jelajahi fitur dan peluang sekarang.",
+    desc: "Profilmu telah selesai! Mulai jelajahi fitur dan peluang di Doable! sekarang.",
   },
 };
 
@@ -136,7 +131,7 @@ function OnboardingContent() {
           </div>
 
           <div className="flex flex-wrap items-center gap-1">
-            {[1, 2, 3, 4, 5, 6].map((num) => (
+            {[1, 2, 3, 4, 5].map((num) => (
               <button
                 key={num}
                 type="button"
@@ -219,10 +214,10 @@ function OnboardingContent() {
           {/* Sole Bottom Step Progress Indicator */}
           <div className="relative z-20 flex items-center justify-between text-xs text-white/85 pt-2.5 border-t border-white/15">
             <span className="font-medium text-[11px]">
-              {isRoleSwitchMode ? `Langkah ${step - 1} dari 5` : `Langkah ${step} dari 6`}
+              {`Langkah ${step} dari 5`}
             </span>
             <div className="flex items-center gap-1">
-              {(isRoleSwitchMode ? [2, 3, 4, 5, 6] : [1, 2, 3, 4, 5, 6]).map((i) => (
+              {[1, 2, 3, 4, 5].map((i) => (
                 <div
                   key={i}
                   className={`h-1.5 rounded-full transition-all duration-500 ease-out ${
@@ -246,23 +241,15 @@ function OnboardingContent() {
             className="h-full flex flex-col justify-between animate-in fade-in-50 slide-in-from-right-4 duration-300 ease-out"
           >
             {step === 1 && (
-              <StepRole
-                selectedRole={data.role}
-                onSelectRole={(role) => updateData({ role })}
-                onNext={nextStep}
-              />
-            )}
-
-            {step === 2 && (
               <StepIdentity
                 data={data}
                 onUpdate={updateData}
                 onNext={nextStep}
-                onPrev={isRoleSwitchMode ? () => router.back() : prevStep}
+                onPrev={isRoleSwitchMode ? () => router.back() : () => router.push("/login")}
               />
             )}
 
-            {step === 3 && (
+            {step === 2 && (
               <StepBackground
                 data={data}
                 onUpdate={updateData}
@@ -271,7 +258,7 @@ function OnboardingContent() {
               />
             )}
 
-            {step === 4 && (
+            {step === 3 && (
               <StepSkills
                 data={data}
                 onUpdate={updateData}
@@ -282,7 +269,7 @@ function OnboardingContent() {
               />
             )}
 
-            {step === 5 && (
+            {step === 4 && (
               <StepRatesBio
                 data={data}
                 onUpdate={updateData}
@@ -293,7 +280,7 @@ function OnboardingContent() {
               />
             )}
 
-            {step === 6 && (
+            {step === 5 && (
               <StepWelcome data={data} onFinish={finishAndGoToDashboard} />
             )}
           </div>

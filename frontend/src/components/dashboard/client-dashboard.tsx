@@ -24,6 +24,8 @@ import Grainient from "@/components/ui/Grainient";
 import { CreateProjectModal, type CreateProjectModalProps, type CreatedProject } from "@/components/dashboard/create-project-modal";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import { createClient } from "@/lib/supabase/client";
+import { matchCategory, DEFAULT_CLIENT_CATEGORIES } from "@/lib/constants/categories";
+import { useCurrency } from "@/context/currency-context";
 
 interface FeaturedTalent {
   id: string;
@@ -91,6 +93,7 @@ interface MarketPeerProject {
   description: string;
   skills: string[];
   budget: string;
+  budgetNumeric?: number;
 }
 
 const MARKET_SAMPLE_PROJECTS: MarketPeerProject[] = [
@@ -104,6 +107,7 @@ const MARKET_SAMPLE_PROJECTS: MarketPeerProject[] = [
     description: "Pengembangan dashboard analitik multi-tenant terintegrasi payment gateway, subscription management, dan visualisasi metrik real-time.",
     skills: ["Next.js 14", "PostgreSQL", "Prisma"],
     budget: "Rp 18.500.000",
+    budgetNumeric: 18500000,
   },
   {
     id: "mkt-2",
@@ -115,6 +119,7 @@ const MARKET_SAMPLE_PROJECTS: MarketPeerProject[] = [
     description: "Implementasi agent AI berbasis Large Language Model dan speech-to-text realtime untuk otomatisasi ticketing customer service.",
     skills: ["Python", "OpenAI Realtime", "LangChain"],
     budget: "Rp 14.000.000",
+    budgetNumeric: 14000000,
   },
   {
     id: "mkt-3",
@@ -126,6 +131,7 @@ const MARKET_SAMPLE_PROJECTS: MarketPeerProject[] = [
     description: "Aplikasi mobile dompet digital dengan modul transaksi QRIS dinamis, integrasi biometric auth, dan settlement audit log.",
     skills: ["Flutter", "Dart", "Biometrics"],
     budget: "Rp 25.000.000",
+    budgetNumeric: 25000000,
   },
 ];
 
@@ -133,6 +139,7 @@ import { getTalents } from "@/lib/services/talents";
 
 export function ClientDashboard() {
   const router = useRouter();
+  const { formatMoney } = useCurrency();
 
   // State
   const [projects, setProjects] = useState<ClientProject[]>([]);
@@ -140,6 +147,7 @@ export function ClientDashboard() {
   const [projectStatusFilter, setProjectStatusFilter] = useState<"All" | "Hiring" | "In Progress" | "Completed">("All");
   const [talentCategory, setTalentCategory] = useState("Semua");
   const [marketCategory, setMarketCategory] = useState("Semua");
+  const [preferredCategories, setPreferredCategories] = useState<string[]>([]);
   const [savedTalents, setSavedTalents] = useState<string[]>([]);
   const [quickPrompt, setQuickPrompt] = useState("");
 
@@ -172,6 +180,14 @@ export function ClientDashboard() {
     };
     window.addEventListener("doable-search-sync", handleSync);
 
+    const handlePrefUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent<{ categories?: string[] }>;
+      if (customEvent.detail?.categories && Array.isArray(customEvent.detail.categories)) {
+        setPreferredCategories(customEvent.detail.categories);
+      }
+    };
+    window.addEventListener("doable-preferences-updated", handlePrefUpdate);
+
     let rafId: number;
     const handleScroll = () => {
       rafId = requestAnimationFrame(() => {
@@ -185,6 +201,7 @@ export function ClientDashboard() {
     handleScroll();
     return () => {
       window.removeEventListener("doable-search-sync", handleSync);
+      window.removeEventListener("doable-preferences-updated", handlePrefUpdate);
       window.removeEventListener("scroll", handleScroll);
       cancelAnimationFrame(rafId);
     };
@@ -198,6 +215,22 @@ export function ClientDashboard() {
         const {
           data: { user },
         } = await supabase.auth.getUser();
+
+        // Load Client Profile Preferences
+        if (user) {
+          const metaCategories = user.user_metadata?.project_categories;
+          if (Array.isArray(metaCategories) && metaCategories.length > 0) {
+            setPreferredCategories(metaCategories);
+          }
+          const { data: clProf } = await supabase
+            .from("client_profiles")
+            .select("project_categories")
+            .eq("user_id", user.id)
+            .maybeSingle();
+          if (clProf?.project_categories && Array.isArray(clProf.project_categories) && clProf.project_categories.length > 0) {
+            setPreferredCategories(clProf.project_categories);
+          }
+        }
 
         // 1. Load Projects (Only for the logged in client)
         if (!user) {
@@ -274,20 +307,35 @@ export function ClientDashboard() {
     return projects.filter((p) => p.status === projectStatusFilter);
   }, [projects, projectStatusFilter]);
 
-  // Filtered Talents
+  // Category Chips based on user onboarding / settings preference
+  const talentCategoryChips = useMemo(() => {
+    if (preferredCategories.length > 0) {
+      return ["Semua", ...preferredCategories];
+    }
+    return ["Semua", ...DEFAULT_CLIENT_CATEGORIES];
+  }, [preferredCategories]);
+
+  const marketCategoryChips = useMemo(() => {
+    if (preferredCategories.length > 0) {
+      return ["Semua", ...preferredCategories];
+    }
+    return ["Semua", ...DEFAULT_CLIENT_CATEGORIES];
+  }, [preferredCategories]);
+
+  // Filtered Talents using smart category matching
   const filteredTalents = useMemo(() => {
     if (talentCategory === "Semua") return featuredTalents;
-    return featuredTalents.filter((t) => t.category.includes(talentCategory));
+    return featuredTalents.filter(
+      (t) =>
+        matchCategory(t.category, talentCategory) ||
+        t.skills.some((s) => matchCategory(s, talentCategory))
+    );
   }, [featuredTalents, talentCategory]);
 
-  // Filtered Market Projects
+  // Filtered Market Projects using smart category matching
   const filteredMarketProjects = useMemo(() => {
     if (marketCategory === "Semua") return MARKET_SAMPLE_PROJECTS;
-    return MARKET_SAMPLE_PROJECTS.filter(
-      (p) =>
-        p.category.toLowerCase().includes(marketCategory.toLowerCase()) ||
-        (marketCategory === "Web Development" && p.category.includes("Web"))
-    );
+    return MARKET_SAMPLE_PROJECTS.filter((p) => matchCategory(p.category, marketCategory));
   }, [marketCategory]);
 
   // Toggle Save Talent
@@ -600,7 +648,7 @@ export function ClientDashboard() {
                     <div className="flex items-center justify-between text-xs py-1.5 border-y border-border/40">
                       <div>
                         <span className="text-xs text-muted-foreground block font-medium">Anggaran Proyek</span>
-                        <span className="font-bold text-foreground text-sm">{proj.budget}</span>
+                        <span className="font-bold text-foreground text-sm">{formatMoney(proj.budgetNumeric || 0)}</span>
                       </div>
                       <div className="text-right">
                         <span className="text-xs text-muted-foreground block font-medium">Target Deadline</span>
@@ -692,11 +740,11 @@ export function ClientDashboard() {
             <div className="flex flex-wrap items-center gap-3 self-start sm:self-auto">
               {/* Category Filter Chips */}
               <div className="flex flex-wrap items-center gap-1.5">
-                {["Semua", "Frontend", "UI/UX", "AI & Machine", "Mobile"].map((cat) => (
+                {talentCategoryChips.map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setTalentCategory(cat)}
-                    className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${talentCategory === cat
+                    className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${talentCategory === cat
                       ? "bg-primary text-white shadow-xs"
                       : "border border-border/80 bg-card text-muted-foreground hover:text-foreground hover:bg-muted/60"
                       }`}
@@ -741,11 +789,6 @@ export function ClientDashboard() {
                       />
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-
-                    {/* Category Badge on Cover */}
-                    <span className="absolute top-2.5 left-3 rounded-md bg-black/50 backdrop-blur-md px-2 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider">
-                      {tal.category}
-                    </span>
 
                     {/* Bookmark Button */}
                     <button
@@ -868,11 +911,11 @@ export function ClientDashboard() {
             <div className="flex flex-wrap items-center gap-3 self-start sm:self-auto">
               {/* Category Filter Chips */}
               <div className="flex flex-wrap items-center gap-1.5">
-                {["Semua", "Web Development", "AI & Machine", "Mobile Apps"].map((cat) => (
+                {marketCategoryChips.map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setMarketCategory(cat)}
-                    className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
+                    className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
                       marketCategory === cat
                         ? "bg-primary text-white shadow-xs"
                         : "border border-border/80 bg-card text-muted-foreground hover:text-foreground hover:bg-muted/60"
@@ -938,7 +981,7 @@ export function ClientDashboard() {
                   <div className="flex items-center justify-between text-xs py-1.5 border-y border-border/40">
                     <div>
                       <span className="text-xs text-muted-foreground block font-medium">Estimasi Budget</span>
-                      <span className="font-bold text-foreground text-sm">{proj.budget}</span>
+                      <span className="font-bold text-foreground text-sm">{formatMoney(proj.budgetNumeric || 0)}</span>
                     </div>
                     <div className="text-right">
                       <span className="text-xs text-muted-foreground block font-medium">Klien / Perusahaan</span>
@@ -1046,7 +1089,7 @@ export function ClientDashboard() {
                   Tinjau Pelamar Proposal: {selectedProjectForProposals.title}
                 </h2>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Alokasi Budget: <strong className="text-foreground">{selectedProjectForProposals.budget}</strong> • {selectedProjectForProposals.applicants.length} Proposal Masuk
+                  Alokasi Budget: <strong className="text-foreground">{formatMoney(selectedProjectForProposals.budgetNumeric || 0)}</strong> • {selectedProjectForProposals.applicants.length} Proposal Masuk
                 </p>
               </div>
 

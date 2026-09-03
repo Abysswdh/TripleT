@@ -40,7 +40,7 @@ export interface OnboardingData {
 const STORAGE_KEY = "doable_onboarding_data";
 
 const initialData: OnboardingData = {
-  role: "freelancer",
+  role: "customer",
   fullName: "",
   username: "",
   backgroundType: "mahasiswa",
@@ -52,7 +52,7 @@ const initialData: OnboardingData = {
   hiringType: "umkm",
   businessName: "",
   budgetPreference: "umkm",
-  projectCategories: ["UI/UX & Product Design"],
+  projectCategories: ["Desain & Branding", "Web & IT Engineering"],
   bio: "",
   locationCity: "Jakarta, DKI Jakarta",
   avatarUrl: DEFAULT_AVATAR_URL,
@@ -63,12 +63,12 @@ export function useOnboarding() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const roleParam = searchParams?.get("role") as RoleType | null;
-  const isRoleSwitchMode = Boolean(roleParam && (roleParam === "freelancer" || roleParam === "customer"));
+  const isRoleSwitchMode = roleParam === "freelancer";
 
-  const [step, setStep] = useState(() => (isRoleSwitchMode ? 2 : 1));
+  const [step, setStep] = useState(1);
   const [data, setData] = useState<OnboardingData>(() => ({
     ...initialData,
-    role: (roleParam === "freelancer" || roleParam === "customer") ? roleParam : "freelancer",
+    role: roleParam === "freelancer" ? "freelancer" : "customer",
   }));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -80,25 +80,18 @@ export function useOnboarding() {
       const saved = sessionStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (roleParam && (roleParam === "freelancer" || roleParam === "customer")) {
-          setData({ ...parsed, role: roleParam });
+        if (roleParam === "freelancer") {
+          setData({ ...parsed, role: "freelancer" });
         } else {
-          setData(parsed);
+          setData({ ...parsed, role: "customer" });
         }
-      } else if (roleParam && (roleParam === "freelancer" || roleParam === "customer")) {
-        setData((prev) => ({ ...prev, role: roleParam }));
+      } else if (roleParam === "freelancer") {
+        setData((prev) => ({ ...prev, role: "freelancer" }));
       }
     } catch {
       // Ignore sessionStorage errors
     }
   }, [roleParam]);
-
-  // Ensure secondary onboarding starts at data input (step 2) and skips role selection
-  useEffect(() => {
-    if (isRoleSwitchMode) {
-      setStep((s) => (s < 2 ? 2 : s));
-    }
-  }, [isRoleSwitchMode]);
 
   // Pre-fill user's existing basic identity (Name, Username, Domisili, Avatar) from Supabase
   useEffect(() => {
@@ -153,15 +146,12 @@ export function useOnboarding() {
   }, []);
 
   const nextStep = useCallback(() => {
-    setStep((s) => Math.min(s + 1, 6));
+    setStep((s) => Math.min(s + 1, 5));
   }, []);
 
   const prevStep = useCallback(() => {
-    setStep((s) => {
-      const minStep = isRoleSwitchMode ? 2 : 1;
-      return Math.max(s - 1, minStep);
-    });
-  }, [isRoleSwitchMode]);
+    setStep((s) => Math.max(s - 1, 1));
+  }, []);
 
   const toggleSkill = useCallback((skill: string) => {
     setData((prev) => {
@@ -207,7 +197,7 @@ export function useOnboarding() {
           try {
             sessionStorage.removeItem(STORAGE_KEY);
           } catch {}
-          setStep(6);
+          setStep(5);
           return;
         }
         throw new Error("Silakan masuk terlebih dahulu untuk menyelesaikan onboarding");
@@ -287,7 +277,7 @@ export function useOnboarding() {
             starting_price: availLabel,
             availability: data.weeklyAvailability,
             experience_level: data.experienceLevel,
-            category: data.projectCategories[0] || "Web Development",
+            category: data.projectCategories[0] || "Web & Fullstack",
             badge_level: "Verified Pro",
             organization: eduText,
             cover_image: userBanner,
@@ -313,7 +303,9 @@ export function useOnboarding() {
                 company_name: data.businessName || displayName,
                 company_size: "1-10 Karyawan (UMKM)",
                 client_type: "individual",
-                industry: data.projectCategories[0] || "Teknologi & Kreatif",
+                industry: data.projectCategories[0] || "Desain & Branding",
+                project_categories: data.projectCategories.length > 0 ? data.projectCategories : ["Desain & Branding"],
+                budget_preference: data.budgetPreference || "umkm",
                 banner_url: userBanner,
                 is_verified: false,
               },
@@ -329,7 +321,9 @@ export function useOnboarding() {
             company_name: data.businessName || displayName,
             company_size: data.hiringType === "umkm" ? "1-10 Karyawan (UMKM)" : data.hiringType === "startup" ? "11-50 Karyawan (Startup)" : "Personal / Proyek Sendiri",
             client_type: data.hiringType,
-            industry: data.projectCategories[0] || "Teknologi & Kreatif",
+            industry: data.projectCategories[0] || "Desain & Branding",
+            project_categories: data.projectCategories.length > 0 ? data.projectCategories : ["Desain & Branding"],
+            budget_preference: data.budgetPreference || "umkm",
             banner_url: userBanner,
             is_verified: false,
           },
@@ -355,7 +349,7 @@ export function useOnboarding() {
                 starting_price: "15 – 30 Jam / Minggu (Part-Time)",
                 availability: "semi_full",
                 experience_level: "intermediate",
-                category: "Web Development",
+                category: "Web & Fullstack",
                 badge_level: "Verified Pro",
                 organization: "Profesional",
                 cover_image: userBanner,
@@ -380,6 +374,9 @@ export function useOnboarding() {
           onboarding_completed: true,
           freelancer_onboarded: newFreelancerOnboarded,
           client_onboarded: newClientOnboarded,
+          client_type: data.hiringType,
+          project_categories: data.projectCategories,
+          budget_preference: data.budgetPreference,
           experience_level: data.experienceLevel,
           weekly_availability: data.weeklyAvailability,
           availability: data.weeklyAvailability,
@@ -394,6 +391,7 @@ export function useOnboarding() {
         if (newFreelancerOnboarded) localStorage.setItem("triplet_freelancer_onboarded", "true");
         if (newClientOnboarded) localStorage.setItem("triplet_client_onboarded", "true");
         window.dispatchEvent(new Event("profile-updated"));
+        window.dispatchEvent(new CustomEvent("doable-preferences-updated", { detail: { categories: data.projectCategories } }));
       }
 
       // Clear session storage
@@ -401,8 +399,8 @@ export function useOnboarding() {
         sessionStorage.removeItem(STORAGE_KEY);
       } catch {}
 
-      // Advance to Step 6 (Welcome)
-      setStep(6);
+      // Advance to Step 5 (Welcome)
+      setStep(5);
     } catch (err) {
       console.error("Error during onboarding submit:", err);
       setError(err instanceof Error ? err.message : "Gagal menyimpan profil");

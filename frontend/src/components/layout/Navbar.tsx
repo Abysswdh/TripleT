@@ -11,7 +11,6 @@ import { BrandLogo } from "@/components/branding/BrandLogo";
 import { Container } from "@/components/layout/Container";
 import {
   Search,
-  Sparkles,
   ChevronDown,
   LogOut,
   LayoutDashboard,
@@ -269,9 +268,8 @@ export function Navbar() {
                   router.push(targetUrl);
                 }
               }}
-              className="relative hidden md:flex items-center gap-2 max-w-xs lg:max-w-sm xl:max-w-md w-full ml-3 rounded-2xl border border-border/80 bg-white dark:bg-card/90 shadow-xs focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary px-3 py-1 transition-all"
+              className="relative hidden md:flex items-center max-w-xs lg:max-w-sm xl:max-w-md w-full ml-3 rounded-full border border-border/80 bg-white dark:bg-card/90 shadow-xs focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary overflow-hidden pl-3.5 pr-0 py-0 transition-all h-9"
             >
-              <Sparkles className="h-4 w-4 text-primary shrink-0 animate-pulse" />
               <input
                 type="text"
                 value={navbarQuery}
@@ -287,11 +285,11 @@ export function Navbar() {
                     ? t("nav.freelancerSearchPlaceholder", "Cari proyek, keahlian...")
                     : t("nav.searchPlaceholder", "Cari proyek, blueprint, talenta...")
                 }
-                className="w-full text-xs text-foreground placeholder:text-muted-foreground focus:outline-none bg-transparent font-medium py-1"
+                className="w-full flex-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none bg-transparent font-medium py-1.5 pr-2"
               />
               <button
                 type="submit"
-                className="shrink-0 inline-flex items-center justify-center h-7 w-7 rounded-xl bg-primary text-white shadow-xs hover:bg-primary-600 transition-all hover:scale-105 active:scale-95"
+                className="shrink-0 self-stretch inline-flex items-center justify-center px-3.5 bg-primary text-white hover:bg-primary-600 active:bg-primary-700 transition-colors"
                 title={isFreelancerView ? "Cari Proyek" : "Cari di Market"}
                 aria-label={isFreelancerView ? "Cari Proyek" : "Cari di Market"}
               >

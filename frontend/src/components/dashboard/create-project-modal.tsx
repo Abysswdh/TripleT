@@ -33,8 +33,6 @@ import {
   Lock,
   Star,
   CheckSquare,
-  Search,
-  ChevronDown,
   Bot,
 } from "lucide-react";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
@@ -85,64 +83,26 @@ const STEP_INFO: Record<number, { title: string; desc: string }> = {
 
 // 6 Universal Top Categories for Doable!
 const TOP_CATEGORIES = [
-  { id: "Desain Grafis & Branding", label: "Desain & Branding", icon: Palette, desc: "Poster UMKM, Logo, Feed IG, Kemasan, UI/UX" },
-  { id: "Foto, Video & Kreatif", label: "Foto & Video Kreatif", icon: Camera, desc: "Foto Produk, Reels/TikTok, Video Editing" },
-  { id: "Tugas Lapangan & On-Site", label: "Tugas Lokal / On-Site", icon: MapPin, desc: "Foto Tempat/Bali, Cek Lokasi, Survei, Event" },
-  { id: "Web & Digital Engineering", label: "Web & IT Engineering", icon: Globe, desc: "Website Bisnis, Landing Page, App, Coding" },
-  { id: "Penulisan & Virtual Admin", label: "Penulisan & Admin", icon: FileText, desc: "Copywriting Iklan, Artikel, Data Entry" },
-  { id: "Pemasaran & Bisnis UMKM", label: "Marketing & Promosi", icon: TrendingUp, desc: "Kelola Sosmed, Setup Ads, Riset Pasar" },
+  { id: "Desain & Branding", label: "Desain & Branding", icon: Palette, desc: "Poster UMKM, Logo, Feed IG, Kemasan, UI/UX" },
+  { id: "Foto & Video Kreatif", label: "Foto & Video Kreatif", icon: Camera, desc: "Foto Produk, Reels/TikTok, Video Editing" },
+  { id: "Tugas Lokal / On-Site", label: "Tugas Lokal / On-Site", icon: MapPin, desc: "Foto Tempat/Bali, Cek Lokasi, Survei, Event" },
+  { id: "Web & IT Engineering", label: "Web & IT Engineering", icon: Globe, desc: "Website Bisnis, Landing Page, App, Coding" },
+  { id: "Penulisan & Admin", label: "Penulisan & Admin", icon: FileText, desc: "Copywriting Iklan, Artikel, Data Entry" },
+  { id: "Marketing & Promosi", label: "Marketing & Promosi", icon: TrendingUp, desc: "Kelola Sosmed, Setup Ads, Riset Pasar" },
 ];
 
-// All Subcategories for "Pilih Kategori Lainnya" Directory
-const ALL_CATEGORIES_DIRECTORY: Record<string, string[]> = {
-  "Desain & Kreatif": [
-    "Desain Poster & Brosur UMKM",
-    "Desain Logo & Identitas Brand",
-    "Desain Kemasan Produk (Packaging)",
-    "Desain Feed & Story Media Sosial",
-    "UI/UX Design Web & Mobile",
-    "Ilustrasi & Desain Vektor",
-  ],
-  "Foto, Video & Audio": [
-    "Fotografi Produk & Katalog Olshop",
-    "Video Reels, TikTok & Shorts",
-    "Editing Video YouTube & Promosi",
-    "Voice Over & Audio Podcast",
-    "Fotografi Model & Event",
-  ],
-  "Tugas Lapangan & On-Site (Real-World Gigs)": [
-    "Foto & Verifikasi Lokasi Khusus (Bali, Jogja, dll.)",
-    "Survei Lapangan & Mystery Shopper",
-    "Pengecekan Fisik Tempat / Properti",
-    "Bantuan Logistik & Pendampingan Event",
-  ],
-  "Web, Aplikasi & Software": [
-    "Website Profil Bisnis & UMKM",
-    "Landing Page Penjualan Responsif",
-    "Aplikasi Mobile (Flutter / React Native)",
-    "Otomasi Bot & Integrasi AI",
-    "Perbaikan Bug & Maintenance Web",
-  ],
-  "Penulisan & Bantuan Operasional": [
-    "Copywriting Iklan & Caption Jualan",
-    "Penulisan Artikel Blog & SEO",
-    "Admin Toko Online & Data Entry",
-    "Penerjemahan Dokumen & Transkripsi",
-  ],
-  "Pemasaran Digital & Social Media": [
-    "Manajemen Akun Media Sosial UMKM",
-    "Setup Iklan Meta Ads (Instagram/FB)",
-    "Setup Google Ads & Local Business",
-    "Riset Kompetitor & Tren Pasar",
-  ],
-};
-
 const POPULAR_SKILLS: Record<string, string[]> = {
+  "Desain & Branding": ["Canva", "Photoshop", "Illustrator", "Figma", "CorelDraw", "Poster Design", "Logo Design", "Branding"],
   "Desain Grafis & Branding": ["Canva", "Photoshop", "Illustrator", "Figma", "CorelDraw", "Poster Design", "Logo Design", "Branding"],
+  "Foto & Video Kreatif": ["CapCut", "Premiere Pro", "Lightroom", "Video Editing", "Color Grading", "Product Photo", "Storyboarding"],
   "Foto, Video & Kreatif": ["CapCut", "Premiere Pro", "Lightroom", "Video Editing", "Color Grading", "Product Photo", "Storyboarding"],
+  "Tugas Lokal / On-Site": ["Fotografi Smartphone", "Survei Lapangan", "Komunikasi Lokal", "Verifikasi Alamat", "Mobilitas Tinggi"],
   "Tugas Lapangan & On-Site": ["Fotografi Smartphone", "Survei Lapangan", "Komunikasi Lokal", "Verifikasi Alamat", "Mobilitas Tinggi"],
+  "Web & IT Engineering": ["Next.js", "WordPress", "React", "Tailwind CSS", "HTML/CSS", "PHP/Laravel", "TypeScript", "Python"],
   "Web & Digital Engineering": ["Next.js", "WordPress", "React", "Tailwind CSS", "HTML/CSS", "PHP/Laravel", "TypeScript", "Python"],
+  "Penulisan & Admin": ["Copywriting", "SEO Content", "Microsoft Excel", "Google Sheets", "Penerjemahan", "Data Entry"],
   "Penulisan & Virtual Admin": ["Copywriting", "SEO Content", "Microsoft Excel", "Google Sheets", "Penerjemahan", "Data Entry"],
+  "Marketing & Promosi": ["Meta Ads", "Instagram Marketing", "TikTok Ads", "Google Ads", "Canva", "Analisis Pasar"],
   "Pemasaran & Bisnis UMKM": ["Meta Ads", "Instagram Marketing", "TikTok Ads", "Google Ads", "Canva", "Analisis Pasar"],
 };
 
@@ -304,9 +264,7 @@ export function CreateProjectModal({
 
   // Form State - Step 1: Info & Classification
   const [title, setTitle] = useState("");
-  const [category, setCategory] = useState("Desain Grafis & Branding");
-  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
-  const [categorySearchQuery, setCategorySearchQuery] = useState("");
+  const [category, setCategory] = useState("Desain & Branding");
   const [difficulty, setDifficulty] = useState<"Starter" | "Standard" | "Enterprise">("Starter");
   const [hiringMode, setHiringMode] = useState<"public" | "private">("public");
 
@@ -434,7 +392,6 @@ export function CreateProjectModal({
     if (isOpen) {
       setStep(1);
       setIsSubmitting(false);
-      setShowCategoryPicker(false);
       if (initialData) {
         if (initialData.title !== undefined) {
           setTitle(initialData.title);
@@ -496,22 +453,6 @@ export function CreateProjectModal({
     [category, selectedSkills]
   );
 
-  // Filtered categories for the category directory modal/dropdown
-  const filteredCategoryDirectory = useMemo(() => {
-    if (!categorySearchQuery.trim()) return ALL_CATEGORIES_DIRECTORY;
-    const query = categorySearchQuery.toLowerCase();
-    const result: Record<string, string[]> = {};
-
-    Object.entries(ALL_CATEGORIES_DIRECTORY).forEach(([group, items]) => {
-      const matchedItems = items.filter((item) => item.toLowerCase().includes(query) || group.toLowerCase().includes(query));
-      if (matchedItems.length > 0) {
-        result[group] = matchedItems;
-      }
-    });
-
-    return result;
-  }, [categorySearchQuery]);
-
   // Re-compute default Gantt tasks when category or duration changes
   const handleDurationChange = (val: string) => {
     setDurationDays(val);
@@ -538,17 +479,13 @@ export function CreateProjectModal({
   // Handle ESC key to close
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen && !isSubmitting) {
-        if (showCategoryPicker) {
-          setShowCategoryPicker(false);
-        } else {
-          onClose();
-        }
+      if (e.key === "Escape" && !isSubmitting) {
+        onClose();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, isSubmitting, showCategoryPicker, onClose]);
+  }, [isOpen, isSubmitting, onClose]);
 
   if (!mounted || !isOpen) return null;
 
@@ -939,14 +876,6 @@ export function CreateProjectModal({
                   <label className="text-sm font-bold text-foreground flex items-center gap-2">
                     <span>Kategori Pekerjaan</span>
                   </label>
-                  <button
-                    type="button"
-                    onClick={() => setShowCategoryPicker(true)}
-                    className="text-xs font-bold text-primary hover:text-primary-600 flex items-center gap-1 hover:underline"
-                  >
-                    <span>Jelajahi 30+ Kategori Lainnya</span>
-                    <ChevronDown className="h-3.5 w-3.5" />
-                  </button>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2.5">
@@ -1759,66 +1688,6 @@ export function CreateProjectModal({
           )}
         </div>
       </div>
-
-      {/* Popover / Overlay Directory: 30+ Kategori Lainnya (Searchable) */}
-      {showCategoryPicker && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="relative w-full max-w-2xl bg-card border border-border rounded-3xl p-6 shadow-2xl shadow-black/40 space-y-4 max-h-[85vh] flex flex-col">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-bold text-foreground">Direktori Semua Kategori</h3>
-                <p className="text-xs text-muted-foreground">Pilih bidang pekerjaan spesifik untuk proyekmu</p>
-              </div>
-              <ModalCloseButton variant="pill" onClick={() => setShowCategoryPicker(false)} />
-            </div>
-
-            {/* Search Input */}
-            <div className="relative">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
-                type="text"
-                value={categorySearchQuery}
-                onChange={(e) => setCategorySearchQuery(e.target.value)}
-                placeholder="Cari kategori... (contoh: Poster, Foto Bali, TikTok, Landing Page, Admin)"
-                className="h-11 w-full rounded-2xl border border-input bg-background pl-10 pr-4 text-sm focus:border-primary focus:outline-none"
-                autoFocus
-              />
-            </div>
-
-            {/* Category Groups List */}
-            <div className="flex-1 overflow-y-auto space-y-4 pr-1 max-h-[50vh]">
-              {Object.keys(filteredCategoryDirectory).length === 0 ? (
-                <div className="py-8 text-center text-sm text-muted-foreground">
-                  Tidak ditemukan kategori yang cocok. Anda tetap bisa menggunakan kategori kustom dengan mengetikkan langsung.
-                </div>
-              ) : (
-                Object.entries(filteredCategoryDirectory).map(([groupName, items]) => (
-                  <div key={groupName} className="space-y-2">
-                    <h4 className="text-xs font-bold text-primary uppercase tracking-wider">{groupName}</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {items.map((item) => (
-                        <button
-                          key={item}
-                          type="button"
-                          onClick={() => handleSelectCategory(item)}
-                          className={`p-2.5 rounded-xl border text-left text-xs font-medium transition-all ${
-                            category === item
-                              ? "border-primary bg-primary/10 text-primary font-bold"
-                              : "border-border/70 bg-card hover:bg-muted/50 text-foreground"
-                          }`}
-                        >
-                          {item}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>,
     document.body
   );

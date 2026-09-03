@@ -1,18 +1,14 @@
 "use client";
 
-import { use } from "react";
+import { useParams } from "next/navigation";
 import { ClientProfileView } from "@/components/profile/client-profile-view";
 import { useAuth } from "@/hooks/use-auth";
 
-export default function DynamicClientProfilePage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const resolvedParams = use(params);
+export default function DynamicClientProfilePage() {
+  const params = useParams();
   const { user } = useAuth();
-  const clientId = resolvedParams.id;
-  const isOwner = user?.id === clientId;
+  const clientId = Array.isArray(params?.id) ? params.id[0] : (params?.id as string) || "";
+  const isOwner = Boolean(user?.id && user.id === clientId);
 
   return <ClientProfileView clientId={clientId} isOwner={isOwner} />;
 }

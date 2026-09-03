@@ -1,8 +1,29 @@
 "use client";
 
 import { OnboardingData } from "@/hooks/use-onboarding";
-import { ArrowLeft, ArrowRight, Check, Plus } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  Plus,
+  Palette,
+  Camera,
+  MapPin,
+  Globe,
+  FileText,
+  TrendingUp,
+} from "lucide-react";
 import { useState } from "react";
+import { UNIFIED_PROJECT_CATEGORIES } from "@/lib/constants/categories";
+
+const CATEGORY_ICON_MAP: Record<string, React.ElementType> = {
+  "Desain & Branding": Palette,
+  "Foto & Video Kreatif": Camera,
+  "Tugas Lokal / On-Site": MapPin,
+  "Web & IT Engineering": Globe,
+  "Penulisan & Admin": FileText,
+  "Marketing & Promosi": TrendingUp,
+};
 
 interface StepSkillsProps {
   data: OnboardingData;
@@ -32,45 +53,6 @@ const POPULAR_SKILLS = [
   "SEO & Copywriting",
   "Video Editing",
   "Laravel / PHP",
-];
-
-const PROJECT_CATEGORIES = [
-  {
-    id: "Branding & Desain Visual UMKM",
-    title: "Branding & Desain Visual UMKM",
-    desc: "Logo, packaging produk, banner sosial media, poster promo",
-    icon: "🎨",
-  },
-  {
-    id: "UI/UX & Product Design",
-    title: "UI/UX & Product Design",
-    desc: "Desain aplikasi mobile, dashboard web, prototipe interaktif Figma",
-    icon: "📱",
-  },
-  {
-    id: "Website & Web App Development",
-    title: "Website & Web App Development",
-    desc: "Company profile, landing page, sistem informasi, toko online",
-    icon: "💻",
-  },
-  {
-    id: "Mobile Apps (Flutter / React Native)",
-    title: "Mobile Apps Development",
-    desc: "Aplikasi Android & iOS fungsional siap rilis di app store",
-    icon: "⚡",
-  },
-  {
-    id: "Otomasi Bisnis & Integrasi AI",
-    title: "Otomasi Bisnis & AI Tools",
-    desc: "Chatbot WhatsApp, integrasi OpenAI/LLM, integrasi payment gateway",
-    icon: "🤖",
-  },
-  {
-    id: "Backend API & Database Cloud",
-    title: "Backend API & Database Cloud",
-    desc: "REST/GraphQL API, database PostgreSQL, migrasi arsitektur cloud",
-    icon: "☁️",
-  },
 ];
 
 export function StepSkills({
@@ -170,8 +152,9 @@ export function StepSkills({
             </div>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {PROJECT_CATEGORIES.map((cat) => {
+              {UNIFIED_PROJECT_CATEGORIES.map((cat) => {
                 const isSelected = data.projectCategories.includes(cat.id);
+                const Icon = CATEGORY_ICON_MAP[cat.id] || Globe;
                 return (
                   <button
                     key={cat.id}
@@ -183,7 +166,13 @@ export function StepSkills({
                         : "border-border/70 bg-card hover:border-border hover:bg-muted/40"
                     }`}
                   >
-                    <span className="text-2xl shrink-0 mt-0.5">{cat.icon}</span>
+                    <div
+                      className={`p-2.5 rounded-xl shrink-0 ${
+                        isSelected ? "bg-primary text-white" : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      <Icon className="h-5 w-5" />
+                    </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <p className="text-xs sm:text-sm font-bold text-foreground truncate">{cat.title}</p>
