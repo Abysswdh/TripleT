@@ -234,9 +234,10 @@ export function Navbar() {
 
   const publicLinks = [
     { href: "/#our-story", label: t("nav.ourStory", "Our Story") },
-    { href: "/#realitas", label: t("nav.impact", "Impact") },
-    { href: "/#transformasi-ai", label: t("nav.methodology", "Methodology") },
-    { href: "/#filosofi", label: t("nav.careers", "Careers") },
+    { href: "/#realitas-data", label: t("nav.dataRealitas", "Data & Realitas") },
+    { href: "/#solusi-doable", label: t("nav.solusiWorkspace", "Solusi & Workspace") },
+    { href: "/#dummy-projects", label: t("nav.dummyProjects", "Dummy Projects") },
+    { href: "/#sdg-impact", label: t("nav.sdgImpact", "SDG Impact") },
   ];
 
   return (
@@ -260,10 +261,12 @@ export function Navbar() {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                if (navbarQuery.trim()) {
-                  router.push(`/client/market?q=${encodeURIComponent(navbarQuery.trim())}`);
+                const query = navbarQuery.trim();
+                const targetUrl = isFreelancerView ? "/freelancer/explore" : "/client/market";
+                if (query) {
+                  router.push(`${targetUrl}?q=${encodeURIComponent(query)}`);
                 } else {
-                  router.push("/client/market");
+                  router.push(targetUrl);
                 }
               }}
               className="relative hidden md:flex items-center gap-2 max-w-xs lg:max-w-sm xl:max-w-md w-full ml-3 rounded-2xl border border-border/80 bg-white dark:bg-card/90 shadow-xs focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary px-3 py-1 transition-all"
@@ -279,16 +282,20 @@ export function Navbar() {
                     window.dispatchEvent(new CustomEvent("doable-search-sync", { detail: val }));
                   }
                 }}
-                placeholder={t("nav.searchPlaceholder", "Cari proyek, blueprint, talenta...")}
+                placeholder={
+                  isFreelancerView
+                    ? t("nav.freelancerSearchPlaceholder", "Cari proyek, keahlian...")
+                    : t("nav.searchPlaceholder", "Cari proyek, blueprint, talenta...")
+                }
                 className="w-full text-xs text-foreground placeholder:text-muted-foreground focus:outline-none bg-transparent font-medium py-1"
               />
               <button
                 type="submit"
-                className="shrink-0 inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary px-3 py-1 text-xs font-bold text-white shadow-xs hover:bg-primary-600 transition-all hover:scale-105 active:scale-95"
-                title="Cari di Market"
+                className="shrink-0 inline-flex items-center justify-center h-7 w-7 rounded-xl bg-primary text-white shadow-xs hover:bg-primary-600 transition-all hover:scale-105 active:scale-95"
+                title={isFreelancerView ? "Cari Proyek" : "Cari di Market"}
+                aria-label={isFreelancerView ? "Cari Proyek" : "Cari di Market"}
               >
-                <Search className="h-3 w-3" />
-                <span className="hidden xl:inline text-[11px]">Cari</span>
+                <Search className="h-3.5 w-3.5" />
               </button>
             </form>
           )}

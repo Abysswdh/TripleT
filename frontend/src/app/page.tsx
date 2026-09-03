@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
@@ -18,6 +18,8 @@ import {
   MessageSquare,
   PieChart,
   HelpCircle,
+  Menu,
+  X,
 } from "lucide-react";
 import CountUp from "@/components/ui/CountUp";
 import { DoableStreakTracker } from "@/components/dashboard/doable-streak-tracker";
@@ -45,6 +47,35 @@ const fadeUpVariants = {
 };
 
 export default function LandingPage() {
+  // Navigation & ScrollSpy State
+  const [activeSection, setActiveSection] = useState<string>("our-story");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
+
+  const navLinks = [
+    { href: "#our-story", id: "our-story", label: "Our Story" },
+    { href: "#realitas-data", id: "realitas-data", label: "Data & Realitas" },
+    { href: "#solusi-doable", id: "solusi-doable", label: "Solusi & Workspace" },
+    { href: "#dummy-projects", id: "dummy-projects", label: "Dummy Projects" },
+    { href: "#sdg-impact", id: "sdg-impact", label: "SDG Impact" },
+  ];
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY + 160;
+      for (let i = navLinks.length - 1; i >= 0; i--) {
+        const section = document.getElementById(navLinks[i].id);
+        if (section && section.offsetTop <= scrollPosition) {
+          setActiveSection(navLinks[i].id);
+          break;
+        }
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   // Section 1: ASEAN Chart & Demographic States
   const [selectedAseanCountry, setSelectedAseanCountry] = useState<string>("id");
   const [activeChartTab, setActiveChartTab] = useState<"asean" | "demographics" | "informal">("asean");
@@ -170,68 +201,97 @@ export default function LandingPage() {
             />
           </Link>
 
-          {/* Center Navigation Links */}
-          <nav className="hidden lg:flex items-center gap-7 text-xs sm:text-sm font-semibold text-slate-600">
-            <a
-              href="#our-story"
-              className="text-blue-600 font-bold border-b-2 border-blue-600 pb-0.5 transition-colors"
-            >
-              Our Story
-            </a>
-            <a
-              href="#kenalan"
-              className="hover:text-blue-600 transition-colors"
-            >
-              Our Brand
-            </a>
-            <a
-              href="#realitas-data"
-              className="hover:text-blue-600 transition-colors"
-            >
-              Data &amp; Impact
-            </a>
-            <a
-              href="#kesenjangan"
-              className="hover:text-blue-600 transition-colors"
-            >
-              Kesenjangan
-            </a>
-            <a
-              href="#solusi-doable"
-              className="hover:text-blue-600 transition-colors"
-            >
-              Solusi &amp; Workspace
-            </a>
-            <a
-              href="#dummy-projects"
-              className="hover:text-blue-600 transition-colors"
-            >
-              Dummy Projects
-            </a>
-            <a
-              href="#sdg-impact"
-              className="hover:text-blue-600 transition-colors"
-            >
-              SDG Impact
-            </a>
+          {/* Center Navigation Links (Clean, Dynamic & Modern) */}
+          <nav className="hidden lg:flex items-center gap-8 text-sm">
+            {navLinks.map((link) => {
+              const isActive = activeSection === link.id;
+              return (
+                <a
+                  key={link.id}
+                  href={link.href}
+                  className={`relative py-1.5 text-sm font-semibold transition-all duration-200 ${
+                    isActive
+                      ? "text-blue-600 font-bold"
+                      : "text-slate-600 hover:text-blue-600"
+                  }`}
+                >
+                  {link.label}
+                  {isActive && (
+                    <motion.div
+                      layoutId="landingActiveNavIndicator"
+                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full"
+                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                    />
+                  )}
+                </a>
+              );
+            })}
           </nav>
 
           {/* Right Action Buttons */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             <Link
               href="/login"
-              className="text-sm font-semibold text-blue-600 hover:text-blue-800 px-3 py-2 transition-all hover:scale-105 inline-block"
+              className="hidden sm:inline-block text-sm font-semibold text-blue-600 hover:text-blue-800 px-3 py-2 transition-all hover:scale-105"
             >
               Sign In
             </Link>
             <Link
               href="/register"
-              className="rounded-xl bg-[#254BE3] px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-blue-600/20 hover:bg-blue-800 hover:scale-105 hover:shadow-lg hover:shadow-blue-600/30 active:scale-95 transition-all"
+              className="rounded-xl bg-[#254BE3] px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-white shadow-md shadow-blue-600/20 hover:bg-blue-800 hover:scale-105 hover:shadow-lg hover:shadow-blue-600/30 active:scale-95 transition-all"
             >
               Get Started
             </Link>
+
+            {/* Mobile Menu Toggle Button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="lg:hidden p-2 text-slate-600 hover:text-blue-600 rounded-xl hover:bg-slate-100 transition-colors"
+              aria-label="Toggle Navigation Menu"
+            >
+              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile Navigation Dropdown */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="lg:hidden border-t border-slate-100 bg-white/98 backdrop-blur-md px-6 py-4 space-y-2 overflow-hidden shadow-lg"
+            >
+              {navLinks.map((link) => {
+                const isActive = activeSection === link.id;
+                return (
+                  <a
+                    key={link.id}
+                    href={link.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`block py-2.5 px-3 rounded-xl text-sm font-semibold transition-colors ${
+                      isActive
+                        ? "bg-blue-50 text-blue-600 font-bold"
+                        : "text-slate-600 hover:bg-slate-50 hover:text-blue-600"
+                    }`}
+                  >
+                    {link.label}
+                  </a>
+                );
+              })}
+              <div className="pt-3 border-t border-slate-100 flex flex-col gap-2">
+                <Link
+                  href="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full text-center py-2.5 text-sm font-semibold text-blue-600 hover:text-blue-800 border border-blue-200 rounded-xl"
+                >
+                  Sign In
+                </Link>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </header>
 
       {/* ========================================================================= */}
@@ -1724,27 +1784,15 @@ export default function LandingPage() {
 
           {/* Right Navigation & Legal Links */}
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-semibold text-slate-600">
-            <a href="#our-story" className="hover:text-blue-600 transition-colors">
-              Our Story
-            </a>
-            <a href="#kenalan" className="hover:text-blue-600 transition-colors">
-              Our Brand
-            </a>
-            <a href="#realitas-data" className="hover:text-blue-600 transition-colors">
-              BPS Data 2026
-            </a>
-            <a href="#kesenjangan" className="hover:text-blue-600 transition-colors">
-              Kesenjangan
-            </a>
-            <a href="#solusi-doable" className="hover:text-blue-600 transition-colors">
-              Workspace
-            </a>
-            <a href="#dummy-projects" className="hover:text-blue-600 transition-colors">
-              Dummy Projects
-            </a>
-            <a href="#sdg-impact" className="hover:text-blue-600 transition-colors">
-              SDG 8 &amp; 9
-            </a>
+            {navLinks.map((link) => (
+              <a
+                key={link.id}
+                href={link.href}
+                className="hover:text-blue-600 transition-colors"
+              >
+                {link.label}
+              </a>
+            ))}
           </div>
         </div>
       </footer>

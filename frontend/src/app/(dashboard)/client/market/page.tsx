@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Search,
   SlidersHorizontal,
@@ -61,7 +62,8 @@ const CATEGORY_TABS = [
   "DevOps & Data"
 ] as const;
 
-export default function ProjectMarketPage() {
+function ProjectMarketContent() {
+  const searchParams = useSearchParams();
   const [marketProjects, setMarketProjects] = useState<MarketProject[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("Semua Kategori");
@@ -73,6 +75,26 @@ export default function ProjectMarketPage() {
   const [activeProject, setActiveProject] = useState<MarketProject | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const { t } = useTranslation();
+
+  // Sync with search parameter in URL
+  useEffect(() => {
+    const q = searchParams?.get("q");
+    if (q !== null && q !== undefined) {
+      setSearchQuery(q);
+    }
+  }, [searchParams]);
+
+  // Sync with live navbar custom event
+  useEffect(() => {
+    const handleSync = (e: Event) => {
+      const customEvent = e as CustomEvent<string>;
+      if (typeof customEvent?.detail === "string") {
+        setSearchQuery(customEvent.detail);
+      }
+    };
+    window.addEventListener("doable-search-sync", handleSync);
+    return () => window.removeEventListener("doable-search-sync", handleSync);
+  }, []);
 
   useEffect(() => {
     async function loadMarket() {
@@ -590,5 +612,13 @@ export default function ProjectMarketPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ProjectMarketPage() {
+  return (
+    <Suspense fallback={<div className="max-w-7xl mx-auto px-4 py-12 text-center text-xs text-muted-foreground">Memuat pasar proyek...</div>}>
+      <ProjectMarketContent />
+    </Suspense>
   );
 }

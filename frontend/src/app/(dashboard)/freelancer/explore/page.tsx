@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Compass,
   Search,
@@ -30,12 +31,33 @@ interface Quest {
 
 const CATEGORIES = ["Semua", "Web Development", "Backend & API Engineering", "UI/UX & Product Design", "AI & Machine Learning", "Mobile App Development"];
 
-export default function FreelancerExploreQuestsPage() {
+function FreelancerExploreQuestsContent() {
   const { user } = useAuth();
+  const searchParams = useSearchParams();
   const [quests, setQuests] = useState<Quest[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Semua");
   const [loading, setLoading] = useState(true);
+
+  // Sync with search parameter in URL
+  useEffect(() => {
+    const q = searchParams?.get("q");
+    if (q !== null && q !== undefined) {
+      setSearchQuery(q);
+    }
+  }, [searchParams]);
+
+  // Sync with live navbar custom event
+  useEffect(() => {
+    const handleSync = (e: Event) => {
+      const customEvent = e as CustomEvent<string>;
+      if (typeof customEvent?.detail === "string") {
+        setSearchQuery(customEvent.detail);
+      }
+    };
+    window.addEventListener("doable-search-sync", handleSync);
+    return () => window.removeEventListener("doable-search-sync", handleSync);
+  }, []);
 
   useEffect(() => {
     async function loadProjects() {
@@ -214,6 +236,14 @@ export default function FreelancerExploreQuestsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function FreelancerExploreQuestsPage() {
+  return (
+    <Suspense fallback={<div className="max-w-7xl mx-auto px-4 py-12 text-center text-xs text-muted-foreground">Memuat proyek...</div>}>
+      <FreelancerExploreQuestsContent />
+    </Suspense>
   );
 }
 
