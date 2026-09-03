@@ -31,7 +31,19 @@ export async function getFreelancerEarnings(userId?: string): Promise<EarningsSu
 
   if (!targetUserId) {
     const { data: { user } } = await supabase.auth.getUser();
-    targetUserId = user?.id || "fa000000-0000-0000-0000-000000000001";
+    targetUserId = user?.id;
+  }
+
+  if (!targetUserId) {
+    return {
+      availableBalance: 0,
+      availableBalanceDisplay: "Rp 0",
+      inEscrowBalance: 0,
+      inEscrowBalanceDisplay: "Rp 0",
+      totalWithdrawn: 0,
+      totalWithdrawnDisplay: "Rp 0",
+      transactions: [],
+    };
   }
 
   // Fetch contracts of this freelancer
@@ -90,43 +102,15 @@ export async function getFreelancerEarnings(userId?: string): Promise<EarningsSu
     }
   }
 
-  // Fallback initial realistic earnings if brand new
-  if (txList.length === 0) {
-    available = 14850000;
-    inEscrow = 7500000;
-    totalWithdrawn = 24500000;
-    txList.push(
-      {
-        id: "tx-fallback-1",
-        contractId: "ba000000-0000-0000-0000-000000000001",
-        type: "release",
-        amount: 7500000,
-        amountDisplay: "+Rp 7.500.000",
-        status: "success",
-        projectTitle: "SaaS Dashboard & Analytics Platform Realtime",
-        date: "28 Agustus 2026",
-      },
-      {
-        id: "tx-fallback-2",
-        contractId: "ba000000-0000-0000-0000-000000000002",
-        type: "payout",
-        amount: 10000000,
-        amountDisplay: "-Rp 10.000.000",
-        status: "success",
-        projectTitle: "Penarikan Dana ke Rekening Bank BCA (•••• 8921)",
-        date: "20 Agustus 2026",
-      },
-      {
-        id: "tx-fallback-3",
-        contractId: "ba000000-0000-0000-0000-000000000002",
-        type: "release",
-        amount: 5000000,
-        amountDisplay: "+Rp 5.000.000",
-        status: "success",
-        projectTitle: "Interactive 3D Product Showcase with Three.js & WebGL",
-        date: "15 Agustus 2026",
-      }
-    );
+  // Check if freelancer profile has recorded total_earnings in database
+  const { data: flProfile } = await supabase
+    .from("freelancer_profiles")
+    .select("total_earnings")
+    .eq("user_id", targetUserId)
+    .maybeSingle();
+
+  if (flProfile && Number(flProfile.total_earnings) > 0 && available === 0) {
+    available = Number(flProfile.total_earnings);
   }
 
   return {

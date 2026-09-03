@@ -42,6 +42,7 @@ export default function FreelancerProjectDetailPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [activePreset, setActivePreset] = useState<number | null>(1.0);
 
   useEffect(() => {
     async function loadData() {
@@ -52,6 +53,7 @@ export default function FreelancerProjectDetailPage() {
         setProject(res);
         if (res.budgetNumeric && res.budgetNumeric > 0) {
           setBidNumeric(res.budgetNumeric);
+          setActivePreset(1.0);
         }
       }
       setLoading(false);
@@ -74,11 +76,17 @@ export default function FreelancerProjectDetailPage() {
     if (!project) return;
     const base = project.budgetNumeric || 5000000;
     setBidNumeric(Math.round(base * multiplier));
+    setActivePreset(multiplier);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!project) return;
+
+    if (!user) {
+      setSubmitError("Silakan masuk (login) terlebih dahulu untuk mengajukan proposal ke klien.");
+      return;
+    }
 
     if (isOwner) {
       setSubmitError("Anda tidak dapat mengajukan proposal pada proyek milik Anda sendiri.");
@@ -475,10 +483,22 @@ export default function FreelancerProjectDetailPage() {
                       <input
                         type="number"
                         disabled={isOwner}
-                        min="100000"
-                        step="50000"
+                        min="1000"
+                        step="any"
                         value={bidNumeric || ""}
-                        onChange={(e) => setBidNumeric(parseInt(e.target.value || "0", 10))}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value || "0", 10);
+                          setBidNumeric(val);
+                          if (project && project.budgetNumeric) {
+                            const b = project.budgetNumeric;
+                            if (val === Math.round(b * 0.9)) setActivePreset(0.9);
+                            else if (val === Math.round(b * 1.0)) setActivePreset(1.0);
+                            else if (val === Math.round(b * 1.1)) setActivePreset(1.1);
+                            else setActivePreset(null);
+                          } else {
+                            setActivePreset(null);
+                          }
+                        }}
                         required
                         className="h-11 w-full rounded-2xl border border-border bg-background pl-11 pr-4 text-sm font-bold text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all disabled:opacity-50"
                       />
@@ -486,30 +506,28 @@ export default function FreelancerProjectDetailPage() {
 
                     {/* Quick Preset Buttons */}
                     <div className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        disabled={isOwner}
-                        onClick={() => handleApplyPreset(0.9)}
-                        className="flex-1 rounded-lg border border-border bg-muted/40 py-1 text-[11px] font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50"
-                      >
-                        90% Budget
-                      </button>
-                      <button
-                        type="button"
-                        disabled={isOwner}
-                        onClick={() => handleApplyPreset(1.0)}
-                        className="flex-1 rounded-lg border border-primary/30 bg-primary/10 py-1 text-[11px] font-bold text-primary hover:bg-primary/20 transition-colors disabled:opacity-50"
-                      >
-                        100% Budget
-                      </button>
-                      <button
-                        type="button"
-                        disabled={isOwner}
-                        onClick={() => handleApplyPreset(1.1)}
-                        className="flex-1 rounded-lg border border-border bg-muted/40 py-1 text-[11px] font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50"
-                      >
-                        110% Budget
-                      </button>
+                      {[
+                        { label: "90% Budget", multiplier: 0.9 },
+                        { label: "100% Budget", multiplier: 1.0 },
+                        { label: "110% Budget", multiplier: 1.1 },
+                      ].map((preset) => {
+                        const isActive = activePreset === preset.multiplier;
+                        return (
+                          <button
+                            key={preset.multiplier}
+                            type="button"
+                            disabled={isOwner}
+                            onClick={() => handleApplyPreset(preset.multiplier)}
+                            className={`flex-1 rounded-lg py-1 text-[11px] font-bold transition-all disabled:opacity-50 ${
+                              isActive
+                                ? "border border-primary/40 bg-primary/15 text-primary shadow-xs"
+                                : "border border-border bg-muted/40 font-semibold text-muted-foreground hover:text-foreground hover:bg-muted"
+                            }`}
+                          >
+                            {preset.label}
+                          </button>
+                        );
+                      })}
                     </div>
 
                     {/* Payout Calculation Card */}
@@ -621,23 +639,33 @@ export default function FreelancerProjectDetailPage() {
 
                   {/* Submit Action */}
                   <div className="pt-2">
-                    <button
-                      type="submit"
-                      disabled={isSubmitting || isOwner}
-                      className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-primary to-indigo-600 py-3 text-xs sm:text-sm font-bold text-white shadow-lg shadow-primary/25 hover:brightness-105 active:scale-[0.99] transition-all disabled:opacity-50 disabled:pointer-events-none"
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <div className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                          <span>Mengirimkan Proposal...</span>
-                        </>
-                      ) : (
-                        <>
-                          <span>Kirim Proposal ke Klien Sekarang</span>
-                          <Send className="h-4 w-4" />
-                        </>
-                      )}
-                    </button>
+                    {!user ? (
+                      <Link
+                        href={`/login?redirect=/freelancer/explore/${projectId}`}
+                        className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-primary to-indigo-600 py-3 text-xs sm:text-sm font-bold text-white shadow-lg shadow-primary/25 hover:brightness-105 active:scale-[0.99] transition-all"
+                      >
+                        <span>Masuk untuk Mengajukan Proposal</span>
+                        <ChevronRight className="h-4 w-4" />
+                      </Link>
+                    ) : (
+                      <button
+                        type="submit"
+                        disabled={isSubmitting || isOwner}
+                        className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-primary to-indigo-600 py-3 text-xs sm:text-sm font-bold text-white shadow-lg shadow-primary/25 hover:brightness-105 active:scale-[0.99] transition-all disabled:opacity-50 disabled:pointer-events-none"
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <div className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                            <span>Mengirimkan Proposal...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>Kirim Proposal ke Klien Sekarang</span>
+                            <Send className="h-4 w-4" />
+                          </>
+                        )}
+                      </button>
+                    )}
                     <p className="text-[10px] text-center text-muted-foreground mt-2">
                       Dengan mengirimkan proposal, Anda menyetujui Ketentuan Layanan & Kebijakan Escrow Doable.
                     </p>

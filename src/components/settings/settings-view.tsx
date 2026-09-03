@@ -9,6 +9,7 @@ import { useTranslation, type Locale } from "@/context/language-context";
 import { useCurrency, type Currency } from "@/context/currency-context";
 import { createClient } from "@/lib/supabase/client";
 import { uploadProfileMedia } from "@/lib/services/storage";
+import { getFreelancerEarnings } from "@/lib/services/earnings";
 import { UNIFIED_PROJECT_CATEGORIES } from "@/lib/constants/categories";
 import {
   User,
@@ -162,6 +163,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState("");
+  const [walletBalance, setWalletBalance] = useState<number>(0);
   const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -1903,7 +1905,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                     <div>
                       <span className="text-[11px] font-bold text-primary uppercase tracking-wider">{t("settings.billing.availableBalance", "Saldo Tersedia")}</span>
                       <h3 className="text-2xl font-bold text-foreground font-heading">
-                        {formatMoney(14850000, "IDR")}
+                        {formatMoney(walletBalance, "IDR")}
                       </h3>
                       <p className="text-xs text-muted-foreground mt-0.5">{t("settings.billing.instantPayoutDesc", "Siap ditarik langsung ke rekening bank terverifikasi Anda.")}</p>
                     </div>

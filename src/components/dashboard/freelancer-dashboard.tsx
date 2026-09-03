@@ -28,8 +28,9 @@ import Grainient from "@/components/ui/Grainient";
 import { getOpenProjects } from "@/lib/services/projects";
 import { getFreelancerContracts, submitMilestoneDeliverable } from "@/lib/services/contracts";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
-import { fetchHeatmapData, fetchUserXPBreakdown, getLearnedResources, type HeatmapData, type XPBreakdown } from "@/lib/services/activity";
-import { getSavedQuizResults, SKILL_QUIZZES, type QuizAttemptResult } from "@/lib/services/quizzes";
+import { fetchHeatmapData, fetchUserXPBreakdown, getLearnedResources, logActivity, type HeatmapData, type XPBreakdown } from "@/lib/services/activity";
+import { getSavedQuizResults, fetchUserQuizResults, SKILL_QUIZZES, type QuizAttemptResult } from "@/lib/services/quizzes";
+import { getFreelancerEarnings, type EarningsSummary } from "@/lib/services/earnings";
 import { DoableStreakTracker } from "@/components/dashboard/doable-streak-tracker";
 
 interface QuestOpportunity {
@@ -146,7 +147,7 @@ export function FreelancerDashboard() {
             return [...mapped, ...remainingMock];
           });
         }
-        // 2. Load live contracts for timeline
+        // 2. Load live contracts for timeline & daily missions
         const liveContracts = await getFreelancerContracts();
         if (liveContracts && liveContracts.length > 0) {
           const mappedTimeline: TimelineActionItem[] = liveContracts.flatMap((c) =>
@@ -172,6 +173,57 @@ export function FreelancerDashboard() {
           if (mappedTimeline.length > 0) {
             setTimelineItems(mappedTimeline);
           }
+
+          // Daily Missions only populate if freelancer has active client contracts with tasks for today
+          const activeContracts = liveContracts.filter((c) => c.status === "active");
+          if (activeContracts.length > 0) {
+            const missions: DailyMission[] = [];
+
+            for (const c of activeContracts) {
+              const activeMilestone =
+                c.milestones.find((m) => m.status === "in_progress") ||
+                c.milestones.find((m) => m.status !== "completed") ||
+                c.milestones[0];
+
+              if (activeMilestone) {
+                const tlItem = mappedTimeline.find((t) => t.id === activeMilestone.id);
+                const pendingTasks = tlItem?.tasksChecklist.filter((t) => !t.done) || [];
+
+                // 1. Task checklist item for today
+                if (pendingTasks.length > 0) {
+                  missions.push({
+                    id: `mission-task-${pendingTasks[0].id}`,
+                    title: `Kerjakan: ${pendingTasks[0].title}`,
+                    description: `Target harian proyek "${c.projectTitle}" (Klien: ${c.clientName})`,
+                    xpReward: 50,
+                    completed: false,
+                    actionType: "checkin",
+                    actionTarget: pendingTasks[0].id,
+                  });
+                }
+
+                // 2. Deliverable submission if milestone is active & ready
+                if (activeMilestone.status !== "completed") {
+                  missions.push({
+                    id: `mission-submit-${activeMilestone.id}`,
+                    title: `Serahkan Milestone: ${activeMilestone.title}`,
+                    description: `Kirim hasil karya ke ${c.clientName} untuk peninjauan rekber`,
+                    xpReward: 150,
+                    completed: activeMilestone.status === "submitted",
+                    actionType: "submit",
+                    actionTarget: activeMilestone.id,
+                  });
+                }
+              }
+            }
+
+            setDailyMissions(missions);
+          } else {
+            setDailyMissions([]);
+          }
+        } else {
+          setTimelineItems([]);
+          setDailyMissions([]);
         }
       } catch (err) {
         console.error("Error loading quests from Supabase:", err);
@@ -182,47 +234,63 @@ export function FreelancerDashboard() {
   }, []);
 
   // Gamification Profile State (3-Pillar XP Accumulation: Quiz + Work + Learning)
-  const freelancerName = user?.user_metadata?.full_name || "Rania Putri";
-  const currentLevel = (user?.user_metadata?.level as number) || 3;
-  const nextLevelXP = 3000;
+  const freelancerName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Freelancer";
 
   const [xpBreakdown, setXpBreakdown] = useState<XPBreakdown>({
-    quizXP: 750,
-    workXP: 1500,
-    learningXP: 200,
-    totalXP: 2450,
+    quizXP: 0,
+    workXP: 0,
+    learningXP: 0,
+    totalXP: 0,
   });
 
   const [currentXP, setCurrentXP] = useState<number>(() => {
     try {
       const results = getSavedQuizResults();
       const quizTotal = Object.values(results).reduce((sum, r) => sum + (r.earnedXp || 0), 0);
-      return quizTotal > 0 ? quizTotal + 1700 : ((user?.user_metadata?.xp as number) || 2450);
+      return quizTotal > 0 ? quizTotal : (Number(user?.user_metadata?.xp) || 0);
     } catch {
-      return (user?.user_metadata?.xp as number) || 2450;
+      return Number(user?.user_metadata?.xp) || 0;
     }
   });
 
-  const xpPercentage = Math.min(100, Math.round((currentXP / nextLevelXP) * 100));
+  // Freelancer Level: Defaults to 0 for new users (each 1,000 XP = 1 Level)
+  const currentLevel = typeof user?.user_metadata?.level === "number"
+    ? user.user_metadata.level
+    : Math.floor(currentXP / 1000);
+
+  const nextLevelXP = (currentLevel + 1) * 1000;
+  const currentLevelBaseXP = currentLevel * 1000;
+  const xpInCurrentLevel = Math.max(0, currentXP - currentLevelBaseXP);
+  const xpNeededForLevel = 1000;
+  const xpPercentage = Math.min(100, Math.round((xpInCurrentLevel / xpNeededForLevel) * 100));
 
   // Load real XP breakdown from Supabase / DB
   useEffect(() => {
     fetchUserXPBreakdown().then((data) => {
       setXpBreakdown(data);
-      if (data.totalXP > 0) {
-        setCurrentXP(data.totalXP);
-      }
+      setCurrentXP(data.totalXP);
     });
   }, [user]);
 
-  // Saved quiz results & learned resources tracking
+  // Saved quiz results & learned resources tracking from database
   const [quizResults, setQuizResults] = useState<Record<string, QuizAttemptResult>>({});
   const [learnedCount, setLearnedCount] = useState<number>(0);
 
   useEffect(() => {
-    setQuizResults(getSavedQuizResults());
+    fetchUserQuizResults().then((res) => {
+      setQuizResults(res);
+    });
     setLearnedCount(getLearnedResources().length);
-  }, []);
+  }, [user]);
+
+  // Real earnings & wallet balance from database
+  const [earnings, setEarnings] = useState<EarningsSummary | null>(null);
+
+  useEffect(() => {
+    getFreelancerEarnings().then((data) => {
+      if (data) setEarnings(data);
+    });
+  }, [user]);
 
   // Listen for live XP events (quizzes, milestones, learning)
   useEffect(() => {
@@ -352,18 +420,39 @@ export function FreelancerDashboard() {
     }, 1600);
   };
 
-  const toggleTaskCheck = (itemId: string, taskId: string) => {
+  const toggleTaskCheck = async (itemId: string, taskId: string) => {
+    let nowDone = false;
     setTimelineItems((prev) =>
       prev.map((item) => {
         if (item.id !== itemId) return item;
-        const updatedChecklist = item.tasksChecklist.map((t) =>
-          t.id === taskId ? { ...t, done: !t.done } : t
-        );
+        const updatedChecklist = item.tasksChecklist.map((t) => {
+          if (t.id === taskId) {
+            nowDone = !t.done;
+            return { ...t, done: nowDone };
+          }
+          return t;
+        });
         const doneCount = updatedChecklist.filter((t) => t.done).length;
         const progress = Math.round((doneCount / updatedChecklist.length) * 100);
         return { ...item, tasksChecklist: updatedChecklist, progress };
       })
     );
+
+    // Sync corresponding daily mission
+    setDailyMissions((prev) =>
+      prev.map((m) =>
+        m.actionTarget === taskId ? { ...m, completed: nowDone } : m
+      )
+    );
+
+    // If marked done, log activity to advance day streak and award 50 XP
+    if (nowDone) {
+      await logActivity("milestone_delivered", {
+        task_id: taskId,
+        milestone_id: itemId,
+        xp_earned: 50,
+      });
+    }
   };
 
   // Filtered Quests
@@ -838,10 +927,12 @@ export function FreelancerDashboard() {
                     <ChevronRight className="h-3 w-3 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
                   </div>
                   <h3 className="text-2xl font-bold text-foreground font-heading mt-0.5">
-                    {formatMoney(14850000, "IDR")}
+                    {formatMoney(earnings?.availableBalance ?? 0, "IDR")}
                   </h3>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Terhubung ke rekening BCA &bull; a.n. {freelancerName}
+                    {earnings && earnings.availableBalance > 0
+                      ? `Terhubung ke rekening penarikan • a.n. ${freelancerName}`
+                      : "Saldo dompet rekber siap ditarik"}
                   </p>
                 </div>
 
@@ -864,7 +955,6 @@ export function FreelancerDashboard() {
             totalContributions={totalContributions}
             isOwner={true}
           />
-
           {/* 2. Misi Harian / Daily Quest Checklist */}
           <div id="misi-harian-section" className="rounded-3xl border border-border/70 bg-card p-5 sm:p-6 shadow-sm space-y-4">
             <div className="flex items-center justify-between border-b border-border/40 pb-3">
@@ -872,71 +962,97 @@ export function FreelancerDashboard() {
                 <Target className="h-4 w-4 text-primary" />
                 <h3 className="text-sm font-bold text-foreground font-heading">Misi Harian</h3>
               </div>
-              <span className="text-xs font-semibold text-primary bg-primary/10 px-2.5 py-0.5 rounded-full">
-                {completedMissionsCount}/{dailyMissions.length} Selesai
-              </span>
+              {dailyMissions.length > 0 && (
+                <span className="text-xs font-semibold text-primary bg-primary/10 px-2.5 py-0.5 rounded-full">
+                  {completedMissionsCount}/{dailyMissions.length} Selesai
+                </span>
+              )}
             </div>
 
-            <div className="space-y-3">
-              {dailyMissions.map((mission) => (
-                <div
-                  key={mission.id}
-                  className={`p-3.5 rounded-2xl border transition-all flex items-start gap-3 ${mission.completed
-                      ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-800 dark:text-emerald-300"
-                      : "bg-muted/20 border-border/60 hover:bg-muted/40"
-                    }`}
-                >
-                  <div className="pt-0.5 shrink-0">
-                    {mission.completed ? (
-                      <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                    ) : (
-                      <CircleDot className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </div>
-
-                  <div className="flex-1 min-w-0 space-y-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <h4
-                        className={`text-xs font-bold truncate ${mission.completed ? "line-through opacity-70" : "text-foreground"
-                          }`}
-                      >
-                        {mission.title}
-                      </h4>
-                      <span className="text-[10px] font-semibold text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded-md shrink-0 flex items-center gap-1">
-                        <Zap className="h-3 w-3" />
-                        +{mission.xpReward} XP
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground leading-relaxed">
-                      {mission.description}
-                    </p>
-
-                    {!mission.completed && mission.actionType === "submit" && (
-                      <button
-                        onClick={() => {
-                          const target = timelineItems.find((i) => i.id === mission.actionTarget);
-                          if (target) handleOpenSubmit(target);
-                        }}
-                        className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
-                      >
-                        <span>Serahkan Milestone</span>
-                        <ChevronRight className="h-3 w-3" />
-                      </button>
-                    )}
-
-                    {!mission.completed && mission.actionType === "quiz" && (
-                      <Link
-                        href="/freelancer/explore"
-                        className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
-                      >
-                        <span>Buka Simulasi</span>
-                        <ChevronRight className="h-3 w-3" />
-                      </Link>
-                    )}
-                  </div>
+            {dailyMissions.length === 0 ? (
+              <div className="text-center py-6 px-3 space-y-2 rounded-2xl bg-muted/20 border border-border/50">
+                <div className="h-10 w-10 rounded-2xl bg-muted text-muted-foreground flex items-center justify-center mx-auto">
+                  <Briefcase className="h-5 w-5" />
                 </div>
-              ))}
-            </div>
+                <h4 className="text-xs font-bold text-foreground">Tidak Ada Misi Kontrak Aktif</h4>
+                <p className="text-[11px] text-muted-foreground leading-relaxed max-w-xs mx-auto">
+                  Misi harian hanya muncul ketika Anda memiliki kontrak aktif dengan klien dan terdapat tugas atau penyerahan milestone yang harus dikerjakan hari ini.
+                </p>
+                <Link
+                  href="/freelancer/explore"
+                  className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline pt-1"
+                >
+                  <span>Cari Proyek & Ajukan Proposal</span>
+                  <ChevronRight className="h-3 w-3" />
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {dailyMissions.map((mission) => (
+                  <div
+                    key={mission.id}
+                    className={`p-3.5 rounded-2xl border transition-all flex items-start gap-3 ${mission.completed
+                        ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-800 dark:text-emerald-300"
+                        : "bg-muted/20 border-border/60 hover:bg-muted/40"
+                      }`}
+                  >
+                    <div className="pt-0.5 shrink-0">
+                      {mission.completed ? (
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                      ) : (
+                        <CircleDot className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </div>
+
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <h4
+                          className={`text-xs font-bold truncate ${mission.completed ? "line-through opacity-70" : "text-foreground"
+                            }`}
+                        >
+                          {mission.title}
+                        </h4>
+                        <span className="text-[10px] font-semibold text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded-md shrink-0 flex items-center gap-1">
+                          <Zap className="h-3 w-3" />
+                          +{mission.xpReward} XP
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground leading-relaxed">
+                        {mission.description}
+                      </p>
+
+                      {!mission.completed && mission.actionType === "checkin" && (
+                        <button
+                          onClick={() => {
+                            const tl = timelineItems.find((i) => i.tasksChecklist.some((t) => t.id === mission.actionTarget));
+                            if (tl && mission.actionTarget) {
+                              toggleTaskCheck(tl.id, mission.actionTarget);
+                            }
+                          }}
+                          className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
+                        >
+                          <Check className="h-3 w-3" />
+                          <span>Tandai Task Selesai (+50 XP)</span>
+                        </button>
+                      )}
+
+                      {!mission.completed && mission.actionType === "submit" && (
+                        <button
+                          onClick={() => {
+                            const target = timelineItems.find((i) => i.id === mission.actionTarget);
+                            if (target) handleOpenSubmit(target);
+                          }}
+                          className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
+                        >
+                          <span>Serahkan Milestone (+150 XP)</span>
+                          <ChevronRight className="h-3 w-3" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* 3. Level & Career Progression Road */}
@@ -955,8 +1071,8 @@ export function FreelancerDashboard() {
 
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-xs font-semibold">
-                <span className="text-foreground">Level {currentLevel} Creator</span>
-                <span className="text-muted-foreground">Level {currentLevel + 1} Verified Pro</span>
+                <span className="text-foreground">Level {currentLevel} {currentLevel === 0 ? "Starter" : currentLevel === 1 ? "Creator" : "Verified Pro"}</span>
+                <span className="text-muted-foreground">Level {currentLevel + 1} {currentLevel === 0 ? "Creator" : "Verified Pro"}</span>
               </div>
               <div className="h-2.5 w-full rounded-full bg-muted overflow-hidden">
                 <div
@@ -984,7 +1100,7 @@ export function FreelancerDashboard() {
 
             <div className="flex items-center justify-between gap-3">
               <p className="text-[11px] text-muted-foreground leading-relaxed flex-1">
-                Tinggal <strong className="text-foreground">{Math.max(0, nextLevelXP - currentXP).toLocaleString("id-ID")} XP lagi</strong> untuk membuka lencana <strong>Verified Pro</strong> dan prioritas rekomendasi di pencarian klien UMKM.
+                Tinggal <strong className="text-foreground">{Math.max(0, nextLevelXP - currentXP).toLocaleString("id-ID")} XP lagi</strong> untuk membuka <strong>Level {currentLevel + 1}</strong> dan meningkatkan prioritas rekomendasi di pencarian klien UMKM.
               </p>
               <Link
                 href="/freelancer/skills"

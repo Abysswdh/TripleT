@@ -329,6 +329,28 @@ function isValidUuid(id?: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 }
 
+function formatAvailabilityHours(raw?: string | null): string {
+  if (!raw) return "15–30 Jam";
+  const val = String(raw).toLowerCase().trim();
+
+  if (val === "semi_full") return "15–30 Jam";
+  if (val === "part_time") return "< 15 Jam";
+  if (val === "full_time") return "> 30 Jam";
+  if (val === "flexible") return "Fleksibel";
+
+  if (val.includes("jam")) {
+    const beforeParenthesis = raw?.split("(")[0]?.trim() || "";
+    const cleaned = beforeParenthesis.replace(/\s*\/\s*(minggu|mgg)/gi, "").trim();
+    return cleaned || "15–30 Jam";
+  }
+
+  if (val.includes("< 15")) return "< 15 Jam";
+  if (val.includes("> 30")) return "> 30 Jam";
+  if (val.includes("15") && val.includes("30")) return "15–30 Jam";
+
+  return raw || "15–30 Jam";
+}
+
 interface FreelancerProfileViewProps {
   talentId?: string;
   isOwner?: boolean;
@@ -408,13 +430,7 @@ export function FreelancerProfileView({
         reviewsCount: 0,
         responseTime: "< 2 Jam",
         earnings: meta.hourly_rate ? `Rp ${(meta.hourly_rate * 20).toLocaleString("id-ID")}` : "Rp 0",
-        availability: meta.weekly_availability === "part_time"
-          ? "< 15 Jam / Mgg"
-          : meta.weekly_availability === "full_time"
-          ? "> 30 Jam / Mgg"
-          : meta.weekly_availability === "flexible"
-          ? "Fleksibel"
-          : "15–30 Jam / Mgg",
+        availability: formatAvailabilityHours(meta.weekly_availability),
         aboutMe: meta.bio ? [meta.bio] : [
           "Freelancer spesialis terdaftar di platform TripleT. Berpengalaman mengerjakan proyek pengembangan teknologi dan desain modern."
         ],
@@ -583,15 +599,11 @@ export function FreelancerProfileView({
             reviewsCount: Number(fp.reviews_count) || 0,
             responseTime: (fp.response_time as string) || "< 2 Jam",
             earnings: formattedEarnings,
-            availability: typeof fp.starting_price === "string" && fp.starting_price.includes("Jam")
-              ? fp.starting_price.split("(")[0].trim()
-              : (fp.availability as string) || (isOwner && meta.weekly_availability === "part_time"
-              ? "< 15 Jam / Mgg"
-              : isOwner && meta.weekly_availability === "full_time"
-              ? "> 30 Jam / Mgg"
-              : isOwner && meta.weekly_availability === "flexible"
-              ? "Fleksibel"
-              : "15–30 Jam / Mgg"),
+            availability: formatAvailabilityHours(
+              typeof fp.starting_price === "string" && fp.starting_price.includes("Jam")
+                ? fp.starting_price
+                : (fp.availability as string) || (isOwner ? meta.weekly_availability : null)
+            ),
             aboutMe: rawAboutMe,
             streakWeeks: Number(fp.streak_weeks) || 1,
             verifiedSkills: displayVerifiedSkills,
@@ -801,8 +813,8 @@ export function FreelancerProfileView({
                 <div className="mx-auto h-7 w-7 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
                   <Zap className="h-4 w-4" />
                 </div>
-                <div className="text-sm sm:text-base font-bold text-emerald-600 truncate" title={profile.availability || "15–30 Jam / Minggu"}>
-                  {profile.availability?.split("(")[0]?.trim() || "15–30 Jam/Mgg"}
+                <div className="text-sm sm:text-base font-bold text-emerald-600 truncate" title={formatAvailabilityHours(profile.availability)}>
+                  {formatAvailabilityHours(profile.availability)}
                 </div>
                 <div className="text-[11px] text-muted-foreground font-medium">Kapasitas / Mgg</div>
               </div>

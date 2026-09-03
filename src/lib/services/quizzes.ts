@@ -471,42 +471,26 @@ export const SKILL_QUIZZES: SkillQuizDefinition[] = [
 const LOCAL_STORAGE_QUIZ_RESULTS_KEY = "doable_freelancer_quiz_results";
 
 /**
- * Get all completed quiz results for current user (from localStorage with fallbacks)
+ * Get all completed quiz results for current user (from localStorage, defaulting to empty for new users)
  */
 export function getSavedQuizResults(): Record<string, QuizAttemptResult> {
   if (typeof window === "undefined") return {};
   try {
     const raw = localStorage.getItem(LOCAL_STORAGE_QUIZ_RESULTS_KEY);
     if (!raw) {
-      // Default seeded completions for initial demo experience
-      const defaultSeeded: Record<string, QuizAttemptResult> = {
-        "q-nextjs": {
-          quizId: "q-nextjs",
-          score: 100,
-          passed: true,
-          correctCount: 5,
-          totalQuestions: 5,
-          earnedXp: 350,
-          badgeName: "Next.js Verified Pro",
-          completedAt: new Date(Date.now() - 86400000 * 3).toISOString(),
-          userAnswers: [1, 1, 1, 0, 1]
-        },
-        "q-fastapi": {
-          quizId: "q-fastapi",
-          score: 100,
-          passed: true,
-          correctCount: 5,
-          totalQuestions: 5,
-          earnedXp: 400,
-          badgeName: "FastAPI Certified",
-          completedAt: new Date(Date.now() - 86400000 * 7).toISOString(),
-          userAnswers: [1, 1, 1, 0, 0]
-        }
-      };
-      localStorage.setItem(LOCAL_STORAGE_QUIZ_RESULTS_KEY, JSON.stringify(defaultSeeded));
-      return defaultSeeded;
+      return {};
     }
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    // Clear legacy mock seed if present so new users start at 0
+    if (
+      parsed["q-nextjs"]?.earnedXp === 350 &&
+      parsed["q-fastapi"]?.earnedXp === 400 &&
+      Object.keys(parsed).length === 2
+    ) {
+      localStorage.removeItem(LOCAL_STORAGE_QUIZ_RESULTS_KEY);
+      return {};
+    }
+    return parsed;
   } catch (err) {
     console.warn("Failed to read quiz results:", err);
     return {};
@@ -514,9 +498,93 @@ export function getSavedQuizResults(): Record<string, QuizAttemptResult> {
 }
 
 /**
+ * Fetch verified skill quiz results directly from Supabase database
+ */
+export async function fetchUserQuizResults(): Promise<Record<string, QuizAttemptResult>> {
+  const local = getSavedQuizResults();
+  try {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return local;
+
+    // 1. Fetch from user_activity_log
+    const { data: logs } = await supabase
+      .from("user_activity_log")
+      .select("metadata, occurred_at")
+      .eq("user_id", user.id)
+      .eq("activity_type", "quiz_completed");
+
+    // 2. Fetch verified_skills from freelancer_profiles
+    const { data: profile } = await supabase
+      .from("freelancer_profiles")
+      .select("verified_skills")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    const merged: Record<string, QuizAttemptResult> = {};
+
+    if (logs && logs.length > 0) {
+      for (const log of logs) {
+        const meta = (log.metadata as Record<string, unknown>) || {};
+        const quizId = String(meta.quiz_id || "");
+        if (quizId) {
+          const quizDef = SKILL_QUIZZES.find((q) => q.id === quizId);
+          merged[quizId] = {
+            quizId,
+            score: Number(meta.score) || 100,
+            passed: true,
+            correctCount: 5,
+            totalQuestions: 5,
+            earnedXp: Number(meta.xp_earned) || quizDef?.xpReward || 300,
+            badgeName: String(meta.badge_name || quizDef?.badgeName || "Verified Pro"),
+            completedAt: log.occurred_at || new Date().toISOString(),
+            userAnswers: (meta.user_answers as number[]) || [0, 0, 0, 0, 0],
+          };
+        }
+      }
+    }
+
+    if (profile?.verified_skills && Array.isArray(profile.verified_skills)) {
+      for (const badge of profile.verified_skills) {
+        const quizDef = SKILL_QUIZZES.find((q) => q.badgeName === badge);
+        if (quizDef && !merged[quizDef.id]) {
+          merged[quizDef.id] = {
+            quizId: quizDef.id,
+            score: 100,
+            passed: true,
+            correctCount: 5,
+            totalQuestions: 5,
+            earnedXp: quizDef.xpReward,
+            badgeName: quizDef.badgeName,
+            completedAt: new Date().toISOString(),
+            userAnswers: [0, 0, 0, 0, 0],
+          };
+        }
+      }
+    }
+
+    // Keep any user-completed quizzes in current session
+    for (const [k, v] of Object.entries(local)) {
+      if (v?.passed && !merged[k]) {
+        merged[k] = v;
+      }
+    }
+
+    if (typeof window !== "undefined" && Object.keys(merged).length > 0) {
+      localStorage.setItem(LOCAL_STORAGE_QUIZ_RESULTS_KEY, JSON.stringify(merged));
+    }
+
+    return merged;
+  } catch (err) {
+    console.warn("Failed to fetch quiz results from database:", err);
+    return local;
+  }
+}
+
+/**
  * Save or update a quiz completion attempt and broadcast update event
  */
-export function saveQuizResult(result: QuizAttemptResult): void {
+export async function saveQuizResult(result: QuizAttemptResult): Promise<void> {
   if (typeof window === "undefined") return;
   try {
     const existing = getSavedQuizResults();
@@ -524,7 +592,7 @@ export function saveQuizResult(result: QuizAttemptResult): void {
     localStorage.setItem(LOCAL_STORAGE_QUIZ_RESULTS_KEY, JSON.stringify(existing));
 
     // 1. Sync directly to Supabase Database (freelancer_profiles & user metadata)
-    syncResultToSupabase(result);
+    await syncResultToSupabase(result);
 
     // 2. Also sync verified badge into local profile skills if passed
     if (result.passed && result.badgeName) {
@@ -532,7 +600,7 @@ export function saveQuizResult(result: QuizAttemptResult): void {
     }
 
     // 3. Log activity to user_activity_log for real heatmap & streak tracking
-    logActivity(result.passed ? "quiz_completed" : "quiz_attempted", {
+    await logActivity(result.passed ? "quiz_completed" : "quiz_attempted", {
       quiz_id: result.quizId,
       score: result.score,
       xp_earned: result.earnedXp,

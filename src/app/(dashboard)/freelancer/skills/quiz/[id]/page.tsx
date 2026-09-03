@@ -75,7 +75,7 @@ export default function SkillQuizRunnerPage() {
   }, [quizId]);
 
   // Handle quiz completion calculation
-  const handleFinishQuiz = useCallback(() => {
+  const handleFinishQuiz = useCallback(async () => {
     if (!quiz) return;
 
     let correctCount = 0;
@@ -101,7 +101,7 @@ export default function SkillQuizRunnerPage() {
       userAnswers: [...userAnswers],
     };
 
-    saveQuizResult(newResult);
+    await saveQuizResult(newResult);
     setResult(newResult);
     setPhase("result");
   }, [quiz, userAnswers]);

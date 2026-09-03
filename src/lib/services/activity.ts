@@ -39,6 +39,40 @@ export interface XPBreakdown {
 
 const LOCAL_STORAGE_LEARNED_RESOURCES_KEY = "doable_learned_resources";
 
+export function formatLocalDateKey(d: Date | string = new Date()): string {
+  const dateObj = typeof d === "string" ? new Date(d) : d;
+  const year = dateObj.getFullYear();
+  const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+  const day = String(dateObj.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+const LOCAL_ACTIVITY_DATES_KEY = "doable_local_active_dates";
+
+export function getLocalActiveDates(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(LOCAL_ACTIVITY_DATES_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function recordLocalActiveDate(dateStr?: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    const target = dateStr || formatLocalDateKey(new Date());
+    const dates = getLocalActiveDates();
+    if (!dates.includes(target)) {
+      dates.push(target);
+      localStorage.setItem(LOCAL_ACTIVITY_DATES_KEY, JSON.stringify(dates));
+    }
+  } catch {
+    // ignore
+  }
+}
+
 // ============================================================================
 // LOG ACTIVITY & ACCUMULATE XP
 // ============================================================================
@@ -47,47 +81,50 @@ export async function logActivity(
   metadata: Record<string, unknown> = {}
 ): Promise<void> {
   try {
+    // 1. Immediately cache local active date for real-time streak responsiveness
+    recordLocalActiveDate();
+
     const supabase = createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) return;
 
-    // 1. Insert activity log row
-    await supabase.from("user_activity_log").insert({
-      user_id: user.id,
-      activity_type: type,
-      metadata,
-    });
-
-    // 2. If xp_earned is present, update user metadata XP in Supabase
-    const xpEarned = (metadata.xp_earned as number) || 0;
-    if (xpEarned > 0) {
-      const currentXp = (user.user_metadata?.xp as number) || 0;
-      const newTotal = currentXp + xpEarned;
-
-      await supabase.auth.updateUser({
-        data: {
-          xp: newTotal,
-        },
+    if (user) {
+      // 2. Insert activity log row to database
+      await supabase.from("user_activity_log").insert({
+        user_id: user.id,
+        activity_type: type,
+        metadata,
       });
 
-      // Broadcast XP update across UI components
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(
-          new CustomEvent("xp-updated", {
-            detail: {
-              xpEarned,
-              newTotalXp: newTotal,
-              type,
-              metadata,
-            },
-          })
-        );
+      // 3. If xp_earned is present, update user metadata XP in Supabase
+      const xpEarned = (metadata.xp_earned as number) || 0;
+      if (xpEarned > 0) {
+        const currentXp = (user.user_metadata?.xp as number) || 0;
+        const newTotal = currentXp + xpEarned;
+
+        await supabase.auth.updateUser({
+          data: {
+            xp: newTotal,
+          },
+        });
       }
     }
+
+    // 4. Broadcast XP and Activity update across UI components
+    const xpEarned = (metadata.xp_earned as number) || 0;
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("xp-updated", {
+          detail: {
+            xpEarned,
+            type,
+            metadata,
+          },
+        })
+      );
+    }
   } catch (err) {
-    // Non-fatal — activity logging should never break main flows
     console.warn("[activity] Failed to log activity:", err);
   }
 }
@@ -150,10 +187,10 @@ export async function fetchUserXPBreakdown(): Promise<XPBreakdown> {
       data: { user },
     } = await supabase.auth.getUser();
 
-    // Default seeded breakdown values for rich initial experience
-    let quizXP = 750; // Next.js (350) + FastAPI (400)
-    let workXP = 1500; // Milestones / projects
-    let learningXP = 200; // 8 learning modules
+    // Default for new users is 0
+    let quizXP = 0;
+    let workXP = 0;
+    let learningXP = 0;
 
     if (user) {
       const { data: logs } = await supabase
@@ -162,30 +199,27 @@ export async function fetchUserXPBreakdown(): Promise<XPBreakdown> {
         .eq("user_id", user.id);
 
       if (logs && logs.length > 0) {
-        let q = 0;
-        let w = 0;
-        let l = 0;
-
         for (const log of logs) {
           const xp = (log.metadata as { xp_earned?: number })?.xp_earned || 0;
           if (log.activity_type.startsWith("quiz_")) {
-            q += xp;
+            quizXP += xp;
           } else if (
             log.activity_type === "milestone_delivered" ||
             log.activity_type === "contract_completed" ||
             log.activity_type === "proposal_submitted"
           ) {
-            w += xp;
+            workXP += xp;
           } else if (log.activity_type === "resource_studied") {
-            l += xp;
+            learningXP += xp;
           }
         }
+      }
 
-        if (q > 0 || w > 0 || l > 0) {
-          quizXP = q;
-          workXP = w;
-          learningXP = l;
-        }
+      // Also check user_metadata.xp if present
+      const metadataXp = Number(user.user_metadata?.xp) || 0;
+      const currentSum = quizXP + workXP + learningXP;
+      if (metadataXp > currentSum) {
+        workXP += (metadataXp - currentSum);
       }
     }
 
@@ -194,10 +228,10 @@ export async function fetchUserXPBreakdown(): Promise<XPBreakdown> {
   } catch (err) {
     console.warn("[activity] Failed to fetch XP breakdown:", err);
     return {
-      quizXP: 750,
-      workXP: 1500,
-      learningXP: 200,
-      totalXP: 2450,
+      quizXP: 0,
+      workXP: 0,
+      learningXP: 0,
+      totalXP: 0,
     };
   }
 }
@@ -212,26 +246,34 @@ export async function fetchHeatmapData(): Promise<HeatmapData> {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user) return buildEmptyHeatmap();
-
     // Query: group by date for last 16 weeks
-    const { data, error } = await supabase
-      .from("user_activity_log")
-      .select("occurred_at")
-      .eq("user_id", user.id)
-      .gte(
-        "occurred_at",
-        new Date(Date.now() - 16 * 7 * 24 * 60 * 60 * 1000).toISOString()
-      )
-      .order("occurred_at", { ascending: true });
+    let data: Array<{ occurred_at: string }> = [];
+    if (user) {
+      const res = await supabase
+        .from("user_activity_log")
+        .select("occurred_at")
+        .eq("user_id", user.id)
+        .gte(
+          "occurred_at",
+          new Date(Date.now() - 16 * 7 * 24 * 60 * 60 * 1000).toISOString()
+        )
+        .order("occurred_at", { ascending: true });
+      if (res.data) data = res.data;
+    }
 
-    if (error || !data) return buildEmptyHeatmap();
-
-    // Build count-per-day map  { "2025-09-01": 3, ... }
+    // Build count-per-day map using local calendar date
     const countByDate: Record<string, number> = {};
-    for (const row of data) {
-      const date = row.occurred_at.slice(0, 10); // "YYYY-MM-DD"
-      countByDate[date] = (countByDate[date] || 0) + 1;
+    if (data && data.length > 0) {
+      for (const row of data) {
+        const date = formatLocalDateKey(row.occurred_at);
+        countByDate[date] = (countByDate[date] || 0) + 1;
+      }
+    }
+
+    // Merge with local active dates cache
+    const localDates = getLocalActiveDates();
+    for (const ld of localDates) {
+      countByDate[ld] = (countByDate[ld] || 0) + 1;
     }
 
     return buildHeatmapFromCounts(countByDate);
@@ -251,7 +293,6 @@ function buildHeatmapFromCounts(
   const NUM_WEEKS = 16;
 
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
   const dayOfWeek = today.getDay();
   const endDate = new Date(today);
   endDate.setDate(today.getDate() - dayOfWeek + 6);
@@ -270,7 +311,7 @@ function buildHeatmapFromCounts(
       const date = new Date(endDate);
       date.setDate(endDate.getDate() - dayOffset);
 
-      const dateStr = date.toISOString().slice(0, 10);
+      const dateStr = formatLocalDateKey(date);
       const count = countByDate[dateStr] || 0;
       totalContributions += count;
 
@@ -294,19 +335,26 @@ function buildHeatmapFromCounts(
 
   weeks.reverse();
 
-  // Calculate streak
-  const todayStr = today.toISOString().slice(0, 10);
+  // Calculate streak backwards from today
+  const todayStr = formatLocalDateKey(today);
   let streakDays = 0;
   const checkDate = new Date(today);
-  while (true) {
-    const ds = checkDate.toISOString().slice(0, 10);
-    if (ds > todayStr) {
-      checkDate.setDate(checkDate.getDate() - 1);
-      continue;
-    }
-    if (!countByDate[ds] && ds !== todayStr) break;
-    if (countByDate[ds]) streakDays++;
+
+  // If user completed activity today: start count from today!
+  // If user has not done today's activity yet: start check from yesterday to maintain streak!
+  const hasActivityToday = Boolean(countByDate[todayStr]);
+  if (!hasActivityToday) {
     checkDate.setDate(checkDate.getDate() - 1);
+  }
+
+  while (true) {
+    const ds = formatLocalDateKey(checkDate);
+    if (countByDate[ds] && countByDate[ds] > 0) {
+      streakDays++;
+      checkDate.setDate(checkDate.getDate() - 1);
+    } else {
+      break;
+    }
     if (streakDays > 365) break;
   }
 
@@ -316,10 +364,18 @@ function buildHeatmapFromCounts(
 }
 
 function buildEmptyHeatmap(): HeatmapData {
+  const localDates = getLocalActiveDates();
+  if (localDates.length > 0) {
+    const countByDate: Record<string, number> = {};
+    for (const ld of localDates) {
+      countByDate[ld] = (countByDate[ld] || 0) + 1;
+    }
+    return buildHeatmapFromCounts(countByDate);
+  }
+
   const NUM_WEEKS = 16;
   const weeks: HeatmapData["weeks"] = [];
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
 
   for (let w = NUM_WEEKS - 1; w >= 0; w--) {
     const weekDays: HeatmapData["weeks"][0] = [];
@@ -327,7 +383,7 @@ function buildEmptyHeatmap(): HeatmapData {
       const dayOffset = w * 7 + (6 - d);
       const date = new Date(today);
       date.setDate(today.getDate() - dayOffset);
-      weekDays.push({ date: date.toISOString().slice(0, 10), count: 0, level: 0 });
+      weekDays.push({ date: formatLocalDateKey(date), count: 0, level: 0 });
     }
     weeks.push(weekDays);
   }

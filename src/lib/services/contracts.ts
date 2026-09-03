@@ -42,7 +42,11 @@ export async function getFreelancerContracts(userId?: string): Promise<ContractI
 
   if (!targetUserId) {
     const { data: { user } } = await supabase.auth.getUser();
-    targetUserId = user?.id || "fa000000-0000-0000-0000-000000000001";
+    targetUserId = user?.id;
+  }
+
+  if (!targetUserId) {
+    return [];
   }
 
   const { data, error } = await supabase

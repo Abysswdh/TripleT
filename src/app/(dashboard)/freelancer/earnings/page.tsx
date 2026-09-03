@@ -77,7 +77,7 @@ export default function FreelancerEarningsPage() {
         <div className="rounded-3xl border border-primary/20 bg-primary/5 p-6 space-y-3 shadow-xs">
           <span className="text-xs font-semibold text-primary">Saldo Tersedia (Dapat Ditarik)</span>
           <h3 className="text-3xl font-extrabold text-foreground">
-            {earnings?.availableBalanceDisplay || "Rp 14.850.000"}
+            {earnings?.availableBalanceDisplay || "Rp 0"}
           </h3>
           <button
             onClick={() => setIsPayoutModalOpen(true)}
@@ -90,7 +90,7 @@ export default function FreelancerEarningsPage() {
         <div className="rounded-3xl border border-border/70 bg-card p-6 space-y-2 shadow-xs">
           <span className="text-xs font-semibold text-muted-foreground">Dana di Rekber (Tersimpan Aman)</span>
           <h3 className="text-3xl font-extrabold text-foreground">
-            {earnings?.inEscrowBalanceDisplay || "Rp 7.500.000"}
+            {earnings?.inEscrowBalanceDisplay || "Rp 0"}
           </h3>
           <p className="text-xs text-muted-foreground">Otomatis cair setelah milestone disetujui klien</p>
         </div>
@@ -98,7 +98,7 @@ export default function FreelancerEarningsPage() {
         <div className="rounded-3xl border border-border/70 bg-card p-6 space-y-2 shadow-xs">
           <span className="text-xs font-semibold text-muted-foreground">Total Penarikan Sukses</span>
           <h3 className="text-3xl font-extrabold text-foreground">
-            {earnings?.totalWithdrawnDisplay || "Rp 24.500.000"}
+            {earnings?.totalWithdrawnDisplay || "Rp 0"}
           </h3>
           <p className="text-xs text-emerald-600 font-medium">Rekening Terverifikasi</p>
         </div>

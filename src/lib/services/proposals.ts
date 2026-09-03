@@ -35,7 +35,51 @@ export async function submitProposal(params: {
 
   if (!targetFreelancerId) {
     const { data: { user } } = await supabase.auth.getUser();
-    targetFreelancerId = user?.id || "fa000000-0000-0000-0000-000000000001";
+    if (!user) {
+      return {
+        success: false,
+        error: "Silakan masuk (login) terlebih dahulu untuk mengajukan proposal ke klien.",
+      };
+    }
+    targetFreelancerId = user.id;
+  }
+
+  // Ensure user exists in public.users to prevent foreign key violation "proposals_freelancer_id_fkey"
+  try {
+    const { data: existingUser } = await supabase
+      .from("users")
+      .select("id")
+      .eq("id", targetFreelancerId)
+      .maybeSingle();
+
+    if (!existingUser) {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (authUser && authUser.id === targetFreelancerId) {
+        const meta = authUser.user_metadata || {};
+        await supabase.from("users").upsert({
+          id: authUser.id,
+          email: authUser.email || "",
+          full_name: meta.full_name || authUser.email?.split("@")[0] || "Freelancer Doable",
+          avatar_url: meta.avatar_url || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80",
+          role: "freelancer",
+          is_active: true,
+          onboarding_completed: true,
+        });
+
+        await supabase.from("freelancer_profiles").upsert({
+          user_id: authUser.id,
+          headline: "Freelancer Spesialis",
+          skills: params.skills || ["General"],
+        }, { onConflict: "user_id" });
+      } else {
+        return {
+          success: false,
+          error: "Profil akun Anda belum terdaftar di database. Silakan masuk (login) kembali.",
+        };
+      }
+    }
+  } catch (userCheckErr) {
+    console.warn("Notice validating user profile before proposal submission:", userCheckErr);
   }
 
   // Anti Self-Dealing validation: Prevent project owner from submitting proposal to their own project
@@ -88,10 +132,11 @@ export async function submitProposal(params: {
     console.info("Notice updating proposal count:", countErr);
   }
 
-  // Log activity for heatmap & streak
+  // Log activity for heatmap & streak + award 100 Work XP
   logActivity("proposal_submitted", {
     project_id: params.projectId,
     bid_amount: params.bidAmount,
+    xp_earned: 100,
   });
 
   return { success: true, data };

@@ -19,21 +19,35 @@ import {
   type SkillQuizDefinition,
   type QuizAttemptResult,
   getSavedQuizResults,
+  fetchUserQuizResults,
 } from "@/lib/services/quizzes";
+import { fetchHeatmapData, fetchUserXPBreakdown, type XPBreakdown } from "@/lib/services/activity";
+import { useAuth } from "@/hooks/use-auth";
 import { createClient } from "@/lib/supabase/client";
 import Grainient from "@/components/ui/Grainient";
 
 const CATEGORIES = ["Semua", "Frontend", "Backend", "UI/UX", "Frontend 3D", "Database"];
 
 export default function FreelancerSkillsPage() {
+  const { user } = useAuth();
   const [quizzes] = useState<SkillQuizDefinition[]>(SKILL_QUIZZES);
   const [completedResults, setCompletedResults] = useState<Record<string, QuizAttemptResult>>({});
   const [userProfileSkills, setUserProfileSkills] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("Semua");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const loadResults = () => {
-    const data = getSavedQuizResults();
+  // Live database gamification state
+  const [streakDays, setStreakDays] = useState<number>(0);
+  const [totalXP, setTotalXP] = useState<number>(0);
+  const [xpBreakdown, setXpBreakdown] = useState<XPBreakdown>({
+    quizXP: 0,
+    workXP: 0,
+    learningXP: 0,
+    totalXP: 0,
+  });
+
+  const loadResults = async () => {
+    const data = await fetchUserQuizResults();
     setCompletedResults(data);
   };
 
@@ -42,11 +56,39 @@ export default function FreelancerSkillsPage() {
 
     const handleQuizCompleted = () => {
       loadResults();
+      fetchHeatmapData().then((data) => setStreakDays(data.streakDays));
+      fetchUserXPBreakdown().then((data) => setTotalXP(data.totalXP));
     };
 
     window.addEventListener("quiz-completed", handleQuizCompleted);
     return () => {
       window.removeEventListener("quiz-completed", handleQuizCompleted);
+    };
+  }, []);
+
+  // Fetch real XP and day streak from Supabase database
+  useEffect(() => {
+    fetchUserXPBreakdown().then((data) => {
+      setXpBreakdown(data);
+      setTotalXP(data.totalXP);
+    });
+
+    fetchHeatmapData().then((data) => {
+      setStreakDays(data.streakDays);
+    });
+  }, [user]);
+
+  // Listen to live XP events
+  useEffect(() => {
+    const handleXpUpdated = (e: CustomEvent) => {
+      const earnedXp = (e.detail?.xpEarned as number) || 0;
+      setTotalXP((prev) => prev + earnedXp);
+      fetchHeatmapData().then((data) => setStreakDays(data.streakDays));
+    };
+
+    window.addEventListener("xp-updated", handleXpUpdated as EventListener);
+    return () => {
+      window.removeEventListener("xp-updated", handleXpUpdated as EventListener);
     };
   }, []);
 
@@ -80,7 +122,7 @@ export default function FreelancerSkillsPage() {
   // Compute live stats
   const stats = useMemo(() => {
     const completedList = Object.values(completedResults).filter((r) => r.passed);
-    const totalXp = completedList.reduce((acc, curr) => acc + (curr.earnedXp || 0), 0);
+    const quizXp = completedList.reduce((acc, curr) => acc + (curr.earnedXp || 0), 0);
     const totalBadges = completedList.length;
     const averageScore =
       completedList.length > 0
@@ -88,11 +130,60 @@ export default function FreelancerSkillsPage() {
         : 0;
 
     return {
-      totalXp,
+      totalXp: quizXp,
       totalBadges,
       averageScore,
     };
   }, [completedResults]);
+
+  // Level & League calculation synchronized with Dashboard & Supabase
+  // Each 1,000 XP = 1 Level. 0 XP = Level 0 (Starter)
+  const currentLevel = typeof user?.user_metadata?.level === "number"
+    ? user.user_metadata.level
+    : Math.floor(totalXP / 1000);
+
+  const nextLevelXP = (currentLevel + 1) * 1000;
+  const currentLevelBaseXP = currentLevel * 1000;
+  const xpInCurrentLevel = Math.max(0, totalXP - currentLevelBaseXP);
+  const xpNeededForLevel = 1000;
+  const xpPercentage = Math.min(100, Math.round((xpInCurrentLevel / xpNeededForLevel) * 100));
+
+  // Dynamic League & Rank based on current level
+  const leagueInfo = useMemo(() => {
+    if (currentLevel === 0) {
+      return {
+        leagueName: "Starter League",
+        badge: "New Talent",
+        rankTitle: "Peringkat Pemula (Starter)",
+        rankSubtitle: "Lulus kuis pertamamu untuk naik ke Creator Tier!",
+        iconGradient: "from-blue-600 via-indigo-600 to-primary",
+      };
+    } else if (currentLevel === 1) {
+      return {
+        leagueName: "Creator League",
+        badge: "Rising Talent",
+        rankTitle: "Peringkat Kreator (Level 1)",
+        rankSubtitle: "Lulus kuis berikutnya untuk naik ke Verified Pro!",
+        iconGradient: "from-indigo-600 via-violet-600 to-purple-500",
+      };
+    } else if (currentLevel === 2) {
+      return {
+        leagueName: "Verified Pro League",
+        badge: "Top 10% Talent",
+        rankTitle: "Peringkat Terverifikasi (Level 2)",
+        rankSubtitle: "Pertahankan streak & raih skor tinggi untuk Senior Tier!",
+        iconGradient: "from-violet-600 via-indigo-600 to-purple-500",
+      };
+    } else {
+      return {
+        leagueName: "Master League",
+        badge: "Top 5% Talent",
+        rankTitle: `Peringkat Mahir (Level ${currentLevel})`,
+        rankSubtitle: "Talenta unggulan dengan match score tertinggi!",
+        iconGradient: "from-amber-500 via-orange-500 to-amber-600",
+      };
+    }
+  }, [currentLevel]);
 
   // Compute category counts
   const categoryCounts = useMemo(() => {
@@ -175,15 +266,15 @@ export default function FreelancerSkillsPage() {
           <div className="flex items-center justify-between rounded-2xl border border-border/70 bg-card p-2.5 px-4 shadow-xs">
             <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
               <Trophy className="h-3.5 w-3.5 text-amber-500" />
-              <span>Lv. 2</span>
+              <span>Lv. {currentLevel}</span>
             </div>
             <div className="flex items-center gap-1 text-xs font-bold text-amber-500">
               <Flame className="h-4 w-4 fill-amber-500 text-amber-500" />
-              <span>6 Hari</span>
+              <span>{streakDays} Hari</span>
             </div>
             <div className="flex items-center gap-1 text-xs font-bold text-blue-500">
               <Zap className="h-4 w-4 fill-blue-500 text-blue-500" />
-              <span>+{stats.totalXp} XP</span>
+              <span>+{totalXP.toLocaleString("id-ID")} XP</span>
             </div>
             <div className="flex items-center gap-1 text-xs font-bold text-emerald-600">
               <ShieldCheck className="h-4 w-4 text-emerald-600" />
@@ -195,20 +286,20 @@ export default function FreelancerSkillsPage() {
           <div className="rounded-3xl border border-border/70 bg-card p-5 shadow-sm space-y-3.5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground">
-                Verified Pro League
+                {leagueInfo.leagueName}
               </span>
               <span className="text-[11px] font-extrabold text-primary uppercase">
-                Top 5% Talent
+                {leagueInfo.badge}
               </span>
             </div>
 
             <div className="flex items-center gap-3.5">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-violet-600 via-indigo-600 to-purple-500 text-white shadow-md shadow-violet-500/25">
+              <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr ${leagueInfo.iconGradient} text-white shadow-md shadow-violet-500/25`}>
                 <ShieldCheck className="h-6 w-6 text-white" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold text-foreground truncate">Peringkat #3 Mahir</p>
-                <p className="text-[11px] text-muted-foreground truncate">Lulus kuis untuk naik ke Senior Tier!</p>
+                <p className="text-xs font-bold text-foreground truncate">{leagueInfo.rankTitle}</p>
+                <p className="text-[11px] text-muted-foreground truncate">{leagueInfo.rankSubtitle}</p>
               </div>
             </div>
 
@@ -217,12 +308,12 @@ export default function FreelancerSkillsPage() {
               <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted/80">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-amber-400 to-amber-500 transition-all duration-1000 ease-out shadow-xs"
-                  style={{ width: `${Math.max(12, Math.min(100, Math.round((stats.totalXp / 1500) * 100)))}%` }}
+                  style={{ width: `${xpPercentage}%` }}
                 />
               </div>
               <div className="flex justify-between text-[10px] font-bold text-muted-foreground">
-                <span>{stats.totalXp} XP</span>
-                <span>1.500 XP</span>
+                <span>{totalXP.toLocaleString("id-ID")} XP</span>
+                <span>{nextLevelXP.toLocaleString("id-ID")} XP</span>
               </div>
             </div>
           </div>
