@@ -29,7 +29,7 @@ export const INITIAL_NOTIFICATIONS: AppNotification[] = [
     read: false,
     timestamp: "10 menit lalu",
     linkUrl: "/client/projects",
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
+    avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80",
     roleTarget: "customer"
   },
   {

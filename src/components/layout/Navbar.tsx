@@ -84,7 +84,7 @@ export function Navbar() {
   }, [userDropdownOpen]);
 
   // Live avatar state synced from database and custom update events
-  const DEFAULT_AVATAR = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80";
+  const DEFAULT_AVATAR = "/images/default-avatar.svg";
   const [dbAvatarUrl, setDbAvatarUrl] = useState<string | null>(DEFAULT_AVATAR);
   const [freelancerOnboarded, setFreelancerOnboarded] = useState<boolean | null>(null);
   const [clientOnboarded, setClientOnboarded] = useState<boolean | null>(null);
@@ -97,8 +97,9 @@ export function Navbar() {
       return;
     }
 
+    const isOldStockAvatar = (url?: string | null) => !url || url.includes("photo-1534528741775");
     const cleanUrl = (url?: string | null) => {
-      if (url && typeof url === "string" && url.startsWith("http")) {
+      if (url && !isOldStockAvatar(url) && typeof url === "string" && (url.startsWith("http") || url.startsWith("/"))) {
         return url;
       }
       return DEFAULT_AVATAR;

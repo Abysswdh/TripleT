@@ -42,7 +42,7 @@ interface QuestOpportunity {
   category: string;
   budget: string;
   budgetNumeric: number;
-  budgetType: "Fixed" | "Hourly";
+  budgetType: "Fixed" | "Milestone";
   matchingSkills: string[];
   matchScore: number;
   proposalsCount: number;
@@ -455,15 +455,19 @@ export function FreelancerDashboard() {
     }
   };
 
-  // Filtered Quests
+  // Filtered Quests (sembunyikan proyek milik sendiri dari mode freelancer)
   const filteredQuests = useMemo(() => {
     return quests.filter((quest) => {
+      if (user && quest.ownerId && quest.ownerId === user.id) {
+        return false;
+      }
+
       const matchesCategory =
         selectedCategory === "Semua" || quest.category === selectedCategory;
 
       return matchesCategory;
     });
-  }, [quests, selectedCategory]);
+  }, [quests, selectedCategory, user]);
 
   const completedMissionsCount = dailyMissions.filter((m) => m.completed).length;
 
@@ -806,21 +810,44 @@ export function FreelancerDashboard() {
               {/* Dynamic 2-Column Grid: Verified Modules vs Next Recommendation */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                 {/* Column 1: Verified Skills List */}
-                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3.5 space-y-2.5">
+                <div className={`rounded-xl border p-3.5 space-y-2.5 ${
+                  passedQuizzes.length > 0
+                    ? "border-emerald-500/20 bg-emerald-500/5"
+                    : "border-border/60 bg-muted/20"
+                }`}>
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                      <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                      {passedQuizzes.length > 0 ? (
+                        <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                      ) : (
+                        <Award className="h-4 w-4 text-muted-foreground" />
+                      )}
                       Lencana Terverifikasi ({passedQuizzes.length})
                     </span>
-                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-500/15 px-2 py-0.5 rounded-full">
-                      Aktif di Profil
-                    </span>
+                    {passedQuizzes.length > 0 ? (
+                      <span className="text-[10px] font-bold text-emerald-600 bg-emerald-500/15 px-2 py-0.5 rounded-full">
+                        Aktif di Profil
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                        Belum Aktif
+                      </span>
+                    )}
                   </div>
 
                   {passedQuizzes.length === 0 ? (
-                    <p className="text-xs text-muted-foreground py-2">
-                      Belum ada kuis yang diselesaikan. Mulai verifikasi keahlian pertamamu untuk meningkatkan match score proyek.
-                    </p>
+                    <div className="py-2 space-y-2">
+                      <p className="text-xs text-muted-foreground">
+                        Belum ada kuis yang diselesaikan. Mulai verifikasi keahlian pertamamu untuk meningkatkan match score proyek.
+                      </p>
+                      <Link
+                        href="/freelancer/skills"
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                      >
+                        <span>Ikuti Kuis Keahlian</span>
+                        <ArrowRight className="h-3 w-3" />
+                      </Link>
+                    </div>
                   ) : (
                     <div className="space-y-2 max-h-44 overflow-y-auto pr-1">
                       {passedQuizzes.map((pq) => {

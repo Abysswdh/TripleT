@@ -57,6 +57,47 @@ export async function updateSession(request: NextRequest) {
 
   const isDev = process.env.NODE_ENV === "development";
 
+  // Helper to determine destination based on role & onboarding
+  const getRoleDashboard = () => {
+    const cookieRole = request.cookies.get("triplet_active_dashboard_role")?.value;
+    const metaRole = user?.user_metadata?.role;
+    const effectiveRole = cookieRole || metaRole;
+
+    const isFreelancerOnboarded =
+      !!user?.user_metadata?.freelancer_onboarded ||
+      (!!user?.user_metadata?.onboarding_completed && user?.user_metadata?.role === "freelancer");
+    const isClientOnboarded =
+      !!user?.user_metadata?.client_onboarded ||
+      (!!user?.user_metadata?.onboarding_completed &&
+        (user?.user_metadata?.role === "customer" || user?.user_metadata?.role === "client"));
+
+    if (effectiveRole === "freelancer") {
+      if (isFreelancerOnboarded || isDev) {
+        return "/freelancer/dashboard";
+      }
+      return "/onboarding?role=freelancer";
+    }
+
+    if (effectiveRole === "customer" || effectiveRole === "client") {
+      if (isClientOnboarded || isDev) {
+        return "/client/dashboard";
+      }
+      return "/onboarding?role=customer";
+    }
+
+    if (isFreelancerOnboarded && !isClientOnboarded) {
+      return "/freelancer/dashboard";
+    }
+
+    // Default to client dashboard
+    return "/client/dashboard";
+  };
+
+  // Root landing page: if already logged in, redirect directly to role dashboard
+  if (request.nextUrl.pathname === "/" && user) {
+    return NextResponse.redirect(new URL(getRoleDashboard(), request.url));
+  }
+
   // Protected routes: redirect to login if not authenticated
   const protectedPaths = ["/dashboard", "/onboarding", "/client", "/freelancer"];
   const isProtected = protectedPaths.some((path) =>
@@ -77,18 +118,7 @@ export async function updateSession(request: NextRequest) {
   );
 
   if (isAuthRoute && user) {
-    const isFreelancerOnboarded =
-      !!user.user_metadata?.freelancer_onboarded ||
-      (!!user.user_metadata?.onboarding_completed && user.user_metadata?.role === "freelancer");
-    const isClientOnboarded =
-      !!user.user_metadata?.client_onboarded ||
-      (!!user.user_metadata?.onboarding_completed &&
-        (user.user_metadata?.role === "customer" || user.user_metadata?.role === "client"));
-    const isOnboarded = isFreelancerOnboarded || isClientOnboarded || !!user.user_metadata?.onboarding_completed;
-
-    return NextResponse.redirect(
-      new URL(isOnboarded ? "/dashboard" : "/onboarding", request.url)
-    );
+    return NextResponse.redirect(new URL(getRoleDashboard(), request.url));
   }
 
   // Handle /onboarding access: allow if target role has not completed onboarding

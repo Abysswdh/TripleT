@@ -219,7 +219,7 @@ function formatContract(raw: any): ContractItem {
     clientAvatar: cl.avatar_url || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=300&auto=format&fit=crop&q=80",
     freelancerId: raw.freelancer_id,
     freelancerName: fl.full_name || "Specialist Talent",
-    freelancerAvatar: fl.avatar_url || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
+    freelancerAvatar: (fl.avatar_url && !fl.avatar_url.includes("photo-1534528741775")) ? fl.avatar_url : "/images/default-avatar.svg",
     totalAmount: raw.total_amount,
     amountDisplay: raw.amount_display || `Rp ${raw.total_amount?.toLocaleString("id-ID")}`,
     status: raw.status,

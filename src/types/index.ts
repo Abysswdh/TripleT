@@ -14,6 +14,7 @@ export interface UserProfile {
   role: "freelancer" | "customer";
   skills: string[] | null;
   hourly_rate: number | null;
+  starting_price?: string | null;
   experience_level: string | null;
   xp: number;
   streak_days: number;
@@ -32,13 +33,14 @@ export interface UserUpdate {
   role?: "freelancer" | "customer";
   skills?: string[];
   hourly_rate?: number;
+  starting_price?: string;
   experience_level?: string;
 }
 
 // --- Project ---
 
 export type ProjectStatus = "draft" | "open" | "in_progress" | "completed" | "cancelled";
-export type BudgetType = "fixed" | "hourly";
+export type BudgetType = "fixed" | "milestone" | "hourly";
 
 export interface Project {
   id: string;

@@ -31,6 +31,7 @@ import {
   Briefcase,
   Code2,
   DollarSign,
+  Banknote,
   CheckCircle2,
   Layers,
   Sparkles,
@@ -107,7 +108,7 @@ const PRESET_BANNERS = [
   {
     id: "preset-office",
     name: "Modern Office",
-    url: "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1200&auto=format&fit=crop&q=80",
+    url: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&auto=format&fit=crop&q=80",
     gradient: "from-blue-600/40 via-indigo-600/30 to-purple-600/40"
   },
   {
@@ -214,15 +215,15 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
   };
 
   const handleResetAvatar = () => {
-    setAvatarUrl("");
+    setAvatarUrl("/images/default-avatar.svg");
     setAvatarPreviewUrl("");
     setPendingAvatarFile(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   // Freelancer specific fields
-  const [hourlyRate, setHourlyRate] = useState("35");
-  const [experienceLevel, setExperienceLevel] = useState("Senior (4-7 years)");
+  const [startingPrice, setStartingPrice] = useState("500000");
+  const [experienceLevel, setExperienceLevel] = useState("intermediate");
   const [availability, setAvailability] = useState("available");
   const [selectedSkills, setSelectedSkills] = useState<string[]>([
     "React",
@@ -294,10 +295,17 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
       const meta = user.user_metadata || {};
       
       // Initialize with sanitized metadata
-      const DEFAULT_AVATAR = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80";
-      const DEFAULT_BANNER = "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1200&auto=format&fit=crop&q=80";
-      const cleanAvatar = (url?: string | null) => (url && typeof url === "string" && url.startsWith("http")) ? url : DEFAULT_AVATAR;
-      const cleanBanner = (url?: string | null) => (url && typeof url === "string" && url.startsWith("http")) ? url : DEFAULT_BANNER;
+      const DEFAULT_AVATAR = "/images/default-avatar.svg";
+      const isOldStockAvatar = (url?: string | null) => !url || url.includes("photo-1534528741775");
+      const isOldStockBanner = (url?: string | null) => !url || url.includes("photo-1557804506");
+      const cleanAvatar = (url?: string | null) => {
+        if (!url || isOldStockAvatar(url)) return DEFAULT_AVATAR;
+        return url;
+      };
+      const cleanBanner = (url?: string | null) => {
+        if (!url || isOldStockBanner(url)) return "";
+        return url;
+      };
 
       setFullName(meta.full_name || meta.name || "");
       setDisplayName(meta.display_name || meta.user_name || meta.username || (user.email ? user.email.split("@")[0] : ""));
@@ -318,8 +326,8 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
           .single();
 
         if (dbUser) {
-          if (dbUser.avatar_url) setAvatarUrl(cleanAvatar(dbUser.avatar_url));
-          if (dbUser.banner_url) setBannerUrl(cleanBanner(dbUser.banner_url));
+          if (dbUser.avatar_url !== undefined) setAvatarUrl(cleanAvatar(dbUser.avatar_url));
+          if (dbUser.banner_url !== undefined) setBannerUrl(cleanBanner(dbUser.banner_url));
           if (dbUser.full_name) setFullName(dbUser.full_name);
           if (dbUser.bio) setBio(dbUser.bio);
           if (dbUser.phone) setPhone(dbUser.phone);
@@ -335,11 +343,27 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
           .maybeSingle();
 
         if (flProfile) {
-          if (flProfile.hourly_rate) setHourlyRate(String(flProfile.hourly_rate));
+          if (flProfile.starting_price && !flProfile.starting_price.includes("Jam") && !flProfile.starting_price.includes("Minggu")) {
+            const digits = String(flProfile.starting_price).replace(/\D/g, "");
+            if (digits && Number(digits) > 0) {
+              setStartingPrice(digits);
+            } else if (flProfile.hourly_rate) {
+              const hr = Number(flProfile.hourly_rate);
+              setStartingPrice(String(hr < 1000 ? hr * 50000 : hr));
+            }
+          } else if (flProfile.hourly_rate) {
+            const hr = Number(flProfile.hourly_rate);
+            setStartingPrice(String(hr < 1000 ? hr * 50000 : hr));
+          }
           if (flProfile.skills && Array.isArray(flProfile.skills) && flProfile.skills.length > 0) {
             setSelectedSkills(flProfile.skills);
           }
-          if (flProfile.experience_level) setExperienceLevel(flProfile.experience_level);
+          if (flProfile.experience_level) {
+            const el = flProfile.experience_level.toLowerCase();
+            if (el.includes("start") || el.includes("pemula") || el.includes("junior")) setExperienceLevel("starter");
+            else if (el.includes("expert") || el.includes("lead") || el.includes("ahli") || el.includes("senior")) setExperienceLevel("expert");
+            else setExperienceLevel("intermediate");
+          }
           if (flProfile.availability) setAvailability(flProfile.availability);
           if (flProfile.github_url) setGithubUrl(flProfile.github_url);
           if (flProfile.linkedin_url) setLinkedinUrl(flProfile.linkedin_url);
@@ -375,8 +399,19 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
         setProjectCategories(meta.project_categories);
       }
       if (meta.budget_preference && !budgetPreference) setBudgetPreference(meta.budget_preference);
-      if (meta.company_name && !companyName) setCompanyName(meta.company_name);
-      if (meta.hourly_rate && !hourlyRate) setHourlyRate(String(meta.hourly_rate));
+      if (meta.experience_level) {
+        const el = String(meta.experience_level).toLowerCase();
+        if (el.includes("start") || el.includes("pemula") || el.includes("junior")) setExperienceLevel("starter");
+        else if (el.includes("expert") || el.includes("lead") || el.includes("ahli") || el.includes("senior")) setExperienceLevel("expert");
+        else setExperienceLevel("intermediate");
+      }
+      if (meta.starting_price && !meta.starting_price.includes("Jam") && !meta.starting_price.includes("Minggu")) {
+        const digits = String(meta.starting_price).replace(/\D/g, "");
+        if (digits) setStartingPrice(digits);
+      } else if (meta.hourly_rate && (!startingPrice || startingPrice === "500000")) {
+        const hr = Number(meta.hourly_rate);
+        setStartingPrice(String(hr < 1000 ? hr * 50000 : hr));
+      }
       if (meta.preferred_language && (meta.preferred_language === "id" || meta.preferred_language === "en")) {
         setLocale(meta.preferred_language as Locale);
         setLanguage(meta.preferred_language as Locale);
@@ -459,6 +494,12 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
       }
       
       // Update Supabase Auth User Metadata
+      const isOldStockAvatar = (url?: string | null) => !url || url.includes("photo-1534528741775");
+      const isOldStockBanner = (url?: string | null) => !url || url.includes("photo-1557804506");
+
+      const sanitizedAvatarForSave = (finalAvatarUrl === "/images/default-avatar.svg" || isOldStockAvatar(finalAvatarUrl)) ? null : finalAvatarUrl;
+      const sanitizedBannerForSave = (isOldStockBanner(finalBannerUrl) || !finalBannerUrl) ? null : finalBannerUrl;
+
       const updateData: Record<string, unknown> = {
         full_name: fullName,
         display_name: displayName,
@@ -466,15 +507,19 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
         bio: bio,
         location: location,
         timezone: timezone,
-        avatar_url: finalAvatarUrl,
-        banner_url: finalBannerUrl,
-        cover_image: finalBannerUrl, // Backward compatibility
+        avatar_url: sanitizedAvatarForSave,
+        banner_url: sanitizedBannerForSave,
+        cover_image: sanitizedBannerForSave, // Backward compatibility
         preferred_language: language,
         preferred_currency: currency,
       };
 
+      const numericStartingPrice = parseInt(startingPrice, 10) || 500000;
+      const formattedStartingPrice = `Rp ${numericStartingPrice.toLocaleString("id-ID")}`;
+
       if (currentRole === "freelancer") {
-        updateData.hourly_rate = parseInt(hourlyRate, 10) || 0;
+        updateData.hourly_rate = numericStartingPrice;
+        updateData.starting_price = formattedStartingPrice;
         updateData.skills = selectedSkills;
         updateData.experience_level = experienceLevel;
         updateData.availability = availability;
@@ -511,8 +556,8 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
               id: user.id,
               email: user.email || email,
               full_name: fullName,
-              avatar_url: finalAvatarUrl ? finalAvatarUrl : null,
-              banner_url: finalBannerUrl ? finalBannerUrl : null,
+              avatar_url: sanitizedAvatarForSave,
+              banner_url: sanitizedBannerForSave,
               bio: bio,
               phone: phone,
               location: location,
@@ -523,19 +568,20 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
           );
 
           // 2. Freelancer profile upsert
-          if (currentRole === "freelancer" || selectedSkills.length > 0 || hourlyRate) {
+          if (currentRole === "freelancer" || selectedSkills.length > 0 || startingPrice) {
             await supabase.from("freelancer_profiles").upsert(
               {
                 user_id: user.id,
                 headline: `${selectedSkills[0] || "Digital"} Specialist`,
                 bio: bio,
-                hourly_rate: parseInt(hourlyRate, 10) || 0,
+                hourly_rate: numericStartingPrice,
+                starting_price: formattedStartingPrice,
                 skills: selectedSkills,
                 availability: availability,
                 github_url: githubUrl,
                 linkedin_url: linkedinUrl,
                 portfolio_url: portfolioUrl,
-                cover_image: finalBannerUrl ? finalBannerUrl : null,
+                cover_image: sanitizedBannerForSave,
               },
               { onConflict: "user_id" }
             );
@@ -555,6 +601,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                 budget_preference: budgetPreference,
                 billing_address: billingAddress,
                 tax_id: taxId,
+                banner_url: sanitizedBannerForSave,
                 updated_at: new Date().toISOString(),
               },
               { onConflict: "user_id" }
@@ -661,8 +708,8 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
 
       {/* Main Settings Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Sidebar Navigation */}
-        <div className="lg:col-span-3 space-y-2">
+        {/* Left Sidebar Navigation (Sticky) */}
+        <div className="lg:col-span-3 lg:sticky lg:top-24 self-start space-y-2">
           <div className="bg-card border border-border/70 rounded-2xl p-3 shadow-sm space-y-1">
             <button
               onClick={() => setActiveTab("profile")}
@@ -806,7 +853,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
 
                 {/* 1. Header Cover Banner Area */}
                 <div className="relative h-36 sm:h-44 w-full bg-gradient-to-br from-blue-600/30 via-indigo-600/20 to-purple-600/30 overflow-hidden group">
-                  {(bannerPreviewUrl || bannerUrl) ? (
+                  {(bannerPreviewUrl || (bannerUrl && !bannerUrl.includes("photo-1557804506"))) ? (
                     <img
                       src={bannerPreviewUrl || bannerUrl}
                       alt="Banner Sampul"
@@ -836,7 +883,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
 
                   {/* Banner Action Buttons (Top Right Overlay) */}
                   <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
-                    {(bannerPreviewUrl || bannerUrl) && (
+                    {(pendingBannerFile || bannerPreviewUrl || (bannerUrl && !bannerUrl.includes("photo-1557804506"))) && (
                       <button
                         type="button"
                         onClick={handleResetBanner}
@@ -867,16 +914,18 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                       onClick={() => fileInputRef.current?.click()}
                     >
                       <div className="h-24 w-24 sm:h-28 sm:w-28 rounded-2xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-3xl font-bold text-white shadow-xl overflow-hidden border-4 border-card bg-muted">
-                        {(avatarPreviewUrl || avatarUrl) ? (
+                        {(avatarPreviewUrl || (avatarUrl && avatarUrl !== "/images/default-avatar.svg" && !avatarUrl.includes("photo-1534528741775"))) ? (
                           <img
                             src={avatarPreviewUrl || avatarUrl}
                             alt="Avatar"
                             className="h-full w-full object-cover"
                           />
                         ) : (
-                          <span>
-                            {fullName ? fullName.charAt(0).toUpperCase() : email ? email.charAt(0).toUpperCase() : "U"}
-                          </span>
+                          <img
+                            src="/images/default-avatar.svg"
+                            alt="Avatar Default"
+                            className="h-full w-full object-cover"
+                          />
                         )}
                       </div>
                       <div className="absolute inset-0 bg-black/45 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white border-4 border-transparent">
@@ -897,7 +946,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                             Pratinjau Foto
                           </span>
                         )}
-                        {(avatarPreviewUrl || avatarUrl) && (
+                        {(pendingAvatarFile || avatarPreviewUrl || (avatarUrl && avatarUrl !== "/images/default-avatar.svg" && !avatarUrl.includes("default-avatar") && !avatarUrl.includes("photo-1534528741775"))) && (
                           <button
                             type="button"
                             onClick={handleResetAvatar}
@@ -1110,31 +1159,32 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                       {t("settings.work.freelancerTitle", "Keahlian Freelancer & Tarif")}
                     </h2>
                     <p className="text-xs text-muted-foreground">
-                      {t("settings.work.freelancerSubtitle", "Atur tarif per jam, stack keahlian utama, dan tautan portofolio.")}
+                      {t("settings.work.freelancerSubtitle", "Atur tarif mulai per proyek, stack keahlian utama, dan tautan portofolio.")}
                     </p>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    {/* Hourly Rate */}
+                    {/* Starting Project Rate */}
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                        <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
-                        {t("settings.work.hourlyRate", "Target Tarif per Jam (USD)")}
+                        <Banknote className="h-3.5 w-3.5 text-muted-foreground" />
+                        {t("settings.work.startingPrice", "Tarif Mulai per Proyek (IDR)")}
                       </label>
                       <div className="relative">
-                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground">$</span>
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground">Rp</span>
                         <input
                           type="number"
-                          min="5"
-                          max="500"
-                          value={hourlyRate}
-                          onChange={(e) => setHourlyRate(e.target.value)}
-                          className="h-10 w-full rounded-xl border border-border bg-background pl-8 pr-12 text-xs font-bold text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                          min="50000"
+                          step="50000"
+                          value={startingPrice}
+                          onChange={(e) => setStartingPrice(e.target.value)}
+                          placeholder="500000"
+                          className="h-10 w-full rounded-xl border border-border bg-background pl-10 pr-20 text-xs font-bold text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                         />
-                        <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground">/ hr</span>
+                        <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground">/ proyek</span>
                       </div>
                       <p className="text-[10px] text-muted-foreground">
-                        ≈ {formatMoney(parseInt(hourlyRate || "0", 10), "USD")}/jam
+                        Mulai dari {formatMoney(parseInt(startingPrice || "0", 10), "IDR")} per pengerjaan proyek
                       </p>
                     </div>
 
@@ -1147,12 +1197,11 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                       <select
                         value={experienceLevel}
                         onChange={(e) => setExperienceLevel(e.target.value)}
-                        className="h-10 w-full rounded-xl border border-border bg-background px-3.5 text-xs text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        className="h-10 w-full rounded-xl border border-border bg-background px-3.5 text-xs text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
                       >
-                        <option value="Junior (0-2 years)">Junior (0-2 years)</option>
-                        <option value="Mid-Level (2-4 years)">Mid-Level (2-4 years)</option>
-                        <option value="Senior (4-7 years)">Senior (4-7 years)</option>
-                        <option value="Lead / Architect (7+ years)">Lead / Architect (7+ years)</option>
+                        <option value="starter">{t("settings.work.expStarter", "Pemula (Starter)")}</option>
+                        <option value="intermediate">{t("settings.work.expIntermediate", "Menengah (Intermediate)")}</option>
+                        <option value="expert">{t("settings.work.expExpert", "Ahli (Expert)")}</option>
                       </select>
                     </div>
 

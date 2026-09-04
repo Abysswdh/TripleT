@@ -70,6 +70,7 @@ export interface ClientProfileData {
   hiringInterests: string[];
   recentProjects: ClientProjectItem[];
   reviews: ClientReviewItem[];
+  isVerified: boolean;
 }
 
 interface ClientProfileViewProps {
@@ -91,8 +92,8 @@ export function ClientProfileView({ clientId, isOwner = true }: ClientProfileVie
     id: targetId || "client-user",
     companyName: meta.company_name || meta.full_name || (user?.email ? user.email.split("@")[0] : "Perusahaan Klien"),
     tagline: meta.tagline || meta.bio || "",
-    avatar: meta.avatar_url || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=300&auto=format&fit=crop&q=80",
-    coverImage: "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1200&auto=format&fit=crop&q=80",
+    avatar: meta.avatar_url || "/images/default-avatar.svg",
+    coverImage: "",
     industry: meta.industry || "Teknologi & Bisnis",
     companySize: meta.company_size || "1-10 Karyawan",
     location: meta.location || "Jakarta, Indonesia",
@@ -109,7 +110,8 @@ export function ClientProfileView({ clientId, isOwner = true }: ClientProfileVie
     ],
     hiringInterests: ["Web Development", "UI/UX Design", "Mobile App"],
     recentProjects: [],
-    reviews: []
+    reviews: [],
+    isVerified: Boolean(meta.is_verified || user?.user_metadata?.is_verified)
   });
 
   useEffect(() => {
@@ -132,7 +134,7 @@ export function ClientProfileView({ clientId, isOwner = true }: ClientProfileVie
               .from("client_profiles")
               .select(`
                 *,
-                user:users!user_id(id, full_name, avatar_url, location, bio, created_at, email)
+                user:users!user_id(id, full_name, avatar_url, location, bio, created_at, email, is_verified)
               `)
               .or(`user_id.eq.${targetId},id.eq.${targetId}`)
               .maybeSingle();
@@ -150,7 +152,7 @@ export function ClientProfileView({ clientId, isOwner = true }: ClientProfileVie
             try {
               const { data: uData } = await supabase
                 .from("users")
-                .select("id, full_name, avatar_url, location, bio, created_at, email")
+                .select("id, full_name, avatar_url, location, bio, created_at, email, is_verified")
                 .eq("id", targetId)
                 .maybeSingle();
 
@@ -247,7 +249,7 @@ export function ClientProfileView({ clientId, isOwner = true }: ClientProfileVie
             id: String(r.id || ""),
             freelancerName: String(rev?.full_name || "Freelancer Terverifikasi"),
             freelancerRole: String(rev?.role || "Talenta Spesialis"),
-            freelancerAvatar: String(rev?.avatar_url || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"),
+            freelancerAvatar: String(rev?.avatar_url || "/images/default-avatar.svg"),
             rating: Number(r.rating) || 5,
             date: r.created_at ? new Date(String(r.created_at)).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "Baru saja",
             comment: String(r.comment || "Kerjasama yang sangat baik dan pembayaran milestone tepat waktu."),
@@ -259,10 +261,12 @@ export function ClientProfileView({ clientId, isOwner = true }: ClientProfileVie
           ? new Date(String(u.created_at)).getFullYear().toString()
           : "2025";
 
-        const DEFAULT_AVATAR = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80";
-        const DEFAULT_BANNER = "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1200&auto=format&fit=crop&q=80";
-        const cleanAvatar = (url?: string | null) => (url && typeof url === "string" && url.startsWith("http")) ? url : DEFAULT_AVATAR;
-        const cleanBanner = (url?: string | null) => (url && typeof url === "string" && url.startsWith("http")) ? url : DEFAULT_BANNER;
+        const DEFAULT_AVATAR = "/images/default-avatar.svg";
+        const DEFAULT_BANNER = "";
+        const isOldStockAvatar = (url?: string | null) => !url || url.includes("photo-1534528741775");
+        const isOldStockBanner = (url?: string | null) => !url || url.includes("photo-1557804506");
+        const cleanAvatar = (url?: string | null) => (url && !isOldStockAvatar(url) && typeof url === "string" && (url.startsWith("http") || url.startsWith("/"))) ? url : DEFAULT_AVATAR;
+        const cleanBanner = (url?: string | null) => (url && !isOldStockBanner(url) && typeof url === "string" && (url.startsWith("http") || url.startsWith("/"))) ? url : DEFAULT_BANNER;
 
         const companyDisplayName = isActualOwner
           ? (meta.company_name || meta.full_name || u.full_name || (u.email ? u.email.split("@")[0] : (user?.email ? user.email.split("@")[0] : "Perusahaan Klien")))
@@ -296,7 +300,8 @@ export function ClientProfileView({ clientId, isOwner = true }: ClientProfileVie
           ]),
           hiringInterests: hiringInterests,
           recentProjects: projectsList,
-          reviews: reviewsList
+          reviews: reviewsList,
+          isVerified: Boolean(userData?.is_verified || (isActualOwner && (user?.user_metadata?.is_verified || meta.is_verified)))
         });
       } catch (err) {
         console.error("Gagal membaca profil dari database Supabase:", err);
@@ -360,7 +365,9 @@ export function ClientProfileView({ clientId, isOwner = true }: ClientProfileVie
                 <div className="space-y-1">
                   <div className="flex items-center justify-center gap-1.5">
                     <h1 className="text-xl font-bold text-foreground">{profile.companyName}</h1>
-                    <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
+                    {profile.isVerified && (
+                      <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
+                    )}
                   </div>
                   <p className="text-xs font-semibold text-primary">{profile.industry}</p>
                   
@@ -484,10 +491,14 @@ export function ClientProfileView({ clientId, isOwner = true }: ClientProfileVie
 
                 <div className="flex items-center justify-between py-1.5 border-b border-border/40">
                   <span className="text-muted-foreground flex items-center gap-1.5">
-                    <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
+                    <ShieldCheck className={`h-3.5 w-3.5 ${profile.isVerified ? "text-emerald-500" : "text-muted-foreground/60"}`} />
                     Verifikasi Pembayaran
                   </span>
-                  <span className="font-bold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-md">Terverifikasi</span>
+                  <span className={`font-bold px-2 py-0.5 rounded-md ${
+                    profile.isVerified ? "text-emerald-600 bg-emerald-500/10" : "text-amber-600 bg-amber-500/10"
+                  }`}>
+                    {profile.isVerified ? "Terverifikasi" : "Belum Verifikasi"}
+                  </span>
                 </div>
 
                 <div className="flex items-center justify-between py-1.5">

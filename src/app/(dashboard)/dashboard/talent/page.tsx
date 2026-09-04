@@ -22,10 +22,10 @@ const TALENTS: TalentMatch[] = [
     id: "t-1",
     name: "Dimas Arya Pratama",
     role: "Fullstack Web & AI Specialist",
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+    avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80",
     rating: 4.9,
     reviewsCount: 38,
-    hourlyRate: "Rp 175.000 / jam",
+    hourlyRate: "Mulai Rp 1.750.000",
     skills: ["Next.js", "FastAPI", "PostgreSQL", "PyTorch"],
     isVerified: true,
   },
@@ -36,7 +36,7 @@ const TALENTS: TalentMatch[] = [
     avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80",
     rating: 5.0,
     reviewsCount: 52,
-    hourlyRate: "Rp 150.000 / jam",
+    hourlyRate: "Mulai Rp 1.500.000",
     skills: ["Figma", "Design Systems", "Prototyping", "User Research"],
     isVerified: true,
   },
@@ -47,7 +47,7 @@ const TALENTS: TalentMatch[] = [
     avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
     rating: 4.8,
     reviewsCount: 29,
-    hourlyRate: "Rp 160.000 / jam",
+    hourlyRate: "Mulai Rp 1.600.000",
     skills: ["Flutter", "React Native", "Firebase", "State Management"],
     isVerified: true,
   },
@@ -205,7 +205,7 @@ export default function TalentPage() {
                     <div>
                       <div className="flex items-center gap-1.5">
                         <h3 className="text-base font-bold font-sans text-foreground">{selectedTalent.name}</h3>
-                        <ShieldCheck className="h-4 w-4 text-primary" />
+                        {selectedTalent.isVerified && <ShieldCheck className="h-4 w-4 text-primary" />}
                       </div>
                       <p className="text-xs text-muted-foreground">{selectedTalent.role}</p>
                       <span className="text-xs font-bold text-primary">{selectedTalent.hourlyRate}</span>

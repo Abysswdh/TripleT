@@ -28,18 +28,24 @@ export default function DashboardRedirectPage() {
       (!!user?.user_metadata?.onboarding_completed &&
         (user?.user_metadata?.role === "customer" || user?.user_metadata?.role === "client"));
 
-    if (saved === "customer") {
+    const effectiveRole = saved || user?.user_metadata?.role;
+
+    if (effectiveRole === "customer" || effectiveRole === "client") {
       if (isClOnboarded) {
         router.replace("/client/dashboard");
       } else {
         router.replace("/onboarding?role=customer");
       }
-    } else if (saved === "freelancer") {
+    } else if (effectiveRole === "freelancer") {
       if (isFlOnboarded) {
         router.replace("/freelancer/dashboard");
       } else {
         router.replace("/onboarding?role=freelancer");
       }
+    } else if (isClOnboarded && !isFlOnboarded) {
+      router.replace("/client/dashboard");
+    } else if (isFlOnboarded && !isClOnboarded) {
+      router.replace("/freelancer/dashboard");
     } else {
       setShowRoleSelect(true);
     }

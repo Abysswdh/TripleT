@@ -43,6 +43,7 @@ interface FeaturedTalent {
   completedProjects?: number;
   startingPrice: string;
   skills: string[];
+  verified?: boolean;
 }
 
 interface MilestoneItem {
@@ -281,13 +282,14 @@ export function ClientDashboard() {
               role: t.title,
               headline: t.title,
               location: t.location,
-              level: (t.badgeLevel as "Verified Pro" | "Top Rated" | "Rising Star") || "Verified Pro",
+              level: (t.badgeLevel as "Verified Pro" | "Top Rated" | "Rising Star") || (t.verified ? "Verified Pro" : "Rising Star"),
               category: t.category,
               rating: t.rating,
               reviewsCount: t.reviewsCount,
               completedProjects: t.completedProjects,
               startingPrice: t.hourlyRate,
               skills: t.skills,
+              verified: Boolean(t.verified),
             }))
           );
         }
@@ -819,15 +821,21 @@ export function ClientDashboard() {
                         alt={tal.name}
                         onError={(e) => {
                           (e.target as HTMLImageElement).src =
-                            "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80";
+                            "/images/default-avatar.svg";
                         }}
                         className="h-16 w-16 rounded-full object-cover border-4 border-card bg-muted shadow-md shrink-0"
                       />
                     </div>
-                    <span className="rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 text-[10px] font-bold text-emerald-600 inline-flex items-center gap-1">
-                      <ShieldCheck className="h-3 w-3" />
-                      <span>{tal.level}</span>
-                    </span>
+                    {tal.verified ? (
+                      <span className="rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 text-[10px] font-bold text-emerald-600 inline-flex items-center gap-1">
+                        <ShieldCheck className="h-3 w-3" />
+                        <span>{tal.level}</span>
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-muted border border-border px-2.5 py-0.5 text-[10px] font-medium text-muted-foreground inline-flex items-center gap-1">
+                        <span>{tal.level}</span>
+                      </span>
+                    )}
                   </div>
 
                   {/* Profile Information Body */}
@@ -838,7 +846,7 @@ export function ClientDashboard() {
                         <h3 className="font-sans font-bold text-base text-foreground truncate group-hover:text-primary transition-colors">
                           {tal.name}
                         </h3>
-                        <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                        {tal.verified && <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />}
                       </div>
                       {/* Headline */}
                       <p className="text-xs text-muted-foreground line-clamp-2 mt-1 leading-relaxed">
@@ -1115,7 +1123,7 @@ export function ClientDashboard() {
                           <div>
                             <div className="flex items-center gap-1.5">
                               <h4 className="text-sm font-bold text-foreground">{app.name}</h4>
-                              <ShieldCheck className="h-4 w-4 text-primary" />
+                              {app.badge === "Verified Pro" && <ShieldCheck className="h-4 w-4 text-primary" />}
                               <span className="rounded-md bg-primary/10 px-2 py-0.2 text-[10px] font-semibold text-primary">
                                 {app.badge}
                               </span>
@@ -1243,7 +1251,7 @@ export function ClientDashboard() {
                     <div>
                       <div className="flex items-center gap-1.5">
                         <h3 className="text-base font-bold text-foreground">{selectedTalentForInvite.name}</h3>
-                        <ShieldCheck className="h-4 w-4 text-primary" />
+                        {selectedTalentForInvite.verified && <ShieldCheck className="h-4 w-4 text-primary" />}
                       </div>
                       <p className="text-xs text-muted-foreground">{selectedTalentForInvite.role}</p>
                       <span className="text-xs font-bold text-primary">{selectedTalentForInvite.startingPrice}</span>

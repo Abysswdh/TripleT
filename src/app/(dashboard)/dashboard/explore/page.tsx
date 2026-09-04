@@ -18,7 +18,7 @@ interface Quest {
   clientName: string;
   category: string;
   budget: string;
-  budgetType: "Fixed" | "Hourly";
+  budgetType: "Fixed" | "Milestone";
   skills: string[];
   matchScore: number;
   proposalsCount: number;

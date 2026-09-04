@@ -42,7 +42,7 @@ interface MarketProject {
   category: string;
   budget: string;
   rawBudget: number;
-  budgetType: "Fixed Scope" | "Hourly Milestone";
+  budgetType: "Fixed Scope" | "Milestone Scope";
   timeline: string;
   status: "Menerima Proposal" | "Sedang Dikerjakan" | "Selesai (Blueprint)";
   difficulty: "Starter" | "Standard" | "Enterprise";

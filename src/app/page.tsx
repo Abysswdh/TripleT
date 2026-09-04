@@ -4,7 +4,9 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/hooks/use-auth";
 import logoWithText from "@/assets/logo_with_text.svg";
 import logoWoText from "@/assets/logo_wo_text.svg";
 import {
@@ -47,6 +49,23 @@ const fadeUpVariants = {
 };
 
 export default function LandingPage() {
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
+
+  const userRole = typeof window !== "undefined"
+    ? localStorage.getItem("triplet_active_dashboard_role") || user?.user_metadata?.role
+    : user?.user_metadata?.role;
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      if (userRole === "freelancer") {
+        router.replace("/freelancer/dashboard");
+      } else {
+        router.replace("/client/dashboard");
+      }
+    }
+  }, [user, authLoading, userRole, router]);
+
   // Navigation & ScrollSpy State
   const [activeSection, setActiveSection] = useState<string>("our-story");
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
@@ -230,18 +249,30 @@ export default function LandingPage() {
 
           {/* Right Action Buttons */}
           <div className="flex items-center gap-3 sm:gap-4">
-            <Link
-              href="/login"
-              className="hidden sm:inline-block text-sm font-semibold text-blue-600 hover:text-blue-800 px-3 py-2 transition-all hover:scale-105"
-            >
-              Sign In
-            </Link>
-            <Link
-              href="/register"
-              className="rounded-xl bg-[#254BE3] px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-white shadow-md shadow-blue-600/20 hover:bg-blue-800 hover:scale-105 hover:shadow-lg hover:shadow-blue-600/30 active:scale-95 transition-all"
-            >
-              Get Started
-            </Link>
+            {user ? (
+              <Link
+                href={userRole === "freelancer" ? "/freelancer/dashboard" : "/client/dashboard"}
+                className="rounded-xl bg-[#254BE3] px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-white shadow-md shadow-blue-600/20 hover:bg-blue-800 hover:scale-105 hover:shadow-lg hover:shadow-blue-600/30 active:scale-95 transition-all flex items-center gap-2"
+              >
+                <span>Buka Dashboard</span>
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="hidden sm:inline-block text-sm font-semibold text-blue-600 hover:text-blue-800 px-3 py-2 transition-all hover:scale-105"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/register"
+                  className="rounded-xl bg-[#254BE3] px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-white shadow-md shadow-blue-600/20 hover:bg-blue-800 hover:scale-105 hover:shadow-lg hover:shadow-blue-600/30 active:scale-95 transition-all"
+                >
+                  Get Started
+                </Link>
+              </>
+            )}
 
             {/* Mobile Menu Toggle Button */}
             <button
@@ -281,13 +312,24 @@ export default function LandingPage() {
                 );
               })}
               <div className="pt-3 border-t border-slate-100 flex flex-col gap-2">
-                <Link
-                  href="/login"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="w-full text-center py-2.5 text-sm font-semibold text-blue-600 hover:text-blue-800 border border-blue-200 rounded-xl"
-                >
-                  Sign In
-                </Link>
+                {user ? (
+                  <Link
+                    href={userRole === "freelancer" ? "/freelancer/dashboard" : "/client/dashboard"}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full text-center py-2.5 text-sm font-bold text-white bg-[#254BE3] rounded-xl flex items-center justify-center gap-2"
+                  >
+                    <span>Buka Dashboard</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                ) : (
+                  <Link
+                    href="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full text-center py-2.5 text-sm font-semibold text-blue-600 hover:text-blue-800 border border-blue-200 rounded-xl"
+                  >
+                    Sign In
+                  </Link>
+                )}
               </div>
             </motion.div>
           )}

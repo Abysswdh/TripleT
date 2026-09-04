@@ -21,12 +21,19 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
   const [role, setRoleState] = useState<DashboardRole>("freelancer");
   const hasInitialized = useRef(false);
 
+  const syncCookie = (val: string) => {
+    if (typeof document !== "undefined") {
+      document.cookie = `${STORAGE_KEY}=${val}; path=/; max-age=31536000; SameSite=Lax`;
+    }
+  };
+
   // Initialize role once from localStorage or user metadata
   useEffect(() => {
     if (typeof window !== "undefined") {
       const savedRole = localStorage.getItem(STORAGE_KEY) as DashboardRole | null;
       if (savedRole === "customer" || savedRole === "freelancer") {
         setRoleState(savedRole);
+        syncCookie(savedRole);
         hasInitialized.current = true;
         return;
       }
@@ -37,6 +44,7 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
       setRoleState(userRole);
       if (typeof window !== "undefined") {
         localStorage.setItem(STORAGE_KEY, userRole);
+        syncCookie(userRole);
       }
       hasInitialized.current = true;
     }
@@ -46,6 +54,7 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
     setRoleState(newRole);
     if (typeof window !== "undefined") {
       localStorage.setItem(STORAGE_KEY, newRole);
+      syncCookie(newRole);
     }
   }, []);
 
@@ -54,6 +63,7 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
       const nextRole = prev === "customer" ? "freelancer" : "customer";
       if (typeof window !== "undefined") {
         localStorage.setItem(STORAGE_KEY, nextRole);
+        syncCookie(nextRole);
       }
       return nextRole;
     });

@@ -135,7 +135,16 @@ export function useAuth() {
         localStorage.setItem("doable_current_user_id", data.user.id);
       }
 
-      router.push("/dashboard");
+      const savedRole = typeof window !== "undefined"
+        ? localStorage.getItem("triplet_active_dashboard_role")
+        : null;
+      const role = savedRole || data.user?.user_metadata?.role;
+
+      if (role === "freelancer") {
+        router.push("/freelancer/dashboard");
+      } else {
+        router.push("/client/dashboard");
+      }
       router.refresh();
       return data;
     },

@@ -16,8 +16,10 @@ export interface TalentRecord {
   avatar: string;
   rating: number;
   reviewsCount: number;
-  hourlyRate: string;
+  hourlyRate: string; // Backward-compatible alias for startingPrice
   hourlyRateNumeric: number;
+  startingPrice?: string;
+  startingPriceNumeric?: number;
   location: string;
   verified: boolean;
   badgeLevel: string;
@@ -79,27 +81,35 @@ export async function getTalents(filters?: TalentFilterOptions): Promise<TalentR
 
   let results: TalentRecord[] = activeFreelancers.map((item) => {
     const user = item.user || {};
-    const rateNum = Number(item.hourly_rate) || 150000;
-    const formattedPrice = item.starting_price
-      ? item.starting_price
-      : rateNum > 1000
-      ? `Rp ${rateNum.toLocaleString("id-ID")}/jam`
-      : `$${rateNum}/hr`;
+    const rateNum = Number(item.hourly_rate) > 1000
+      ? Number(item.hourly_rate)
+      : Number(item.hourly_rate) > 0
+      ? Number(item.hourly_rate) * 50000
+      : 500000;
+
+    let formattedPrice = `Mulai Rp ${rateNum.toLocaleString("id-ID")}`;
+    if (item.starting_price && typeof item.starting_price === "string" && !item.starting_price.includes("Jam") && !item.starting_price.includes("Minggu")) {
+      formattedPrice = item.starting_price.startsWith("Rp") || item.starting_price.startsWith("Mulai")
+        ? item.starting_price
+        : `Mulai Rp ${Number(item.starting_price.replace(/\D/g, "") || rateNum).toLocaleString("id-ID")}`;
+    }
 
     return {
       id: user.id || item.id,
       userId: user.id || item.user_id,
       name: user.full_name || "Specialist Talent",
       title: item.headline || "Digital Specialist",
-      avatar: user.avatar_url || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
+      avatar: (user.avatar_url && !user.avatar_url.includes("photo-1534528741775")) ? user.avatar_url : "/images/default-avatar.svg",
       coverImage: item.cover_image || "https://images.unsplash.com/photo-1557683316-973673baf926?w=1200&auto=format&fit=crop&q=80",
       rating: Number(item.rating) || 5.0,
       reviewsCount: item.reviews_count || 0,
       hourlyRate: formattedPrice,
       hourlyRateNumeric: rateNum,
+      startingPrice: formattedPrice,
+      startingPriceNumeric: rateNum,
       location: user.location || "Indonesia",
-      verified: user.is_verified ?? true,
-      badgeLevel: item.badge_level || "Verified Pro",
+      verified: Boolean(user.is_verified),
+      badgeLevel: item.badge_level || (user.is_verified ? "Verified Pro" : "Talenta Muda"),
       skills: item.skills && item.skills.length > 0 ? item.skills : ["UI/UX Design", "Web Development"],
       bio: user.bio || item.headline || "Siap berkolaborasi dan mengerjakan proyek berkualitas tinggi.",
       responseTime: item.response_time || "< 1 jam",
@@ -124,16 +134,15 @@ export async function getTalents(filters?: TalentFilterOptions): Promise<TalentR
     );
   }
 
-  if (filters?.rateTier && filters.rateTier !== "all") {
-    if (filters.rateTier === "tier-1") {
-      results = results.filter((t) => t.hourlyRateNumeric < 25 || (t.hourlyRateNumeric >= 1000 && t.hourlyRateNumeric < 150000));
-    } else if (filters.rateTier === "tier-2") {
+  if (filters?.rateTier && filters.rateTier !== "all" && filters.rateTier !== "Semua") {
+    if (filters.rateTier === "tier-1" || filters.rateTier === "< 150k" || filters.rateTier === "< 500k") {
+      results = results.filter((t) => t.hourlyRateNumeric < 500000);
+    } else if (filters.rateTier === "tier-2" || filters.rateTier === "150k - 300k" || filters.rateTier === "500k - 2m") {
       results = results.filter(
-        (t) => (t.hourlyRateNumeric >= 25 && t.hourlyRateNumeric <= 40) ||
-               (t.hourlyRateNumeric >= 150000 && t.hourlyRateNumeric <= 300000)
+        (t) => t.hourlyRateNumeric >= 500000 && t.hourlyRateNumeric <= 2000000
       );
-    } else if (filters.rateTier === "tier-3") {
-      results = results.filter((t) => (t.hourlyRateNumeric > 40 && t.hourlyRateNumeric < 1000) || t.hourlyRateNumeric > 300000);
+    } else if (filters.rateTier === "tier-3" || filters.rateTier === "> 300k" || filters.rateTier === "> 2m") {
+      results = results.filter((t) => t.hourlyRateNumeric > 2000000);
     }
   }
 

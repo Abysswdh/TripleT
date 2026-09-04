@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <defs>
+    <linearGradient id="doable-avatar-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#4F46E5"/>
+    </linearGradient>
+    <linearGradient id="doable-avatar-fg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#EEF2FF"/>
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" fill="url(#doable-avatar-bg)"/>
+  <circle cx="100" cy="74" r="32" fill="url(#doable-avatar-fg)"/>
+  <path d="M36 172 C36 134 64 122 100 122 C136 122 164 134 164 172 Z" fill="url(#doable-avatar-fg)"/>
+</svg>

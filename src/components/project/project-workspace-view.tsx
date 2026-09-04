@@ -114,7 +114,7 @@ export function ProjectWorkspaceView() {
     role: string;
   }>({
     fullName: user?.user_metadata?.full_name || (isClientMode ? "Klien Doable!" : "Freelancer"),
-    avatarUrl: user?.user_metadata?.avatar_url || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+    avatarUrl: (user?.user_metadata?.avatar_url && !user.user_metadata.avatar_url.includes("photo-1534528741775")) ? user.user_metadata.avatar_url : "/images/default-avatar.svg",
     role: isClientMode ? "customer" : "freelancer",
   });
 
@@ -175,7 +175,11 @@ export function ProjectWorkspaceView() {
         if (data) {
           setUserProfile({
             fullName: data.full_name || user.user_metadata?.full_name || "User",
-            avatarUrl: data.avatar_url || user.user_metadata?.avatar_url || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+            avatarUrl: (data.avatar_url && !data.avatar_url.includes("photo-1534528741775"))
+              ? data.avatar_url
+              : ((user.user_metadata?.avatar_url && !user.user_metadata.avatar_url.includes("photo-1534528741775"))
+              ? user.user_metadata.avatar_url
+              : "/images/default-avatar.svg"),
             role: data.role || "customer",
           });
         }
@@ -1396,8 +1400,9 @@ export function ProjectWorkspaceView() {
                       <div className="flex items-center gap-3">
                         <img
                           src={
-                            project.freelancer.avatarUrl ||
-                            "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
+                            (project.freelancer.avatarUrl && !project.freelancer.avatarUrl.includes("photo-1534528741775"))
+                              ? project.freelancer.avatarUrl
+                              : "/images/default-avatar.svg"
                           }
                           alt={project.freelancer.fullName}
                           className="h-11 w-11 rounded-full object-cover border border-border shrink-0"
@@ -1463,9 +1468,11 @@ export function ProjectWorkspaceView() {
                         <p className="text-xs font-bold text-foreground">
                           {project.owner?.fullName || "Klien Doable!"}
                         </p>
-                        <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
-                          <ShieldCheck className="h-3 w-3" /> Klien Terverifikasi
-                        </span>
+                        {project.owner?.isVerified && (
+                          <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
+                            <ShieldCheck className="h-3 w-3" /> Klien Terverifikasi
+                          </span>
+                        )}
                         <p className="text-[10px] text-muted-foreground mt-0.5">
                           {project.owner?.location || "Indonesia"}
                         </p>

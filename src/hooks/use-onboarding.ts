@@ -11,8 +11,8 @@ export type WeeklyAvailability = "part_time" | "semi_full" | "full_time" | "flex
 export type ClientHiringType = "umkm" | "startup" | "agency" | "individual";
 export type ClientBudgetPref = "umkm" | "standard" | "enterprise";
 
-export const DEFAULT_AVATAR_URL = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80";
-export const DEFAULT_BANNER_URL = "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1200&auto=format&fit=crop&q=80";
+export const DEFAULT_AVATAR_URL = "/images/default-avatar.svg";
+export const DEFAULT_BANNER_URL = "";
 
 export interface OnboardingData {
   role: RoleType;
@@ -125,9 +125,10 @@ export function useOnboarding() {
         const meta = authData.user.user_metadata || {};
         const existingName = dbUser?.full_name || meta.full_name || "";
         const existingUsername = dbUser?.username || meta.username || "";
-        const existingAvatar = (dbUser?.avatar_url && dbUser.avatar_url.startsWith("http")) 
+        const isOldStockAvatar = (url?: string | null) => !url || url.includes("photo-1534528741775");
+        const existingAvatar = (dbUser?.avatar_url && !isOldStockAvatar(dbUser.avatar_url)) 
           ? dbUser.avatar_url 
-          : (meta.avatar_url && meta.avatar_url.startsWith("http")) 
+          : (meta.avatar_url && !isOldStockAvatar(meta.avatar_url)) 
           ? meta.avatar_url 
           : DEFAULT_AVATAR_URL;
         const existingLocation = dbUser?.location || "Jakarta, DKI Jakarta";
@@ -136,7 +137,7 @@ export function useOnboarding() {
           ...prev,
           fullName: prev.fullName || existingName,
           username: prev.username || existingUsername,
-          avatarUrl: (prev.avatarUrl && prev.avatarUrl !== DEFAULT_AVATAR_URL) ? prev.avatarUrl : existingAvatar,
+          avatarUrl: (prev.avatarUrl && prev.avatarUrl !== DEFAULT_AVATAR_URL && !isOldStockAvatar(prev.avatarUrl)) ? prev.avatarUrl : existingAvatar,
           locationCity: prev.locationCity !== "Jakarta, DKI Jakarta" ? prev.locationCity : existingLocation,
           role: (roleParam === "freelancer" || roleParam === "customer") ? roleParam : prev.role,
         }));
@@ -245,8 +246,13 @@ export function useOnboarding() {
 
       const displayName = data.fullName || user.user_metadata?.full_name || (data.role === "customer" ? (data.businessName || "Klien Doable!") : "Talenta Muda Doable!");
       const cleanUsername = data.username ? data.username.toLowerCase().trim().replace(/[^a-z0-9_.]/g, "") : (user.user_metadata?.username || undefined);
-      const userAvatar = (data.avatarUrl && data.avatarUrl.startsWith("http")) ? data.avatarUrl : DEFAULT_AVATAR_URL;
-      const userBanner = DEFAULT_BANNER_URL;
+      const isOldStockAvatar = (url?: string | null) => !url || url.includes("photo-1534528741775");
+      const isOldStockBanner = (url?: string | null) => !url || url.includes("photo-1557804506");
+
+      const userAvatar = (data.avatarUrl && !isOldStockAvatar(data.avatarUrl) && (data.avatarUrl.startsWith("http") || data.avatarUrl.startsWith("/")))
+        ? data.avatarUrl
+        : DEFAULT_AVATAR_URL;
+      const userBanner = (DEFAULT_BANNER_URL && !isOldStockBanner(DEFAULT_BANNER_URL)) ? DEFAULT_BANNER_URL : null;
 
       // 1. Update/Upsert public.users table with independent role onboarding flags
       try {
@@ -311,9 +317,9 @@ export function useOnboarding() {
             headline: headlineText,
             bio: data.bio || `Halo! Saya ${displayName}, ${headlineText}. Siap berkolaborasi dalam proyek.`,
             skills: data.skills.length > 0 ? data.skills : ["UI/UX Design", "Figma"],
-            hourly_rate: data.weeklyAvailability === "full_time" ? 250000 : data.weeklyAvailability === "semi_full" ? 200000 : 150000,
-            starting_price: String(data.startingPrice || 500000),
-            availability: data.weeklyAvailability,
+            hourly_rate: data.startingPrice || 500000,
+            starting_price: `Rp ${(data.startingPrice || 500000).toLocaleString("id-ID")}`,
+            availability: availLabel,
             experience_level: data.experienceLevel,
             category: data.projectCategories[0] || "Web & Fullstack",
             badge_level: "Verified Pro",
@@ -341,6 +347,38 @@ export function useOnboarding() {
           },
           { onConflict: "user_id" }
         );
+
+        // Secondary: Freelancer Profile baseline fallback ONLY if freelancer profile does not exist yet
+        if (!wasFreelancerOnboarded) {
+          const { data: existingFl } = await supabase
+            .from("freelancer_profiles")
+            .select("id")
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+          if (!existingFl) {
+            await supabase.from("freelancer_profiles").upsert(
+              {
+                user_id: user.id,
+                headline: "Digital & Tech Specialist",
+                bio: data.bio || `Halo! Saya ${displayName}. Siap berkolaborasi dalam proyek profesional.`,
+                skills: ["UI/UX Design", "Web Development"],
+                hourly_rate: 500000,
+                starting_price: "Rp 500.000",
+                availability: "15 – 30 Jam / Minggu (Part-Time)",
+                experience_level: "intermediate",
+                category: "Web & Fullstack",
+                badge_level: "Verified Pro",
+                organization: "Profesional",
+                cover_image: userBanner,
+                completed_projects: 0,
+                rating: 5.0,
+                reviews_count: 0,
+              },
+              { onConflict: "user_id" }
+            );
+          }
+        }
       }
 
       // 3. Update Supabase Auth user metadata

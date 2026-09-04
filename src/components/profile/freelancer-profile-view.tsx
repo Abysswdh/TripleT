@@ -21,7 +21,12 @@ import {
   Share2,
   Zap,
   Briefcase,
-  Camera
+  Camera,
+  Globe,
+  Link as LinkIcon,
+  ExternalLink,
+  Banknote,
+  Layers,
 } from "lucide-react";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import { getClientProjects, type ProjectRecord } from "@/lib/services/projects";
@@ -41,11 +46,17 @@ export interface TalentProfile {
   projectsCount: number;
   rating: number;
   reviewsCount: number;
-  responseTime: string;
+  responseTime?: string;
   earnings: string;
   aboutMe: string[];
   streakWeeks: number;
   availability?: string;
+  workStatus?: "available" | "open" | "busy";
+  startingPrice?: string;
+  experienceLevel?: "starter" | "intermediate" | "expert" | string;
+  githubUrl?: string;
+  linkedinUrl?: string;
+  portfolioUrl?: string;
   verifiedSkills: string[];
   otherSkills: string[];
   recentProjects: {
@@ -57,13 +68,14 @@ export interface TalentProfile {
     tags: string[];
     isFeatured?: boolean;
   }[];
+  isVerified?: boolean;
 }
 
 export const TALENT_PROFILES: Record<string, TalentProfile> = {
   "tal-1": {
     id: "tal-1",
     name: "Dimas Arya Pratama",
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
+    avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=300&auto=format&fit=crop&q=80",
     coverImage: "https://images.unsplash.com/photo-1557683316-973673baf926?w=1200&auto=format&fit=crop&q=80",
     role: "Senior Full-Stack Developer",
     location: "Bandung, Indonesia",
@@ -73,8 +85,14 @@ export const TALENT_PROFILES: Record<string, TalentProfile> = {
     projectsCount: 142,
     rating: 4.9,
     reviewsCount: 38,
-    responseTime: "2hrs",
-    earnings: "$120k+",
+    responseTime: "< 1 Jam",
+    earnings: "Rp 145.000.000",
+    workStatus: "available",
+    startingPrice: "Rp 3.500.000",
+    experienceLevel: "expert",
+    githubUrl: "https://github.com/dimaspratama",
+    linkedinUrl: "https://linkedin.com/in/dimaspratama",
+    portfolioUrl: "https://dimaspratama.dev",
     aboutMe: [
       "I build robust, scalable web applications from architecture to deployment. With over 8 years of experience in the startup ecosystem, I specialize in transforming complex business requirements into clean, maintainable code.",
       "My approach is deeply collaborative. I don't just write code; I partner with clients to understand their users and business goals, ensuring every technical decision drives value. Whether you need a rapid MVP or a refactor of a legacy monolithic system, I bring strategic thinking and technical excellence to the table."
@@ -269,7 +287,7 @@ export const TALENT_PROFILES: Record<string, TalentProfile> = {
 export const DEFAULT_PROFILE: TalentProfile = {
   id: "default",
   name: "Dimas Arya Pratama",
-  avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
+  avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=300&auto=format&fit=crop&q=80",
   coverImage: "https://images.unsplash.com/photo-1557683316-973673baf926?w=1200&auto=format&fit=crop&q=80",
   role: "Senior Full-Stack Developer",
   location: "Bandung, Indonesia",
@@ -383,10 +401,12 @@ export function FreelancerProfileView({
   const streakDays = heatmapData.streakDays;
   const totalContributions = heatmapData.totalContributions;
 
-  const DEFAULT_AVATAR = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80";
-  const DEFAULT_BANNER = "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1200&auto=format&fit=crop&q=80";
-  const cleanAvatar = (url?: string | null) => (url && typeof url === "string" && url.startsWith("http")) ? url : DEFAULT_AVATAR;
-  const cleanBanner = (url?: string | null) => (url && typeof url === "string" && url.startsWith("http")) ? url : DEFAULT_BANNER;
+  const DEFAULT_AVATAR = "/images/default-avatar.svg";
+  const DEFAULT_BANNER = "";
+  const isOldStockAvatar = (url?: string | null) => !url || url.includes("photo-1534528741775");
+  const isOldStockBanner = (url?: string | null) => !url || url.includes("photo-1557804506");
+  const cleanAvatar = (url?: string | null) => (url && !isOldStockAvatar(url) && typeof url === "string" && (url.startsWith("http") || url.startsWith("/"))) ? url : DEFAULT_AVATAR;
+  const cleanBanner = (url?: string | null) => (url && !isOldStockBanner(url) && typeof url === "string" && (url.startsWith("http") || url.startsWith("/"))) ? url : DEFAULT_BANNER;
 
   const meta = user?.user_metadata || {};
 
@@ -403,8 +423,13 @@ export function FreelancerProfileView({
     projectsCount: 0,
     rating: 5.0,
     reviewsCount: 0,
-    responseTime: "< 2 Jam",
     earnings: "Rp 0",
+    workStatus: "available",
+    startingPrice: "Rp 500.000",
+    experienceLevel: "intermediate",
+    githubUrl: "",
+    linkedinUrl: "",
+    portfolioUrl: "",
     aboutMe: ["Freelancer spesialis terdaftar di platform TripleT. Berpengalaman mengerjakan proyek pengembangan teknologi dan desain modern."],
     streakWeeks: 1,
     verifiedSkills: ["UI/UX Design", "Web Development"],
@@ -423,13 +448,18 @@ export function FreelancerProfileView({
         role: meta.headline || (meta.skills && meta.skills[0] ? `${meta.skills[0]} Specialist` : "Digital Specialist"),
         location: meta.location || "Indonesia",
         organization: "Member Terdaftar TripleT",
-        level: "Verified Pro",
+        level: (meta.is_verified || user.user_metadata?.is_verified) ? "Verified Pro" : "Talenta Muda",
         category: "Web & Tech",
         projectsCount: 0,
         rating: 5.0,
         reviewsCount: 0,
-        responseTime: "< 2 Jam",
-        earnings: meta.hourly_rate ? `Rp ${(meta.hourly_rate * 20).toLocaleString("id-ID")}` : "Rp 0",
+        earnings: meta.total_earnings ? `Rp ${Number(meta.total_earnings).toLocaleString("id-ID")}` : "Rp 0",
+        workStatus: (meta.availability as "available" | "open" | "busy") || "available",
+        startingPrice: meta.starting_price || (meta.hourly_rate ? `Rp ${Number(meta.hourly_rate).toLocaleString("id-ID")}` : "Rp 500.000"),
+        experienceLevel: meta.experience_level || "intermediate",
+        githubUrl: meta.github_url || "",
+        linkedinUrl: meta.linkedin_url || "",
+        portfolioUrl: meta.portfolio_url || "",
         availability: formatAvailabilityHours(meta.weekly_availability),
         aboutMe: meta.bio ? [meta.bio] : [
           "Freelancer spesialis terdaftar di platform TripleT. Berpengalaman mengerjakan proyek pengembangan teknologi dan desain modern."
@@ -438,6 +468,7 @@ export function FreelancerProfileView({
         verifiedSkills: meta.skills && meta.skills.length > 0 ? meta.skills : ["React", "TypeScript", "Next.js"],
         otherSkills: ["Git", "REST API"],
         recentProjects: [],
+        isVerified: Boolean(meta.is_verified || user.user_metadata?.is_verified),
       }
     : baseProfile;
 
@@ -579,10 +610,50 @@ export function FreelancerProfileView({
             ? (fp.verified_skills as string[])
             : displaySkills;
 
-          const rateNum = Number(fp.hourly_rate) || (isOwner && Number(meta.hourly_rate)) || 0;
-          const formattedEarnings = rateNum > 0
-            ? (rateNum > 1000 ? `Rp ${(rateNum * 20).toLocaleString("id-ID")}` : `$${rateNum * 20}`)
+          const totalEarningsNum = Number(fp.total_earnings) || 0;
+          const formattedEarnings = totalEarningsNum > 0
+            ? `Rp ${totalEarningsNum.toLocaleString("id-ID")}`
             : "Rp 0";
+
+          const rawStatus = (fp.availability as string) || (isOwner ? (meta.availability as string) : "available");
+          let parsedWorkStatus: "available" | "open" | "busy" = "available";
+          if (rawStatus === "busy" || rawStatus.includes("busy") || rawStatus.includes("penuh")) {
+            parsedWorkStatus = "busy";
+          } else if (rawStatus === "open" || rawStatus.includes("open") || rawStatus.includes("tawaran")) {
+            parsedWorkStatus = "open";
+          } else {
+            parsedWorkStatus = "available";
+          }
+
+          let parsedStartingPrice = "Rp 500.000";
+          if (fp.starting_price && typeof fp.starting_price === "string" && !fp.starting_price.includes("Jam") && !fp.starting_price.includes("Minggu")) {
+            parsedStartingPrice = fp.starting_price.startsWith("Rp")
+              ? fp.starting_price
+              : `Rp ${Number(fp.starting_price.replace(/\D/g, "") || 500000).toLocaleString("id-ID")}`;
+          } else if (isOwner && meta.starting_price && !meta.starting_price.includes("Jam") && !meta.starting_price.includes("Minggu")) {
+            parsedStartingPrice = String(meta.starting_price);
+          } else if (fp.hourly_rate || (isOwner && meta.hourly_rate)) {
+            const r = Number(fp.hourly_rate || meta.hourly_rate);
+            const num = r < 1000 ? r * 50000 : r;
+            parsedStartingPrice = `Rp ${num.toLocaleString("id-ID")}`;
+          }
+
+          const rawExp = (fp.experience_level as string) || (isOwner ? (meta.experience_level as string) : "intermediate") || "intermediate";
+          let parsedExp = "intermediate";
+          if (rawExp.includes("start") || rawExp.includes("pemula") || rawExp.includes("junior")) parsedExp = "starter";
+          else if (rawExp.includes("expert") || rawExp.includes("lead") || rawExp.includes("ahli") || rawExp.includes("senior")) parsedExp = "expert";
+
+          const parsedGithub = isOwner
+            ? (meta.github_url || (fp.github_url as string) || "")
+            : ((fp.github_url as string) || "");
+
+          const parsedLinkedin = isOwner
+            ? (meta.linkedin_url || (fp.linkedin_url as string) || "")
+            : ((fp.linkedin_url as string) || "");
+
+          const parsedPortfolio = isOwner
+            ? (meta.portfolio_url || (fp.portfolio_url as string) || "")
+            : ((fp.portfolio_url as string) || "");
 
           setLiveProfile({
             id: targetUserId,
@@ -597,8 +668,13 @@ export function FreelancerProfileView({
             projectsCount: Number(fp.completed_projects) || 0,
             rating: Number(fp.rating) || 5.0,
             reviewsCount: Number(fp.reviews_count) || 0,
-            responseTime: (fp.response_time as string) || "< 2 Jam",
             earnings: formattedEarnings,
+            workStatus: parsedWorkStatus,
+            startingPrice: parsedStartingPrice,
+            experienceLevel: parsedExp,
+            githubUrl: parsedGithub,
+            linkedinUrl: parsedLinkedin,
+            portfolioUrl: parsedPortfolio,
             availability: formatAvailabilityHours(
               typeof fp.starting_price === "string" && fp.starting_price.includes("Jam")
                 ? fp.starting_price
@@ -609,6 +685,7 @@ export function FreelancerProfileView({
             verifiedSkills: displayVerifiedSkills,
             otherSkills: displaySkills,
             recentProjects: mappedPortfolio.length > 0 ? mappedPortfolio : (isOwner ? [] : baseProfile.recentProjects),
+            isVerified: Boolean(u?.is_verified || (isOwner && (meta.is_verified || user?.user_metadata?.is_verified))),
           });
         }
       } catch (err) {
@@ -723,7 +800,9 @@ export function FreelancerProfileView({
                 <div className="space-y-1">
                   <div className="flex items-center justify-center gap-1.5">
                     <h1 className="text-xl font-bold text-foreground">{profile.name}</h1>
-                    <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
+                    {profile.isVerified && (
+                      <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
+                    )}
                   </div>
                   <p className="text-xs font-semibold text-muted-foreground">{profile.role}</p>
                   
@@ -733,6 +812,41 @@ export function FreelancerProfileView({
                       <span>{profile.location}</span>
                     </p>
                   )}
+
+                  {/* Status Ketersediaan Kerja */}
+                  <div className="pt-2 flex items-center justify-center">
+                    <div
+                      className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold border transition-all shadow-xs ${
+                        profile.workStatus === "busy"
+                          ? "bg-rose-500/10 text-rose-600 border-rose-500/25"
+                          : profile.workStatus === "open"
+                          ? "bg-amber-500/10 text-amber-600 border-amber-500/25"
+                          : "bg-emerald-500/10 text-emerald-600 border-emerald-500/25"
+                      }`}
+                    >
+                      <span className="relative flex h-2 w-2">
+                        {profile.workStatus === "available" && (
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                        )}
+                        <span
+                          className={`relative inline-flex rounded-full h-2 w-2 ${
+                            profile.workStatus === "busy"
+                              ? "bg-rose-500"
+                              : profile.workStatus === "open"
+                              ? "bg-amber-500"
+                              : "bg-emerald-500"
+                          }`}
+                        />
+                      </span>
+                      <span>
+                        {profile.workStatus === "busy"
+                          ? "Sedang Penuh"
+                          : profile.workStatus === "open"
+                          ? "Terbuka untuk Tawaran"
+                          : "Tersedia untuk Kerja"}
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Action Buttons */}
@@ -787,7 +901,7 @@ export function FreelancerProfileView({
                   <CheckCircle2 className="h-4 w-4" />
                 </div>
                 <div className="text-lg font-bold text-foreground">{profile.projectsCount}</div>
-                <div className="text-[11px] text-muted-foreground font-medium">Projects</div>
+                <div className="text-[11px] text-muted-foreground font-medium">Projects Selesai</div>
               </div>
 
               {/* Stat 2: Rating */}
@@ -796,27 +910,33 @@ export function FreelancerProfileView({
                   <Star className="h-4 w-4 fill-amber-500" />
                 </div>
                 <div className="text-lg font-bold text-foreground">{profile.rating}</div>
-                <div className="text-[11px] text-muted-foreground font-medium">Rating</div>
+                <div className="text-[11px] text-muted-foreground font-medium">Rating Klien</div>
               </div>
 
-              {/* Stat 3: Response */}
-              <div className="rounded-2xl border border-border/80 bg-card p-4 text-center space-y-1 shadow-xs hover:border-primary/30 transition-colors">
-                <div className="mx-auto h-7 w-7 rounded-lg bg-purple-500/10 text-purple-600 flex items-center justify-center">
-                  <Clock className="h-4 w-4" />
-                </div>
-                <div className="text-lg font-bold text-foreground">{profile.responseTime}</div>
-                <div className="text-[11px] text-muted-foreground font-medium">Response</div>
-              </div>
-
-              {/* Stat 4: Kapasitas / Availability */}
+              {/* Stat 3: Tarif Mulai Proyek */}
               <div className="rounded-2xl border border-border/80 bg-card p-4 text-center space-y-1 shadow-xs hover:border-primary/30 transition-colors">
                 <div className="mx-auto h-7 w-7 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
-                  <Zap className="h-4 w-4" />
+                  <Banknote className="h-4 w-4" />
                 </div>
-                <div className="text-sm sm:text-base font-bold text-emerald-600 truncate" title={formatAvailabilityHours(profile.availability)}>
-                  {formatAvailabilityHours(profile.availability)}
+                <div className="text-sm font-bold text-foreground truncate" title={profile.startingPrice || "Rp 500.000"}>
+                  {profile.startingPrice || "Rp 500.000"}
                 </div>
-                <div className="text-[11px] text-muted-foreground font-medium">Kapasitas / Mgg</div>
+                <div className="text-[11px] text-muted-foreground font-medium">Tarif Mulai Proyek</div>
+              </div>
+
+              {/* Stat 4: Tingkat Pengalaman */}
+              <div className="rounded-2xl border border-border/80 bg-card p-4 text-center space-y-1 shadow-xs hover:border-primary/30 transition-colors">
+                <div className="mx-auto h-7 w-7 rounded-lg bg-purple-500/10 text-purple-600 flex items-center justify-center">
+                  <Layers className="h-4 w-4" />
+                </div>
+                <div className="text-sm font-bold text-foreground truncate">
+                  {profile.experienceLevel === "expert"
+                    ? "Ahli (Expert)"
+                    : profile.experienceLevel === "starter"
+                    ? "Pemula (Starter)"
+                    : "Menengah (Intermediate)"}
+                </div>
+                <div className="text-[11px] text-muted-foreground font-medium">Pengalaman</div>
               </div>
             </div>
 
@@ -845,6 +965,146 @@ export function FreelancerProfileView({
                     <span>{skill}</span>
                   </span>
                 ))}
+              </div>
+            </div>
+
+            {/* 4. Tautan Portofolio & Profesional */}
+            <div className="rounded-3xl border border-border/80 bg-card p-6 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <LinkIcon className="h-4 w-4 text-primary" />
+                  <h3 className="text-sm font-bold text-foreground tracking-tight">Tautan Portofolio & Profesional</h3>
+                </div>
+                {isOwner && (
+                  <Link
+                    href="/freelancer/settings?tab=work"
+                    className="text-[11px] font-bold text-primary hover:underline inline-flex items-center gap-1"
+                  >
+                    <span>Edit</span>
+                    <ExternalLink className="h-3 w-3" />
+                  </Link>
+                )}
+              </div>
+
+              <div className="space-y-2.5">
+                {/* GitHub */}
+                {profile.githubUrl && profile.githubUrl !== "https://github.com/" && profile.githubUrl.trim().length > 8 ? (
+                  <a
+                    href={profile.githubUrl.startsWith("http") ? profile.githubUrl : `https://${profile.githubUrl}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between p-3 rounded-2xl border border-border/80 bg-muted/30 hover:bg-muted hover:border-border text-foreground hover:text-primary transition-all group"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="h-8 w-8 rounded-xl bg-slate-900 text-white flex items-center justify-center shrink-0">
+                        <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
+                          <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+                        </svg>
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold truncate">GitHub Profile</div>
+                        <div className="text-[10px] text-muted-foreground truncate">{profile.githubUrl.replace(/^https?:\/\//, "")}</div>
+                      </div>
+                    </div>
+                    <ExternalLink className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary shrink-0 transition-colors" />
+                  </a>
+                ) : isOwner ? (
+                  <Link
+                    href="/freelancer/settings?tab=work"
+                    className="flex items-center justify-between p-3 rounded-2xl border border-dashed border-border/70 bg-muted/10 hover:bg-muted/30 text-muted-foreground transition-all group"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="h-8 w-8 rounded-xl bg-muted text-muted-foreground flex items-center justify-center shrink-0">
+                        <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
+                          <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+                        </svg>
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-semibold truncate">GitHub Profile</div>
+                        <div className="text-[10px] text-muted-foreground truncate">+ Tambahkan tautan GitHub</div>
+                      </div>
+                    </div>
+                    <ExternalLink className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary shrink-0 transition-colors" />
+                  </Link>
+                ) : null}
+
+                {/* LinkedIn */}
+                {profile.linkedinUrl && profile.linkedinUrl !== "https://linkedin.com/in/" && profile.linkedinUrl.trim().length > 10 ? (
+                  <a
+                    href={profile.linkedinUrl.startsWith("http") ? profile.linkedinUrl : `https://${profile.linkedinUrl}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between p-3 rounded-2xl border border-border/80 bg-muted/30 hover:bg-muted hover:border-border text-foreground hover:text-blue-600 transition-all group"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="h-8 w-8 rounded-xl bg-[#0A66C2] text-white flex items-center justify-center shrink-0">
+                        <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
+                          <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
+                        </svg>
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold truncate">LinkedIn Profile</div>
+                        <div className="text-[10px] text-muted-foreground truncate">{profile.linkedinUrl.replace(/^https?:\/\//, "")}</div>
+                      </div>
+                    </div>
+                    <ExternalLink className="h-3.5 w-3.5 text-muted-foreground group-hover:text-blue-600 shrink-0 transition-colors" />
+                  </a>
+                ) : isOwner ? (
+                  <Link
+                    href="/freelancer/settings?tab=work"
+                    className="flex items-center justify-between p-3 rounded-2xl border border-dashed border-border/70 bg-muted/10 hover:bg-muted/30 text-muted-foreground transition-all group"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="h-8 w-8 rounded-xl bg-muted text-muted-foreground flex items-center justify-center shrink-0">
+                        <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
+                          <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
+                        </svg>
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-semibold truncate">LinkedIn Profile</div>
+                        <div className="text-[10px] text-muted-foreground truncate">+ Tambahkan tautan LinkedIn</div>
+                      </div>
+                    </div>
+                    <ExternalLink className="h-3.5 w-3.5 text-muted-foreground group-hover:text-blue-600 shrink-0 transition-colors" />
+                  </Link>
+                ) : null}
+
+                {/* Personal Portfolio */}
+                {profile.portfolioUrl && profile.portfolioUrl !== "https://" && profile.portfolioUrl.trim().length > 8 ? (
+                  <a
+                    href={profile.portfolioUrl.startsWith("http") ? profile.portfolioUrl : `https://${profile.portfolioUrl}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between p-3 rounded-2xl border border-border/80 bg-muted/30 hover:bg-muted hover:border-border text-foreground hover:text-emerald-600 transition-all group"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="h-8 w-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                        <Globe className="h-4 w-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold truncate">Website Portofolio</div>
+                        <div className="text-[10px] text-muted-foreground truncate">{profile.portfolioUrl.replace(/^https?:\/\//, "")}</div>
+                      </div>
+                    </div>
+                    <ExternalLink className="h-3.5 w-3.5 text-muted-foreground group-hover:text-emerald-600 shrink-0 transition-colors" />
+                  </a>
+                ) : isOwner ? (
+                  <Link
+                    href="/freelancer/settings?tab=work"
+                    className="flex items-center justify-between p-3 rounded-2xl border border-dashed border-border/70 bg-muted/10 hover:bg-muted/30 text-muted-foreground transition-all group"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="h-8 w-8 rounded-xl bg-muted text-muted-foreground flex items-center justify-center shrink-0">
+                        <Globe className="h-4 w-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-semibold truncate">Website Portofolio</div>
+                        <div className="text-[10px] text-muted-foreground truncate">+ Tambahkan tautan Website Portofolio</div>
+                      </div>
+                    </div>
+                    <ExternalLink className="h-3.5 w-3.5 text-muted-foreground group-hover:text-emerald-600 shrink-0 transition-colors" />
+                  </Link>
+                ) : null}
               </div>
             </div>
           </div>
@@ -997,7 +1257,7 @@ export function FreelancerProfileView({
                   <div>
                     <h3 className="text-base font-bold text-foreground flex items-center gap-1.5">
                       <span>Hire {profile.name}</span>
-                      <ShieldCheck className="h-4 w-4 text-primary" />
+                      {profile.isVerified && <ShieldCheck className="h-4 w-4 text-primary" />}
                     </h3>
                     <p className="text-xs text-muted-foreground">{profile.role}</p>
                   </div>

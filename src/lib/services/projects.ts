@@ -42,6 +42,7 @@ export interface ProjectRecord {
     fullName: string;
     avatarUrl?: string;
     location?: string;
+    isVerified?: boolean;
   };
   freelancer?: {
     id: string;
@@ -66,7 +67,7 @@ export async function getOpenProjects(): Promise<ProjectRecord[]> {
     .from("projects")
     .select(`
       *,
-      owner:users!owner_id(id, full_name, avatar_url, location),
+      owner:users!owner_id(id, full_name, avatar_url, location, is_verified),
       milestones(*),
       project_tasks(*)
     `)
@@ -128,7 +129,7 @@ export async function getProjectById(projectId: string): Promise<ProjectRecord |
       .from("projects")
       .select(`
         *,
-        owner:users!owner_id(id, full_name, avatar_url, location),
+        owner:users!owner_id(id, full_name, avatar_url, location, is_verified),
         freelancer:users!freelancer_id(
           id,
           full_name,
@@ -238,6 +239,7 @@ function formatProjectRecord(p: any): ProjectRecord {
           fullName: p.owner.full_name || "Klien Doable!",
           avatarUrl: p.owner.avatar_url,
           location: p.owner.location,
+          isVerified: Boolean(p.owner.is_verified),
         }
       : undefined,
     freelancer,

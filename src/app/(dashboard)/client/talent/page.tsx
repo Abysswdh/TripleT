@@ -128,11 +128,11 @@ function ClientTalentContent() {
           talent.badgeLevel.toLowerCase() === selectedLevel.toLowerCase();
 
         // 4. Rate Tier
-        const rateNum = talent.hourlyRateNumeric || 35;
+        const rateNum = talent.hourlyRateNumeric || 500000;
         let matchesRate = true;
-        if (selectedRateTier === "< 150k") matchesRate = rateNum < 25 || (rateNum >= 1000 && rateNum < 150000);
-        else if (selectedRateTier === "150k - 300k") matchesRate = (rateNum >= 25 && rateNum <= 40) || (rateNum >= 150000 && rateNum <= 300000);
-        else if (selectedRateTier === "> 300k") matchesRate = (rateNum > 40 && rateNum < 1000) || rateNum > 300000;
+        if (selectedRateTier === "< 500k" || selectedRateTier === "< 150k") matchesRate = rateNum < 500000;
+        else if (selectedRateTier === "500k - 2m" || selectedRateTier === "150k - 300k") matchesRate = rateNum >= 500000 && rateNum <= 2000000;
+        else if (selectedRateTier === "> 2m" || selectedRateTier === "> 300k") matchesRate = rateNum > 2000000;
 
         return matchesSearch && matchesCategory && matchesLevel && matchesRate;
       })
@@ -214,17 +214,17 @@ function ClientTalentContent() {
               <option value="Rising Star">{t("talent.risingStar", "Rising Star")}</option>
             </select>
 
-            {/* Hourly Rate Range Selector */}
+            {/* Project Starting Price Range Selector */}
             <select
               value={selectedRateTier}
               onChange={(e) => setSelectedRateTier(e.target.value)}
-              aria-label="Filter rate per jam"
+              aria-label="Filter tarif mulai proyek"
               className="h-11 rounded-2xl border border-border bg-card px-3 text-xs font-medium text-foreground focus:border-primary focus:outline-none shadow-xs cursor-pointer"
             >
-              <option value="Semua">{t("talent.allRates", "Semua Rate")}</option>
-              <option value="< 150k">{t("talent.under150k", "< Rp 150rb / jam")}</option>
-              <option value="150k - 300k">{t("talent.range150to300k", "Rp 150rb - 300rb / jam")}</option>
-              <option value="> 300k">{t("talent.above300k", "> Rp 300rb / jam")}</option>
+              <option value="Semua">{t("talent.allRates", "Semua Tarif")}</option>
+              <option value="< 500k">{t("talent.under150k", "< Rp 500rb / proyek")}</option>
+              <option value="500k - 2m">{t("talent.range150to300k", "Rp 500rb - 2 Juta")}</option>
+              <option value="> 2m">{t("talent.above300k", "> Rp 2 Juta")}</option>
             </select>
 
             {/* Sort Selector */}
@@ -327,7 +327,7 @@ function ClientTalentContent() {
                   </span>
                 </div>
 
-                {/* Rating & Hourly Rate */}
+                {/* Rating & Starting Price */}
                 <div className="flex items-center justify-between text-xs py-1 border-y border-border/40">
                   <div className="flex items-center gap-1 text-amber-500 font-bold">
                     <Star className="h-3.5 w-3.5 fill-amber-500" />
@@ -335,7 +335,9 @@ function ClientTalentContent() {
                     <span className="text-muted-foreground font-normal">({talent.reviewsCount})</span>
                   </div>
                   <span className="font-extrabold text-foreground">
-                    {formatMoney(talent.hourlyRateNumeric || 150000)} {locale === "en" ? "/ hr" : "/ jam"}
+                    {talent.hourlyRate?.startsWith("Rp") || talent.hourlyRate?.startsWith("Mulai")
+                      ? talent.hourlyRate
+                      : `Mulai ${formatMoney(talent.hourlyRateNumeric || 500000)}`}
                   </span>
                 </div>
 
@@ -423,7 +425,7 @@ function ClientTalentContent() {
                     <div>
                       <div className="flex items-center gap-1.5">
                         <h3 className="text-base font-bold font-sans text-foreground">{selectedTalent.name}</h3>
-                        <ShieldCheck className="h-4 w-4 text-primary" />
+                        {selectedTalent.verified && <ShieldCheck className="h-4 w-4 text-primary" />}
                       </div>
                       <p className="text-xs text-muted-foreground">{selectedTalent.title}</p>
                       <span className="text-xs font-bold text-primary">{selectedTalent.hourlyRate}</span>

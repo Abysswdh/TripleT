@@ -19,7 +19,7 @@ interface Quest {
   clientName: string;
   category: string;
   budget: string;
-  budgetType: "Fixed" | "Hourly";
+  budgetType: "Fixed" | "Milestone";
   skills: string[];
   matchScore: number;
   proposalsCount: number;
@@ -66,7 +66,7 @@ function FreelancerExploreQuestsContent() {
       if (liveProjects && liveProjects.length > 0) {
         const mapped: Quest[] = liveProjects.map((p) => ({
           id: p.id,
-          ownerId: p.ownerId,
+          ownerId: p.ownerId || p.owner?.id,
           title: p.title,
           clientName: p.owner?.fullName || "Klien Terverifikasi",
           category: p.category,
@@ -88,6 +88,11 @@ function FreelancerExploreQuestsContent() {
   }, []);
 
   const filteredQuests = quests.filter((quest) => {
+    // Sembunyikan proyek milik sendiri dari mode freelancer
+    if (user && quest.ownerId && quest.ownerId === user.id) {
+      return false;
+    }
+
     const matchesSearch =
       quest.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       quest.skills.some((s) => s.toLowerCase().includes(searchQuery.toLowerCase()));
