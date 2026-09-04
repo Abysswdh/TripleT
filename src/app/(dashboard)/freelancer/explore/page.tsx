@@ -7,10 +7,12 @@ import {
   Search,
   Sparkles,
   ArrowUpRight,
+  CheckCircle2,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
 import { getOpenProjects } from "@/lib/services/projects";
+import { getUserSubmittedProjectIds } from "@/lib/services/proposals";
 
 interface Quest {
   id: string;
@@ -38,6 +40,7 @@ function FreelancerExploreQuestsContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Semua");
   const [loading, setLoading] = useState(true);
+  const [submittedProjectIds, setSubmittedProjectIds] = useState<Set<string>>(new Set());
 
   // Sync with search parameter in URL
   useEffect(() => {
@@ -58,6 +61,21 @@ function FreelancerExploreQuestsContent() {
     window.addEventListener("doable-search-sync", handleSync);
     return () => window.removeEventListener("doable-search-sync", handleSync);
   }, []);
+
+  // Fetch proposals submitted by the current user
+  useEffect(() => {
+    async function loadUserSubmissions() {
+      try {
+        const ids = await getUserSubmittedProjectIds(user?.id);
+        if (ids && ids.length > 0) {
+          setSubmittedProjectIds(new Set(ids));
+        }
+      } catch (err) {
+        console.warn("Notice loading submitted proposal project IDs:", err);
+      }
+    }
+    loadUserSubmissions();
+  }, [user?.id]);
 
   useEffect(() => {
     async function loadProjects() {
@@ -82,10 +100,20 @@ function FreelancerExploreQuestsContent() {
         }));
         setQuests(mapped);
       }
+
+      try {
+        const ids = await getUserSubmittedProjectIds(user?.id);
+        if (ids && ids.length > 0) {
+          setSubmittedProjectIds(new Set(ids));
+        }
+      } catch (err) {
+        console.warn("Notice checking submitted proposals in loadProjects:", err);
+      }
+
       setLoading(false);
     }
     loadProjects();
-  }, []);
+  }, [user?.id]);
 
   const filteredQuests = quests.filter((quest) => {
     // Sembunyikan proyek milik sendiri dari mode freelancer
@@ -175,9 +203,17 @@ function FreelancerExploreQuestsContent() {
             >
               <div className="space-y-3.5">
                 <div className="flex items-start justify-between gap-2">
-                  <span className="rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">
-                    {quest.category}
-                  </span>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">
+                      {quest.category}
+                    </span>
+                    {submittedProjectIds.has(quest.id) && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300">
+                        <CheckCircle2 className="h-3 w-3 text-amber-500" />
+                        <span>Sudah Dilamar</span>
+                      </span>
+                    )}
+                  </div>
                   <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-bold text-emerald-600">
                     <Sparkles className="h-3 w-3" />
                     {quest.matchScore}% Match
@@ -226,6 +262,14 @@ function FreelancerExploreQuestsContent() {
                   <div className="w-full inline-flex items-center justify-center gap-1.5 rounded-2xl bg-muted/80 py-2.5 text-xs font-semibold text-muted-foreground border border-border/60 select-none cursor-not-allowed">
                     <span>Proyek Anda Sendiri</span>
                   </div>
+                ) : submittedProjectIds.has(quest.id) ? (
+                  <Link
+                    href={`/freelancer/explore/${quest.id}`}
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-amber-500/10 border border-amber-500/30 py-2.5 text-xs font-bold text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 active:scale-[0.99] transition-all"
+                  >
+                    <CheckCircle2 className="h-4 w-4 text-amber-500" />
+                    <span>Proposal Sudah Diajukan</span>
+                  </Link>
                 ) : (
                   <Link
                     href={`/freelancer/explore/${quest.id}`}

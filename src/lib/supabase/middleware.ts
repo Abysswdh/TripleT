@@ -132,6 +132,14 @@ export async function updateSession(request: NextRequest) {
       (!!user.user_metadata?.onboarding_completed &&
         (user.user_metadata?.role === "customer" || user.user_metadata?.role === "client"));
 
+    // If the requested role has already been onboarded, redirect straight to that dashboard
+    if (roleParam === "freelancer" && isFreelancerOnboarded) {
+      return NextResponse.redirect(new URL("/freelancer/dashboard", request.url));
+    }
+    if ((roleParam === "customer" || roleParam === "client") && isClientOnboarded) {
+      return NextResponse.redirect(new URL("/client/dashboard", request.url));
+    }
+
     // Allow onboarding if the requested role has not been onboarded yet
     if (roleParam === "freelancer" && !isFreelancerOnboarded) {
       return response;
@@ -143,7 +151,7 @@ export async function updateSession(request: NextRequest) {
     const isBothOnboarded = isFreelancerOnboarded && isClientOnboarded;
     const isInitialOnboarded = !!user.user_metadata?.onboarding_completed;
 
-    if ((isBothOnboarded || (isInitialOnboarded && !roleParam)) && !isDev) {
+    if (isBothOnboarded || (isInitialOnboarded && !roleParam)) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
   }

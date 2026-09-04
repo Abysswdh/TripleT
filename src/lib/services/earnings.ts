@@ -46,7 +46,7 @@ export async function getFreelancerEarnings(userId?: string): Promise<EarningsSu
     };
   }
 
-  // Fetch contracts of this freelancer
+  // Fetch contracts of this freelancer with milestones and escrow transactions
   const { data: contracts } = await supabase
     .from("contracts")
     .select(`
@@ -54,6 +54,7 @@ export async function getFreelancerEarnings(userId?: string): Promise<EarningsSu
       total_amount,
       status,
       project:projects!project_id(title),
+      contract_milestones(*),
       escrow_transactions(*)
     `)
     .eq("freelancer_id", targetUserId);
@@ -69,6 +70,17 @@ export async function getFreelancerEarnings(userId?: string): Promise<EarningsSu
       const projTitle = proj?.title || "Project Milestone";
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const txs = (c.escrow_transactions as any[]) || [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const cms = (c.contract_milestones as any[]) || [];
+
+      // Calculate remaining inEscrow from active milestones not yet completed
+      if (c.status === "active") {
+        for (const cm of cms) {
+          if (cm.status === "locked" || cm.status === "in_progress" || cm.status === "submitted") {
+            inEscrow += Number(cm.amount) || 0;
+          }
+        }
+      }
 
       for (const tx of txs) {
         const isRelease = tx.type === "release";
@@ -76,11 +88,14 @@ export async function getFreelancerEarnings(userId?: string): Promise<EarningsSu
         const isHold = tx.type === "hold";
 
         if (isRelease && tx.status === "success") {
-          available += tx.amount;
+          available += Number(tx.amount) || 0;
         } else if (isHold && tx.status === "pending") {
-          inEscrow += tx.amount;
+          // Explicit hold transaction if present
+          if (cms.length === 0) {
+            inEscrow += Number(tx.amount) || 0;
+          }
         } else if (isPayout && tx.status === "success") {
-          totalWithdrawn += tx.amount;
+          totalWithdrawn += Number(tx.amount) || 0;
         }
 
         txList.push({
@@ -88,7 +103,7 @@ export async function getFreelancerEarnings(userId?: string): Promise<EarningsSu
           contractId: tx.contract_id,
           type: tx.type,
           amount: tx.amount,
-          amountDisplay: `${isPayout ? "-" : "+"}Rp ${tx.amount?.toLocaleString("id-ID")}`,
+          amountDisplay: `${isPayout ? "-" : "+"}Rp ${Number(tx.amount || 0).toLocaleString("id-ID")}`,
           status: tx.status,
           projectTitle: projTitle,
           notes: tx.notes,
@@ -102,6 +117,9 @@ export async function getFreelancerEarnings(userId?: string): Promise<EarningsSu
     }
   }
 
+  // Net available balance is released earnings minus withdrawals
+  available = Math.max(0, available - totalWithdrawn);
+
   // Check if freelancer profile has recorded total_earnings in database
   const { data: flProfile } = await supabase
     .from("freelancer_profiles")
@@ -109,8 +127,9 @@ export async function getFreelancerEarnings(userId?: string): Promise<EarningsSu
     .eq("user_id", targetUserId)
     .maybeSingle();
 
-  if (flProfile && Number(flProfile.total_earnings) > 0 && available === 0) {
-    available = Number(flProfile.total_earnings);
+  const profileEarnings = Number(flProfile?.total_earnings) || 0;
+  if (profileEarnings > available) {
+    available = profileEarnings - totalWithdrawn;
   }
 
   return {
@@ -120,7 +139,7 @@ export async function getFreelancerEarnings(userId?: string): Promise<EarningsSu
     inEscrowBalanceDisplay: `Rp ${inEscrow.toLocaleString("id-ID")}`,
     totalWithdrawn: totalWithdrawn,
     totalWithdrawnDisplay: `Rp ${totalWithdrawn.toLocaleString("id-ID")}`,
-    transactions: txList,
+    transactions: txList.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
   };
 }
 
@@ -135,9 +154,18 @@ export async function requestPayout(params: {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
+  // Find user's contract if available (nullable in migration 014)
+  const { data: latestContract } = await supabase
+    .from("contracts")
+    .select("id")
+    .eq("freelancer_id", user?.id || "")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
   // Record payout in escrow_transactions
   const { error } = await supabase.from("escrow_transactions").insert({
-    contract_id: "ba000000-0000-0000-0000-000000000001",
+    contract_id: latestContract?.id || null,
     type: "payout",
     amount: params.amount,
     status: "success",

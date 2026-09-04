@@ -52,9 +52,6 @@ if (typeof window !== "undefined") {
 export function getCurrentUserId(): string | null {
   if (typeof window === "undefined") return null;
   try {
-    const cached = localStorage.getItem("doable_current_user_id");
-    if (cached) return cached;
-
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (key && key.startsWith("sb-") && key.endsWith("-auth-token")) {
@@ -69,6 +66,8 @@ export function getCurrentUserId(): string | null {
         }
       }
     }
+    // If no active auth token found in localStorage, clear cached id
+    localStorage.removeItem("doable_current_user_id");
   } catch {
     // ignore
   }
@@ -273,7 +272,7 @@ export async function fetchUserXPBreakdown(userId?: string): Promise<XPBreakdown
     const localLearningXP = getLearnedResources(currentUid).length * 25;
     learningXP = Math.max(learningXP, localLearningXP);
 
-    if (user && user.id === currentUid) {
+    if (currentUid) {
       // 3. Query user_activity_log from database specifically for THIS user
       const { data: logs } = await supabase
         .from("user_activity_log")
@@ -306,7 +305,7 @@ export async function fetchUserXPBreakdown(userId?: string): Promise<XPBreakdown
       learningXP = Math.max(learningXP, logLearningXP);
 
       // 4. Also check user_metadata.xp if present
-      const metadataXp = Number(user.user_metadata?.xp) || 0;
+      const metadataXp = Number(user?.user_metadata?.xp) || 0;
       const currentSum = quizXP + workXP + learningXP;
 
       if (metadataXp > currentSum) {
@@ -349,12 +348,14 @@ export async function fetchHeatmapData(userId?: string): Promise<HeatmapData> {
     }
 
     // Query: group by date for last 16 weeks strictly for current user
+    // Filter out passive actions like profile updates which do not count towards work/learning streaks
     let data: Array<{ occurred_at: string }> = [];
-    if (user && user.id === currentUid) {
+    if (currentUid) {
       const res = await supabase
         .from("user_activity_log")
         .select("occurred_at")
         .eq("user_id", currentUid)
+        .neq("activity_type", "profile_updated")
         .gte(
           "occurred_at",
           new Date(Date.now() - 16 * 7 * 24 * 60 * 60 * 1000).toISOString()
@@ -363,12 +364,27 @@ export async function fetchHeatmapData(userId?: string): Promise<HeatmapData> {
       if (res.data) data = res.data;
     }
 
+    const userXp = Number(user?.user_metadata?.xp) || 0;
+
+    // If user has zero logged activities and zero XP, they are completely inactive: return empty heatmap (0 streak)
+    if ((!data || data.length === 0) && userXp === 0) {
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.removeItem(`doable_local_active_dates_${currentUid}`);
+        } catch {
+          // ignore
+        }
+      }
+      return buildEmptyHeatmap();
+    }
+
     // Build count-per-day map using local calendar date
     const countByDate: Record<string, number> = {};
     if (data && data.length > 0) {
       for (const row of data) {
         const date = formatLocalDateKey(row.occurred_at);
         countByDate[date] = (countByDate[date] || 0) + 1;
+        recordLocalActiveDate(date, currentUid);
       }
     }
 
@@ -376,6 +392,23 @@ export async function fetchHeatmapData(userId?: string): Promise<HeatmapData> {
     const localDates = getLocalActiveDates(currentUid);
     for (const ld of localDates) {
       countByDate[ld] = (countByDate[ld] || 0) + 1;
+    }
+
+    // Auto-heal ONLY for legacy users who have REAL XP in user_metadata.xp (> 0) from before activity logging was added
+    if (Object.keys(countByDate).length === 0 && user && user.id === currentUid && userXp > 0 && user.created_at) {
+      const createdDate = formatLocalDateKey(user.created_at);
+      countByDate[createdDate] = 1;
+      recordLocalActiveDate(createdDate, currentUid);
+      supabase.from("user_activity_log").insert({
+        user_id: currentUid,
+        activity_type: "quiz_completed",
+        metadata: { xp_earned: userXp, backfilled: true },
+        occurred_at: user.created_at,
+      }).then(() => {});
+    }
+
+    if (Object.keys(countByDate).length === 0) {
+      return buildEmptyHeatmap();
     }
 
     return buildHeatmapFromCounts(countByDate);

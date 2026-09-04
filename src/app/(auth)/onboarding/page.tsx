@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -87,9 +87,38 @@ function OnboardingContent() {
     loading: submitLoading,
     error,
     isRoleSwitchMode,
+    roleParam,
   } = useOnboarding();
 
   const isDev = process.env.NODE_ENV === "development";
+
+  // If user is already authenticated and has already completed onboarding for the requested role, direct them straight to dashboard
+  useEffect(() => {
+    if (!user || step === 5) return;
+    const targetRole = roleParam === "freelancer" ? "freelancer" : "customer";
+    const storedFl = typeof window !== "undefined" && localStorage.getItem("triplet_freelancer_onboarded") === "true";
+    const storedCl = typeof window !== "undefined" && localStorage.getItem("triplet_client_onboarded") === "true";
+
+    const isFlOnboarded = Boolean(
+      user.user_metadata?.freelancer_onboarded ||
+      storedFl ||
+      (user.user_metadata?.onboarding_completed && user.user_metadata?.role === "freelancer")
+    );
+    const isClOnboarded = Boolean(
+      user.user_metadata?.client_onboarded ||
+      storedCl ||
+      (user.user_metadata?.onboarding_completed && (user.user_metadata?.role === "customer" || user.user_metadata?.role === "client"))
+    );
+
+    const isAlreadyOnboarded = targetRole === "freelancer" ? isFlOnboarded : isClOnboarded;
+    if (isAlreadyOnboarded) {
+      if (typeof window !== "undefined") {
+        localStorage.setItem("triplet_active_dashboard_role", targetRole);
+        document.cookie = `triplet_active_dashboard_role=${targetRole}; path=/; max-age=31536000; SameSite=Lax`;
+      }
+      router.replace(targetRole === "freelancer" ? "/freelancer/dashboard" : "/client/dashboard");
+    }
+  }, [user, roleParam, step, router]);
 
   if (authLoading) {
     return (

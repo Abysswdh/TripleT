@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import {
@@ -35,6 +36,9 @@ import {
   ExternalLink,
   Sparkles,
   RefreshCw,
+  Image as ImageIcon,
+  Maximize2,
+  RotateCcw,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useRole } from "@/context/role-context";
@@ -51,6 +55,23 @@ import {
   type ProposalItem,
 } from "@/lib/services/proposals";
 import {
+  submitMilestoneDeliverable,
+  approveMilestone,
+  requestMilestoneRevision,
+} from "@/lib/services/contracts";
+import {
+  fetchProjectMilestoneComments,
+  sendMilestoneComment,
+  subscribeToMilestoneComments,
+  syncLocalCommentsToSupabase,
+  type MilestoneComment,
+} from "@/lib/services/milestone-chat";
+import {
+  submitContractReview,
+  getContractReview,
+  type ReviewRecord,
+} from "@/lib/services/reviews";
+import {
   GanttProvider,
   GanttSidebar,
   GanttSidebarItem,
@@ -66,14 +87,7 @@ import {
 const STATUS_ACTIVE: GanttStatus = { id: "active", name: "In Progress", color: "#3b82f6" };
 const STATUS_PLANNED: GanttStatus = { id: "planned", name: "Planned", color: "#8b5cf6" };
 
-export interface MilestoneComment {
-  id: string;
-  author: string;
-  role: "freelancer" | "client";
-  avatar: string;
-  content: string;
-  time: string;
-}
+export type { MilestoneComment };
 
 export interface MilestoneState {
   id: string;
@@ -138,6 +152,51 @@ export function ProjectWorkspaceView() {
   const [hiringApplicant, setHiringApplicant] = useState<ProposalItem | null>(null);
   const [isHiringProcessing, setIsHiringProcessing] = useState(false);
   const [newCommentText, setNewCommentText] = useState<Record<string, string>>({});
+  const [pendingImageFiles, setPendingImageFiles] = useState<Record<string, File | null>>({});
+  const [pendingImagePreviews, setPendingImagePreviews] = useState<Record<string, string | null>>({});
+  const [isSendingComment, setIsSendingComment] = useState<Record<string, boolean>>({});
+  const [previewModalImage, setPreviewModalImage] = useState<string | null>(null);
+
+  // Client Review Modals (Request Revision & Approve Escrow)
+  const [revisionMilestoneId, setRevisionMilestoneId] = useState<string | null>(null);
+  const [revisionNote, setRevisionNote] = useState("");
+  const [isSubmittingRevision, setIsSubmittingRevision] = useState(false);
+
+  const [approvingMilestoneId, setApprovingMilestoneId] = useState<string | null>(null);
+  const [isApproving, setIsApproving] = useState(false);
+
+  // Client Project Rating & Review State
+  const [mounted, setMounted] = useState(false);
+  const [contractId, setContractId] = useState<string | null>(null);
+  const [contractReview, setContractReview] = useState<ReviewRecord | null>(null);
+  const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
+  const [selectedRating, setSelectedRating] = useState(5);
+  const [hoveredRating, setHoveredRating] = useState<number | null>(null);
+  const [reviewComment, setReviewComment] = useState("");
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [ratingSuccess, setRatingSuccess] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Milestone chat auto-scroll refs & helper
+  const commentsEndRef = useRef<Record<string, HTMLDivElement | null>>({});
+  const commentsContainerRef = useRef<Record<string, HTMLDivElement | null>>({});
+
+  const scrollToBottom = useCallback((msId: string, smooth = true) => {
+    if (!msId) return;
+    const container = commentsContainerRef.current[msId];
+    const el = commentsEndRef.current[msId];
+    if (container) {
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: smooth ? "smooth" : "auto",
+      });
+    } else if (el) {
+      el.scrollIntoView({ behavior: smooth ? "smooth" : "auto" });
+    }
+  }, []);
 
   // Gantt Chart interactive states
   const [ganttRange, setGanttRange] = useState<"daily" | "weekly">("daily");
@@ -229,21 +288,34 @@ export function ProjectWorkspaceView() {
         let initialMilestones: MilestoneState[] = [];
 
         if (projectData.milestones && projectData.milestones.length > 0) {
-          initialMilestones = projectData.milestones.map((m, idx) => ({
-            id: m.id,
-            title: m.title,
-            amount: m.amountNumeric || Math.round(baseBudget / projectData.milestones.length),
-            amountDisplay: m.amount || formatMoney(m.amountNumeric || Math.round(baseBudget / projectData.milestones.length)),
-            percentage: idx === 0 ? 40 : 60,
-            status: idx === 0 ? "In Progress" : "Locked",
-            dueDate: m.dueDate || (idx === 0 ? "5 hari" : "10 hari"),
-            deliverableHint: (m.deliverables && m.deliverables.join(", ")) || "Serah terima deliverable sprint",
-            tasks: [
-              { id: `t-${idx}-1`, name: `Kickoff & Ruang Lingkup: ${m.title}`, done: idx === 0 },
-              { id: `t-${idx}-2`, name: `Pengerjaan Hasil Utama ${idx + 1}`, done: false },
-            ],
-            comments: [],
-          }));
+          initialMilestones = projectData.milestones.map((m, idx) => {
+            const isCompleted = m.status === "completed";
+            const isInProgress = m.status === "in_progress" || (idx === 0 && !isCompleted);
+            const statusVal: "Completed" | "In Progress" | "Locked" = isCompleted
+              ? "Completed"
+              : isInProgress
+              ? "In Progress"
+              : "Locked";
+
+            return {
+              id: m.id,
+              title: m.title,
+              amount: m.amountNumeric || Math.round(baseBudget / projectData.milestones.length),
+              amountDisplay: m.amount || formatMoney(m.amountNumeric || Math.round(baseBudget / projectData.milestones.length)),
+              percentage: idx === 0 ? 40 : 60,
+              status: statusVal,
+              dueDate: m.dueDate || (idx === 0 ? "5 hari" : "10 hari"),
+              deliverableHint: (m.deliverables && m.deliverables.join(", ")) || "Serah terima deliverable sprint",
+              deliverableFileUrl: m.deliverableFileUrl,
+              deliverableNote: m.deliverableNote,
+              isSubmittedForReview: m.isSubmittedForReview ?? Boolean(m.deliverableFileUrl && !isCompleted),
+              tasks: [
+                { id: `t-${idx}-1`, name: `Kickoff & Ruang Lingkup: ${m.title}`, done: isCompleted || idx === 0 },
+                { id: `t-${idx}-2`, name: `Pengerjaan Hasil Utama ${idx + 1}`, done: isCompleted },
+              ],
+              comments: [],
+            };
+          });
         } else {
           // Default 2 milestones
           initialMilestones = [
@@ -280,9 +352,16 @@ export function ProjectWorkspaceView() {
           ];
         }
 
-        // Restore persisted comments from localStorage
-        if (typeof window !== "undefined") {
-          initialMilestones = initialMilestones.map((ms) => {
+        // Load persistent comments from Supabase database
+        const commentsMap = await fetchProjectMilestoneComments(projectId);
+
+        initialMilestones = initialMilestones.map((ms) => {
+          const dbComments = commentsMap[ms.id] || [];
+          if (dbComments.length > 0) {
+            return { ...ms, comments: dbComments };
+          }
+          // Fallback to localStorage if any exist from before sync
+          if (typeof window !== "undefined") {
             const saved = localStorage.getItem(`doable_comments_${projectId}_${ms.id}`);
             if (saved) {
               try {
@@ -291,9 +370,12 @@ export function ProjectWorkspaceView() {
                 return ms;
               }
             }
-            return ms;
-          });
-        }
+          }
+          return ms;
+        });
+
+        // Background sync: push any previously stored localStorage comments to Supabase
+        syncLocalCommentsToSupabase(projectId, initialMilestones.map((m) => m.id));
 
         setMilestones(initialMilestones);
         if (initialMilestones.length > 0) {
@@ -318,6 +400,33 @@ export function ProjectWorkspaceView() {
         }));
 
         setFeatures(mappedGantt);
+
+        // Load contract and existing client review
+        try {
+          const supabase = createClient();
+          let cId = projectData.contractId;
+          if (!cId) {
+            const { data: cRow } = await supabase
+              .from("contracts")
+              .select("id, status, freelancer_id")
+              .eq("project_id", projectId)
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            if (cRow) cId = cRow.id;
+          }
+          if (cId) {
+            setContractId(cId);
+            const existingReview = await getContractReview(cId);
+            if (existingReview) {
+              setContractReview(existingReview);
+              setSelectedRating(existingReview.rating);
+              setReviewComment(existingReview.comment || "");
+            }
+          }
+        } catch (cErr) {
+          console.warn("Notice checking project contract/review:", cErr);
+        }
       }
     } catch (err) {
       console.error("Error loading project workspace:", err);
@@ -329,6 +438,39 @@ export function ProjectWorkspaceView() {
   useEffect(() => {
     loadProjectData();
   }, [loadProjectData]);
+
+  // Supabase Realtime Subscription for instant live chat synchronization
+  useEffect(() => {
+    if (!projectId) return;
+
+    const unsubscribe = subscribeToMilestoneComments(projectId, (newComment, msId) => {
+      setMilestones((prev) =>
+        prev.map((m) => {
+          if (m.id === msId) {
+            // Check if already in comments list to avoid duplicate
+            if (m.comments.some((c) => c.id === newComment.id)) return m;
+            return { ...m, comments: [...m.comments, newComment] };
+          }
+          return m;
+        })
+      );
+      setTimeout(() => scrollToBottom(msId, true), 60);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [projectId, scrollToBottom]);
+
+  // Auto-scroll chat to bottom whenever comments change or milestone is opened
+  useEffect(() => {
+    if (expandedMilestoneId) {
+      const timer = setTimeout(() => {
+        scrollToBottom(expandedMilestoneId, true);
+      }, 60);
+      return () => clearTimeout(timer);
+    }
+  }, [milestones, expandedMilestoneId, scrollToBottom]);
 
   // Dynamic Gantt bounds calculation
   const ganttBounds = useMemo(() => {
@@ -410,116 +552,287 @@ export function ProjectWorkspaceView() {
   };
 
   // 4. Milestone Deliverable Submission (Freelancer Side)
-  const handleSubmitDeliverable = (e: React.FormEvent) => {
+  const handleSubmitDeliverable = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeSubmitId) return;
 
     setIsSubmitting(true);
+    const finalUrl = deliverableUrl.trim() || "https://drive.google.com/folder/deliverables";
+    const finalNote = deliverableNote.trim() || "File hasil karya telah siap untuk ditinjau oleh klien.";
 
-    setTimeout(() => {
-      setMilestones((prev) =>
-        prev.map((m) =>
-          m.id === activeSubmitId
-            ? {
-                ...m,
-                isSubmittedForReview: true,
-                deliverableFileUrl: deliverableUrl || "https://drive.google.com/folder/deliverables",
-                deliverableNote: deliverableNote || "File hasil karya telah siap untuk ditinjau oleh klien.",
-              }
-            : m
-        )
-      );
-
-      setIsSubmitting(false);
-      setSubmitSuccess(true);
-
-      setTimeout(() => {
-        setActiveSubmitId(null);
-        setSubmitSuccess(false);
-        setDeliverableUrl("");
-        setDeliverableNote("");
-      }, 1500);
-    }, 1000);
-  };
-
-  // 5. Client Review Milestone: Approve & Release Escrow
-  const handleApproveMilestone = (milestoneId: string) => {
-    setMilestones((prev) => {
-      const idx = prev.findIndex((m) => m.id === milestoneId);
-      if (idx === -1) return prev;
-
-      return prev.map((m, i) => {
-        if (i === idx) {
-          return { ...m, status: "Completed", isSubmittedForReview: false };
-        }
-        // Unlock next milestone if available
-        if (i === idx + 1) {
-          return { ...m, status: "In Progress" };
-        }
-        return m;
+    try {
+      const res = await submitMilestoneDeliverable({
+        projectId,
+        milestoneId: activeSubmitId,
+        deliverableUrl: finalUrl,
+        deliverableNote: finalNote,
       });
-    });
-  };
 
-  // 6. Client Review Milestone: Request Revision
-  const handleRequestRevision = (milestoneId: string) => {
-    const note = prompt("Tuliskan catatan revisi untuk freelancer:");
-    if (!note) return;
+      if (res.success) {
+        setMilestones((prev) =>
+          prev.map((m) =>
+            m.id === activeSubmitId
+              ? {
+                  ...m,
+                  isSubmittedForReview: true,
+                  deliverableFileUrl: finalUrl,
+                  deliverableNote: finalNote,
+                }
+              : m
+          )
+        );
 
-    setMilestones((prev) =>
-      prev.map((m) =>
-        m.id === milestoneId
-          ? {
-              ...m,
-              isSubmittedForReview: false,
-              comments: [
-                ...m.comments,
-                {
-                  id: `rev-${Date.now()}`,
-                  author: userProfile.fullName,
-                  role: "client",
-                  avatar: userProfile.avatarUrl,
-                  content: `[PERMINTAAN REVISI]: ${note}`,
-                  time: "Baru saja",
-                },
-              ],
-            }
-          : m
-      )
-    );
-  };
+        setSubmitSuccess(true);
 
-  // 7. Two-Way Persistent Milestone Commenting
-  const handleAddComment = (msId: string) => {
-    const text = newCommentText[msId]?.trim();
-    if (!text) return;
-
-    const newComment: MilestoneComment = {
-      id: `c-${Date.now()}`,
-      author: userProfile.fullName,
-      role: isClientMode ? "client" : "freelancer",
-      avatar: userProfile.avatarUrl,
-      content: text,
-      time: "Baru saja",
-    };
-
-    setMilestones((prev) => {
-      const updated = prev.map((m) =>
-        m.id === msId ? { ...m, comments: [...m.comments, newComment] } : m
-      );
-
-      // Persist to localStorage
-      if (typeof window !== "undefined") {
-        const ms = updated.find((m) => m.id === msId);
-        if (ms) {
-          localStorage.setItem(`doable_comments_${projectId}_${msId}`, JSON.stringify(ms.comments));
-        }
+        setTimeout(() => {
+          setActiveSubmitId(null);
+          setSubmitSuccess(false);
+          setDeliverableUrl("");
+          setDeliverableNote("");
+        }, 1500);
+      } else {
+        alert(`Gagal menyerahkan deliverable: ${res.error || "Terjadi kesalahan"}`);
       }
+    } catch (err) {
+      console.error("Error submitting deliverable:", err);
+      alert("Terjadi kesalahan saat menyerahkan hasil karya.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-      return updated;
-    });
+  // 5. Client Review Milestone: Approve & Release Escrow Modal Handlers
+  const handleOpenApproveModal = (milestoneId: string) => {
+    setApprovingMilestoneId(milestoneId);
+  };
 
-    setNewCommentText((prev) => ({ ...prev, [msId]: "" }));
+  const handleConfirmApprove = async () => {
+    if (!approvingMilestoneId) return;
+    const targetMs = milestones.find((m) => m.id === approvingMilestoneId);
+    const amount = targetMs?.amount || 0;
+
+    setIsApproving(true);
+    try {
+      const res = await approveMilestone({
+        projectId,
+        milestoneId: approvingMilestoneId,
+        amount,
+      });
+
+      if (res.success) {
+        setMilestones((prev) => {
+          const idx = prev.findIndex((m) => m.id === approvingMilestoneId);
+          if (idx === -1) return prev;
+
+          return prev.map((m, i) => {
+            if (i === idx) {
+              return { ...m, status: "Completed", isSubmittedForReview: false };
+            }
+            // Unlock next milestone if available
+            if (i === idx + 1 && m.status === "Locked") {
+              return { ...m, status: "In Progress" };
+            }
+            return m;
+          });
+        });
+
+        const willBeAllDone = milestones
+          .filter((m) => m.id !== approvingMilestoneId)
+          .every((m) => m.status === "Completed");
+
+        if (willBeAllDone) {
+          setProject((p) => (p ? { ...p, status: "Completed" } : null));
+          if (isClientMode) {
+            setTimeout(() => {
+              setIsRatingModalOpen(true);
+            }, 600);
+          }
+        }
+
+        setApprovingMilestoneId(null);
+      } else {
+        alert(`Gagal menyetujui milestone: ${res.error || "Terjadi kesalahan"}`);
+      }
+    } catch (err) {
+      console.error("Error approving milestone:", err);
+      alert("Terjadi kesalahan saat menyetujui hasil karya milestone.");
+    } finally {
+      setIsApproving(false);
+    }
+  };
+
+  // 5b. Client Rating & Review Handler
+  const handleSubmitReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+
+    let cId = contractId || project?.contractId;
+    let targetRevieweeId = project?.freelancer?.id;
+
+    if (!cId || !targetRevieweeId) {
+      const supabase = createClient();
+      const { data: cRow } = await supabase
+        .from("contracts")
+        .select("id, freelancer_id")
+        .eq("project_id", projectId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (cRow) {
+        if (!cId) cId = cRow.id;
+        if (!targetRevieweeId) targetRevieweeId = cRow.freelancer_id;
+      }
+    }
+
+    if (!cId || !targetRevieweeId) {
+      alert("Gagal menemukan kontrak atau freelancer untuk diberi rating.");
+      return;
+    }
+
+    setIsSubmittingReview(true);
+    try {
+      const res = await submitContractReview({
+        contractId: cId,
+        reviewerId: user.id,
+        revieweeId: targetRevieweeId,
+        rating: selectedRating,
+        comment: reviewComment,
+      });
+
+      if (res.success && res.data) {
+        setContractReview(res.data);
+        setRatingSuccess(true);
+        setTimeout(() => {
+          setIsRatingModalOpen(false);
+          setRatingSuccess(false);
+        }, 1200);
+      } else {
+        alert(`Gagal menyimpan rating: ${res.error || "Terjadi kesalahan"}`);
+      }
+    } catch (err) {
+      console.error("Error submitting rating review:", err);
+      alert("Terjadi kesalahan saat mengirim ulasan.");
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
+
+  // 6. Client Review Milestone: Request Revision Modal Handlers
+  const handleOpenRevisionModal = (milestoneId: string) => {
+    setRevisionMilestoneId(milestoneId);
+    setRevisionNote("");
+  };
+
+  const handleConfirmRevision = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!revisionMilestoneId || !revisionNote.trim()) return;
+
+    setIsSubmittingRevision(true);
+    try {
+      const res = await requestMilestoneRevision({
+        projectId,
+        milestoneId: revisionMilestoneId,
+        note: revisionNote.trim(),
+      });
+
+      if (res.success) {
+        setMilestones((prev) =>
+          prev.map((m) =>
+            m.id === revisionMilestoneId
+              ? {
+                  ...m,
+                  isSubmittedForReview: false,
+                }
+              : m
+          )
+        );
+        setRevisionMilestoneId(null);
+        setRevisionNote("");
+      } else {
+        alert(`Gagal mengajukan revisi: ${res.error || "Terjadi kesalahan"}`);
+      }
+    } catch (err) {
+      console.error("Error requesting revision:", err);
+      alert("Terjadi kesalahan saat mengajukan revisi.");
+    } finally {
+      setIsSubmittingRevision(false);
+    }
+  };
+
+  // Direct aliases for buttons
+  const handleApproveMilestone = handleOpenApproveModal;
+  const handleRequestRevision = handleOpenRevisionModal;
+
+  // Image Selection Handlers for Milestone Chat
+  const handleImageSelect = (msId: string, file?: File) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      alert("Hanya file gambar yang diperbolehkan (PNG, JPG, WEBP, GIF).");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Ukuran gambar maksimal 10MB.");
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    setPendingImageFiles((prev) => ({ ...prev, [msId]: file }));
+    setPendingImagePreviews((prev) => ({ ...prev, [msId]: previewUrl }));
+  };
+
+  const handleRemovePendingImage = (msId: string) => {
+    const existing = pendingImagePreviews[msId];
+    if (existing) {
+      URL.revokeObjectURL(existing);
+    }
+    setPendingImageFiles((prev) => ({ ...prev, [msId]: null }));
+    setPendingImagePreviews((prev) => ({ ...prev, [msId]: null }));
+  };
+
+  // 7. Persistent Supabase Milestone Commenting with Image Support
+  const handleAddComment = async (msId: string) => {
+    const text = newCommentText[msId]?.trim() || "";
+    const pendingFile = pendingImageFiles[msId];
+
+    if (!text && !pendingFile) return;
+
+    setIsSendingComment((prev) => ({ ...prev, [msId]: true }));
+
+    try {
+      const result = await sendMilestoneComment({
+        projectId,
+        milestoneId: msId,
+        content: text,
+        imageFile: pendingFile,
+        authorName: userProfile.fullName,
+        authorAvatar: userProfile.avatarUrl,
+        role: isClientMode ? "client" : "freelancer",
+      });
+
+      if (result.success && result.comment) {
+        const newC = result.comment;
+        setMilestones((prev) =>
+          prev.map((m) => {
+            if (m.id === msId) {
+              if (m.comments.some((c) => c.id === newC.id)) return m;
+              return { ...m, comments: [...m.comments, newC] };
+            }
+            return m;
+          })
+        );
+        setTimeout(() => scrollToBottom(msId, true), 50);
+      } else {
+        alert(`Gagal mengirim pesan: ${result.error || "Terjadi kesalahan"}`);
+      }
+    } catch (err) {
+      console.error("Error sending milestone comment:", err);
+      alert("Gagal mengirim pesan.");
+    } finally {
+      setIsSendingComment((prev) => ({ ...prev, [msId]: false }));
+      setNewCommentText((prev) => ({ ...prev, [msId]: "" }));
+      handleRemovePendingImage(msId);
+    }
   };
 
   // 8. Toggle Checklist Task
@@ -651,34 +964,19 @@ export function ProjectWorkspaceView() {
     <div className="min-h-screen bg-background font-sans">
       <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-20">
 
-        {/* ── BREADCRUMB & CONTEXT SWITCHER ── */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-          <div className="flex items-center gap-3">
-            <Link
-              href={isClientMode ? "/client/projects" : "/freelancer/my-work"}
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              {isClientMode ? "Kelola Proyek" : "Pekerjaan Saya"}
-            </Link>
-            <span className="text-muted-foreground/40 text-xs">/</span>
-            <span className="text-xs font-medium text-foreground truncate max-w-[260px]">
-              {project.title}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2 self-start sm:self-auto">
-            <span className="text-[11px] text-muted-foreground font-medium">Mode Tampilan:</span>
-            <span
-              className={`rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
-                isClientMode
-                  ? "bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20"
-                  : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20"
-              }`}
-            >
-              {isClientMode ? "Client (Pemberi Kerja)" : "Freelancer (Pelaksana)"}
-            </span>
-          </div>
+        {/* ── BREADCRUMB ── */}
+        <div className="flex items-center gap-3 mb-6">
+          <Link
+            href={isClientMode ? "/client/projects" : "/freelancer/my-work"}
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            {isClientMode ? "Kelola Proyek" : "Pekerjaan Saya"}
+          </Link>
+          <span className="text-muted-foreground/40 text-xs">/</span>
+          <span className="text-xs font-medium text-foreground truncate max-w-[260px]">
+            {project.title}
+          </span>
         </div>
 
         {/* ── PROJECT HEADER HERO ── */}
@@ -774,7 +1072,49 @@ export function ProjectWorkspaceView() {
         </div>
 
         {/* ── ROLE-SPECIFIC ACTIVE BANNER ── */}
-        {project.status === "Hiring" ? (
+        {project.status === "Completed" ? (
+          <div className="rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent p-5 sm:p-6 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+            <div className="flex items-start gap-4">
+              <div className="h-12 w-12 rounded-2xl bg-amber-500/20 text-amber-500 flex items-center justify-center shrink-0">
+                <Star className="h-6 w-6 fill-amber-400 text-amber-500" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                  <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+                    {contractReview ? "Ulasan Klien Selesai" : "Proyek Selesai — Rating Klien"}
+                  </span>
+                  <span className="rounded-md bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 text-[10px] font-bold">
+                    Completed
+                  </span>
+                </div>
+                <p className="text-sm sm:text-base font-bold text-foreground">
+                  {contractReview
+                    ? `Rating ⭐ ${contractReview.rating.toFixed(1)} / 5.0 telah diberikan untuk ${project.freelancer?.fullName || "Freelancer"}`
+                    : isClientMode
+                    ? `Beri rating & ulasan untuk hasil kerja ${project.freelancer?.fullName || "Freelancer"}`
+                    : `Proyek ini telah selesai dikerjakan! Menunggu penilaian dari klien.`}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5 max-w-xl">
+                  {contractReview?.comment ? (
+                    <span className="italic text-foreground/90 font-medium">"{contractReview.comment}"</span>
+                  ) : (
+                    "Rating & ulasan akan terbit di profil publik freelancer dan portofolio proyek terbarunya."
+                  )}
+                </p>
+              </div>
+            </div>
+
+            {isClientMode && (
+              <button
+                onClick={() => setIsRatingModalOpen(true)}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-slate-950 font-bold px-4 py-2.5 text-xs shadow-md shadow-amber-500/20 hover:scale-[1.02] transition-all shrink-0 cursor-pointer"
+              >
+                <Star className="h-4 w-4 fill-slate-950 text-slate-950" />
+                <span>{contractReview ? "Ubah Rating & Ulasan" : "Beri Rating Sekarang ⭐"}</span>
+              </button>
+            )}
+          </div>
+        ) : project.status === "Hiring" ? (
           <div className="rounded-2xl border border-amber-500/25 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div className="flex items-start gap-3.5">
               <div className="h-10 w-10 rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-400 flex items-center justify-center shrink-0">
@@ -841,10 +1181,21 @@ export function ProjectWorkspaceView() {
               </div>
 
               {/* Action depending on role */}
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
                 {isClientMode ? (
                   activeMilestone.isSubmittedForReview ? (
                     <>
+                      {activeMilestone.deliverableFileUrl && (
+                        <a
+                          href={activeMilestone.deliverableFileUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-primary/30 bg-primary/10 px-3.5 py-2 text-xs font-bold text-primary hover:bg-primary/20 transition-all"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" />
+                          Buka Link Deliverable
+                        </a>
+                      )}
                       <button
                         onClick={() => handleApproveMilestone(activeMilestone.id)}
                         className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 transition-all"
@@ -866,17 +1217,36 @@ export function ProjectWorkspaceView() {
                   )
                 ) : (
                   /* Freelancer action */
-                  <button
-                    onClick={() => {
-                      setActiveSubmitId(activeMilestone.id);
-                      setExpandedMilestoneId(activeMilestone.id);
-                      setActiveTab("overview");
-                    }}
-                    className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all"
-                  >
-                    <UploadCloud className="h-3.5 w-3.5" />
-                    Serahkan Hasil Karya
-                  </button>
+                  activeMilestone.isSubmittedForReview ? (
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30 px-3.5 py-2 text-xs font-bold text-amber-700 dark:text-amber-400">
+                        <Clock className="h-3.5 w-3.5" />
+                        Sedang Ditinjau Klien
+                      </span>
+                      {activeMilestone.deliverableFileUrl && (
+                        <a
+                          href={activeMilestone.deliverableFileUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted"
+                        >
+                          <ExternalLink className="h-3 w-3" /> Tautan
+                        </a>
+                      )}
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setActiveSubmitId(activeMilestone.id);
+                        setExpandedMilestoneId(activeMilestone.id);
+                        setActiveTab("overview");
+                      }}
+                      className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all"
+                    >
+                      <UploadCloud className="h-3.5 w-3.5" />
+                      Serahkan Hasil Karya
+                    </button>
+                  )
                 )}
               </div>
             </div>
@@ -1247,18 +1617,25 @@ export function ProjectWorkspaceView() {
                           <p className="text-muted-foreground">{ms.deliverableHint}</p>
 
                           {ms.deliverableFileUrl && (
-                            <div className="pt-2 border-t border-border/30 flex items-center justify-between">
-                              <span className="text-emerald-600 font-semibold flex items-center gap-1">
-                                <CheckCircle className="h-3 w-3" /> Link Hasil Karya:
-                              </span>
-                              <a
-                                href={ms.deliverableFileUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-primary font-bold hover:underline inline-flex items-center gap-1"
-                              >
-                                Buka Link <ExternalLink className="h-3 w-3" />
-                              </a>
+                            <div className="pt-2 border-t border-border/30 space-y-1.5">
+                              <div className="flex items-center justify-between">
+                                <span className="text-emerald-600 font-semibold flex items-center gap-1">
+                                  <CheckCircle className="h-3 w-3" /> Link Hasil Karya:
+                                </span>
+                                <a
+                                  href={ms.deliverableFileUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-primary font-bold hover:underline inline-flex items-center gap-1"
+                                >
+                                  Buka Link <ExternalLink className="h-3 w-3" />
+                                </a>
+                              </div>
+                              {ms.deliverableNote && (
+                                <p className="text-[11px] text-muted-foreground italic bg-muted/30 p-2 rounded-lg border border-border/30">
+                                  Catatan Freelancer: &ldquo;{ms.deliverableNote}&rdquo;
+                                </p>
+                              )}
                             </div>
                           )}
                         </div>
@@ -1290,13 +1667,27 @@ export function ProjectWorkspaceView() {
                               )
                             ) : (
                               /* Freelancer submission */
-                              <button
-                                onClick={() => setActiveSubmitId(ms.id)}
-                                className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-primary/90 transition-all"
-                              >
-                                <UploadCloud className="h-3.5 w-3.5" />
-                                Serahkan Hasil Karya
-                              </button>
+                              ms.isSubmittedForReview ? (
+                                <div className="flex items-center justify-between w-full p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                                  <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+                                    <Clock className="h-3.5 w-3.5" /> Hasil karya sedang ditinjau klien
+                                  </span>
+                                  <button
+                                    onClick={() => setActiveSubmitId(ms.id)}
+                                    className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-2.5 py-1 text-[11px] font-semibold text-foreground hover:bg-muted"
+                                  >
+                                    <UploadCloud className="h-3 w-3" /> Perbarui Link
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => setActiveSubmitId(ms.id)}
+                                  className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-primary/90 transition-all"
+                                >
+                                  <UploadCloud className="h-3.5 w-3.5" />
+                                  Serahkan Hasil Karya
+                                </button>
+                              )
                             )}
                           </div>
                         )}
@@ -1308,40 +1699,88 @@ export function ProjectWorkspaceView() {
                           </p>
 
                           {ms.comments.length > 0 ? (
-                            <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
-                              {ms.comments.map((c) => (
-                                <div
-                                  key={c.id}
-                                  className={`flex items-start gap-2.5 ${
-                                    c.role === "client" ? "flex-row-reverse" : ""
-                                  }`}
-                                >
-                                  <img
-                                    src={c.avatar}
-                                    alt={c.author}
-                                    className="h-7 w-7 rounded-full object-cover shrink-0 border border-border"
-                                  />
+                            <div
+                              ref={(el) => {
+                                commentsContainerRef.current[ms.id] = el;
+                              }}
+                              className="space-y-3 max-h-64 overflow-y-auto pr-1 scroll-smooth"
+                            >
+                              {ms.comments.map((c) => {
+                                const isCurrentUser = Boolean(
+                                  (user?.id && c.authorId && c.authorId === user.id) ||
+                                  (c.role === (isClientMode ? "client" : "freelancer")) ||
+                                  (c.author && userProfile.fullName && c.author.toLowerCase() === userProfile.fullName.toLowerCase())
+                                );
+
+                                return (
                                   <div
-                                    className={`max-w-[80%] rounded-2xl px-3.5 py-2 space-y-1 ${
-                                      c.role === "client"
-                                        ? "bg-primary/10 border border-primary/20 text-right"
-                                        : "bg-card border border-border/60"
+                                    key={c.id}
+                                    className={`flex items-start gap-2.5 ${
+                                      isCurrentUser ? "flex-row-reverse" : ""
                                     }`}
                                   >
+                                    <img
+                                      src={isCurrentUser && userProfile.avatarUrl ? userProfile.avatarUrl : c.avatar}
+                                      alt={c.author}
+                                      className="h-7 w-7 rounded-full object-cover shrink-0 border border-border"
+                                    />
                                     <div
-                                      className={`flex items-center gap-2 ${
-                                        c.role === "client" ? "justify-end" : ""
+                                      className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 space-y-1.5 ${
+                                        isCurrentUser
+                                          ? "bg-primary/10 border border-primary/20 text-right ml-auto"
+                                          : "bg-card border border-border/60 text-left mr-auto"
                                       }`}
                                     >
-                                      <span className="text-[10px] font-bold text-foreground">
-                                        {c.author} ({c.role === "client" ? "Klien" : "Freelancer"})
-                                      </span>
-                                      <span className="text-[9px] text-muted-foreground">{c.time}</span>
+                                      <div
+                                        className={`flex items-center gap-2 ${
+                                          isCurrentUser ? "justify-end" : "justify-start"
+                                        }`}
+                                      >
+                                        <span className="text-[10px] font-bold text-foreground">
+                                          {isCurrentUser ? "Anda" : c.author} ({c.role === "client" ? "Klien" : "Freelancer"})
+                                        </span>
+                                        <span className="text-[9px] text-muted-foreground">{c.time}</span>
+                                      </div>
+
+                                      {/* Optional Image Attachment */}
+                                      {c.imageUrl && (
+                                        <div
+                                          className={`mt-1 overflow-hidden rounded-xl border border-border/60 bg-background/50 group relative cursor-pointer inline-block shadow-xs ${
+                                            isCurrentUser ? "ml-auto" : ""
+                                          }`}
+                                          onClick={() => setPreviewModalImage(c.imageUrl!)}
+                                        >
+                                          <img
+                                            src={c.imageUrl}
+                                            alt="Lampiran diskusi milestone"
+                                            className="max-h-48 max-w-full rounded-xl object-contain transition-transform duration-200 group-hover:scale-[1.02]"
+                                            loading="lazy"
+                                            onLoad={() => scrollToBottom(ms.id, true)}
+                                          />
+                                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-xl">
+                                            <span className="bg-black/75 text-white text-[10px] px-2.5 py-1 rounded-full font-medium flex items-center gap-1.5 shadow-sm backdrop-blur-xs">
+                                              <Maximize2 className="h-3 w-3" /> Perbesar
+                                            </span>
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      {c.content && (
+                                        <p className="text-xs text-foreground leading-relaxed whitespace-pre-wrap">
+                                          {c.content}
+                                        </p>
+                                      )}
                                     </div>
-                                    <p className="text-xs text-foreground leading-relaxed">{c.content}</p>
                                   </div>
-                                </div>
-                              ))}
+                                );
+                              })}
+                              {/* Invisible target element to scroll to bottom */}
+                              <div
+                                ref={(el) => {
+                                  commentsEndRef.current[ms.id] = el;
+                                }}
+                                className="h-px w-full pointer-events-none opacity-0"
+                              />
                             </div>
                           ) : (
                             <p className="text-xs text-muted-foreground italic">
@@ -1349,8 +1788,56 @@ export function ProjectWorkspaceView() {
                             </p>
                           )}
 
+                          {/* Image Attachment Preview Before Sending */}
+                          {pendingImagePreviews[ms.id] && (
+                            <div className="flex items-center gap-3 p-2 rounded-xl bg-muted/40 border border-border/70 animate-in fade-in">
+                              <div className="relative h-12 w-12 rounded-lg overflow-hidden border border-border/80 bg-background shrink-0">
+                                <img
+                                  src={pendingImagePreviews[ms.id]!}
+                                  alt="Pratinjau Gambar"
+                                  className="h-full w-full object-cover"
+                                />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-semibold text-foreground truncate">
+                                  {pendingImageFiles[ms.id]?.name}
+                                </p>
+                                <p className="text-[10px] text-muted-foreground">
+                                  {((pendingImageFiles[ms.id]?.size || 0) / 1024).toFixed(1)} KB - Siap dikirim
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleRemovePendingImage(ms.id)}
+                                className="h-6 w-6 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                                title="Hapus gambar"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          )}
+
                           {/* Message Input Box */}
                           <div className="flex items-center gap-2 pt-1">
+                            {/* Attach Image Button */}
+                            <label
+                              htmlFor={`file-chat-${ms.id}`}
+                              className="h-9 w-9 rounded-xl border border-border/80 hover:bg-muted/70 flex items-center justify-center cursor-pointer text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                              title="Lampirkan Gambar (Screenshot / Desain)"
+                            >
+                              <ImageIcon className="h-4 w-4" />
+                              <input
+                                id={`file-chat-${ms.id}`}
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  handleImageSelect(ms.id, e.target.files?.[0]);
+                                  e.target.value = "";
+                                }}
+                              />
+                            </label>
+
                             <input
                               type="text"
                               value={newCommentText[ms.id] || ""}
@@ -1358,20 +1845,32 @@ export function ProjectWorkspaceView() {
                                 setNewCommentText((prev) => ({ ...prev, [ms.id]: e.target.value }))
                               }
                               onKeyDown={(e) => {
-                                if (e.key === "Enter") handleAddComment(ms.id);
+                                if (e.key === "Enter" && !e.shiftKey) {
+                                  e.preventDefault();
+                                  handleAddComment(ms.id);
+                                }
                               }}
+                              disabled={isSendingComment[ms.id]}
                               placeholder={
                                 isClientMode
                                   ? "Tulis instruksi atau catatan ke freelancer..."
                                   : "Tulis pertanyaan atau update ke klien..."
                               }
-                              className="flex-1 h-9 rounded-xl border border-border bg-background px-3 text-xs text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15 transition-all"
+                              className="flex-1 h-9 rounded-xl border border-border bg-background px-3 text-xs text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15 transition-all disabled:opacity-50"
                             />
                             <button
                               onClick={() => handleAddComment(ms.id)}
-                              className="h-9 w-9 rounded-xl bg-primary flex items-center justify-center text-white hover:bg-primary/90 shrink-0 transition-colors"
+                              disabled={
+                                isSendingComment[ms.id] ||
+                                (!newCommentText[ms.id]?.trim() && !pendingImageFiles[ms.id])
+                              }
+                              className="h-9 w-9 rounded-xl bg-primary flex items-center justify-center text-white hover:bg-primary/90 shrink-0 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                              <Send className="h-3.5 w-3.5" />
+                              {isSendingComment[ms.id] ? (
+                                <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <Send className="h-3.5 w-3.5" />
+                              )}
                             </button>
                           </div>
                         </div>
@@ -1769,10 +2268,16 @@ export function ProjectWorkspaceView() {
                         className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
                           ms.status === "Completed"
                             ? "bg-emerald-500/15 text-emerald-600"
+                            : ms.isSubmittedForReview
+                            ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
                             : "bg-muted text-muted-foreground"
                         }`}
                       >
-                        {ms.status === "Completed" ? "Selesai & Diserahkan" : "Belum Diserahkan"}
+                        {ms.status === "Completed"
+                          ? "Selesai & Diserahkan"
+                          : ms.isSubmittedForReview
+                          ? "Sedang Ditinjau Klien"
+                          : "Belum Diserahkan"}
                       </span>
                       <span className="text-xs font-bold text-foreground">{ms.title}</span>
                     </div>
@@ -1954,6 +2459,355 @@ export function ProjectWorkspaceView() {
               )}
             </div>
           </div>
+        )}
+
+        {/* ── MODAL: IMAGE LIGHTBOX PREVIEW ── */}
+        {previewModalImage && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm animate-in fade-in"
+            onClick={() => setPreviewModalImage(null)}
+          >
+            <div
+              className="relative max-w-4xl max-h-[90vh] w-full flex flex-col items-center justify-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="w-full flex items-center justify-between pb-3 px-1 text-white">
+                <span className="text-xs font-semibold text-white/80">Lampiran Gambar Milestone</span>
+                <div className="flex items-center gap-2">
+                  <a
+                    href={previewModalImage}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-semibold backdrop-blur-xs transition-colors"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" /> Buka Asli
+                  </a>
+                  <button
+                    onClick={() => setPreviewModalImage(null)}
+                    className="h-8 w-8 rounded-xl bg-white/15 hover:bg-white/25 text-white flex items-center justify-center backdrop-blur-xs transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+              <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/40 shadow-2xl">
+                <img
+                  src={previewModalImage}
+                  alt="Pratinjau Gambar Penuh"
+                  className="max-h-[80vh] max-w-full rounded-2xl object-contain mx-auto"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── MODAL: REQUEST MILESTONE REVISION (CLIENT SIDE) ── */}
+        {revisionMilestoneId && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in">
+            <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-4 animate-in zoom-in-95">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5 text-foreground font-bold text-sm">
+                  <div className="h-8 w-8 rounded-xl bg-amber-500/15 text-amber-600 flex items-center justify-center">
+                    <RotateCcw className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-foreground text-sm">Minta Revisi Deliverable</h3>
+                    <p className="text-[11px] text-muted-foreground font-normal">
+                      Kirimkan instruksi perbaikan kepada freelancer
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setRevisionMilestoneId(null);
+                    setRevisionNote("");
+                  }}
+                  className="text-muted-foreground hover:text-foreground rounded-lg p-1 hover:bg-muted transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Target Milestone info card */}
+              {(() => {
+                const ms = milestones.find((m) => m.id === revisionMilestoneId);
+                if (!ms) return null;
+                return (
+                  <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5 space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-bold text-foreground">{ms.title}</span>
+                      <span className="font-bold text-primary">{formatMoney(ms.amount)}</span>
+                    </div>
+                    {ms.deliverableFileUrl && (
+                      <div className="flex items-center justify-between text-xs pt-1.5 border-t border-border/40">
+                        <span className="text-muted-foreground truncate max-w-[280px]">
+                          File: {ms.deliverableFileUrl}
+                        </span>
+                        <a
+                          href={ms.deliverableFileUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 font-bold text-primary hover:underline shrink-0"
+                        >
+                          Lihat File <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              <form onSubmit={handleConfirmRevision} className="space-y-4">
+                <div>
+                  <label className="text-xs font-bold text-foreground block mb-1.5">
+                    Instruksi & Catatan Revisi <span className="text-destructive">*</span>
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={revisionNote}
+                    onChange={(e) => setRevisionNote(e.target.value)}
+                    placeholder="Jelaskan secara detail bagian mana yang perlu diperbaiki atau disesuaikan oleh freelancer..."
+                    className="w-full rounded-xl border border-border bg-background p-3 text-xs text-foreground focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/15 transition-all"
+                    required
+                    autoFocus
+                  />
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Catatan revisi ini otomatis tercatat di thread diskusi milestone agar dapat langsung ditindaklanjuti.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRevisionMilestoneId(null);
+                      setRevisionNote("");
+                    }}
+                    className="flex-1 rounded-xl border border-border px-4 py-2.5 text-xs font-semibold text-muted-foreground hover:bg-muted transition-colors"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmittingRevision || !revisionNote.trim()}
+                    className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-amber-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-amber-600/20 hover:bg-amber-700 disabled:opacity-50 transition-all"
+                  >
+                    {isSubmittingRevision ? (
+                      <>
+                        <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Mengirim...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-3.5 w-3.5" /> Ajukan Revisi
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* ── MODAL: APPROVE MILESTONE & RELEASE ESCROW (CLIENT SIDE) ── */}
+        {approvingMilestoneId && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in">
+            <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-4 animate-in zoom-in-95">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5 text-foreground font-bold text-sm">
+                  <div className="h-8 w-8 rounded-xl bg-emerald-500/15 text-emerald-600 flex items-center justify-center">
+                    <ShieldCheck className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-foreground text-sm">Setujui & Cairkan Escrow</h3>
+                    <p className="text-[11px] text-muted-foreground font-normal">
+                      Konfirmasi penyelesaian deliverable milestone
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setApprovingMilestoneId(null)}
+                  className="text-muted-foreground hover:text-foreground rounded-lg p-1 hover:bg-muted transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              {(() => {
+                const ms = milestones.find((m) => m.id === approvingMilestoneId);
+                if (!ms) return null;
+                return (
+                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground font-medium">Milestone:</span>
+                      <span className="text-xs font-bold text-foreground">{ms.title}</span>
+                    </div>
+                    <div className="flex items-center justify-between pt-2 border-t border-emerald-500/15">
+                      <span className="text-xs text-muted-foreground font-medium">Dana yang Dicairkan:</span>
+                      <span className="text-sm font-extrabold text-emerald-600">
+                        {formatMoney(ms.amount)}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Dengan menyetujui hasil karya ini, milestone akan ditandai <strong className="text-foreground">Selesai</strong> dan dana escrow sebesar nominal di atas akan langsung dicairkan ke saldo akun freelancer. Milestone berikutnya (jika ada) akan otomatis dibuka.
+              </p>
+
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setApprovingMilestoneId(null)}
+                  className="flex-1 rounded-xl border border-border px-4 py-2.5 text-xs font-semibold text-muted-foreground hover:bg-muted transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  disabled={isApproving}
+                  onClick={handleConfirmApprove}
+                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-emerald-600/20 hover:bg-emerald-700 disabled:opacity-50 transition-all"
+                >
+                  {isApproving ? (
+                    <>
+                      <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Memproses...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="h-3.5 w-3.5" /> Ya, Setujui & Cairkan
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── MODAL: CLIENT PROJECT RATING & REVIEW ── */}
+        {mounted && isRatingModalOpen && typeof document !== "undefined" && createPortal(
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/75 p-4 backdrop-blur-md animate-in fade-in duration-200">
+            <div className="relative w-full max-w-lg rounded-3xl border border-border/80 bg-card p-6 sm:p-8 shadow-2xl space-y-6 animate-in zoom-in-95 duration-200 overflow-hidden">
+              {/* Top golden gradient accent */}
+              <div className="h-1.5 w-full bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-600 absolute top-0 left-0" />
+
+              {/* Header */}
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-11 w-11 rounded-2xl bg-amber-500/15 text-amber-500 flex items-center justify-center shrink-0">
+                    <Star className="h-6 w-6 fill-amber-400 text-amber-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-foreground">
+                      {contractReview ? "Ubah Rating & Ulasan" : "Beri Rating & Ulasan Proyek"}
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      {project?.freelancer?.fullName ? `Untuk ${project.freelancer.fullName}` : "Untuk Freelancer"} • {project?.title}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsRatingModalOpen(false)}
+                  className="text-muted-foreground hover:text-foreground rounded-xl p-1.5 hover:bg-muted transition-colors cursor-pointer"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {ratingSuccess ? (
+                <div className="py-8 text-center space-y-3">
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 animate-in zoom-in-50 duration-300">
+                    <CheckCircle2 className="h-9 w-9" />
+                  </div>
+                  <h4 className="text-lg font-bold text-foreground">Rating Berhasil Disimpan!</h4>
+                  <p className="text-xs text-muted-foreground">
+                    Terima kasih! Penilaian Anda telah disimpan dan langsung tercatat di profil freelancer.
+                  </p>
+                </div>
+              ) : (
+                <form onSubmit={handleSubmitReview} className="space-y-5">
+                  {/* Star selector */}
+                  <div className="space-y-2 text-center py-2 bg-muted/20 rounded-2xl border border-border/50 p-4">
+                    <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block">
+                      Tingkat Kepuasan Klien
+                    </label>
+                    <div className="flex items-center justify-center gap-2 pt-1">
+                      {[1, 2, 3, 4, 5].map((starVal) => {
+                        const isActive = (hoveredRating || selectedRating) >= starVal;
+                        return (
+                          <button
+                            key={starVal}
+                            type="button"
+                            onMouseEnter={() => setHoveredRating(starVal)}
+                            onMouseLeave={() => setHoveredRating(null)}
+                            onClick={() => setSelectedRating(starVal)}
+                            className="p-1 transition-transform hover:scale-125 focus:outline-hidden cursor-pointer"
+                          >
+                            <Star
+                              className={`h-8 w-8 transition-colors ${
+                                isActive
+                                  ? "fill-amber-400 text-amber-500 drop-shadow-xs"
+                                  : "text-muted-foreground/30 hover:text-muted-foreground"
+                              }`}
+                            />
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="text-xs font-semibold text-foreground pt-1">
+                      {(hoveredRating || selectedRating) === 5 && "⭐⭐⭐⭐⭐ Luar Biasa (Sangat Direkomendasikan!)"}
+                      {(hoveredRating || selectedRating) === 4 && "⭐⭐⭐⭐ Sangat Bagus (Hasil Memuaskan)"}
+                      {(hoveredRating || selectedRating) === 3 && "⭐⭐⭐ Cukup Baik (Sesuai Ekspektasi)"}
+                      {(hoveredRating || selectedRating) === 2 && "⭐⭐ Kurang Memuaskan (Perlu Perbaikan)"}
+                      {(hoveredRating || selectedRating) === 1 && "⭐ Sangat Kurang"}
+                    </div>
+                  </div>
+
+                  {/* Comment text area */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-foreground">
+                      Ulasan atau Testimoni (Opsional)
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={reviewComment}
+                      onChange={(e) => setReviewComment(e.target.value)}
+                      placeholder="Ceritakan pengalaman Anda bekerja dengan freelancer ini, komunikasi, dan kualitas hasil karyanya..."
+                      className="w-full rounded-xl border border-border bg-background p-3 text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-hidden resize-none"
+                    />
+                  </div>
+
+                  {/* Modal Action Buttons */}
+                  <div className="flex items-center gap-2 pt-2 border-t border-border/50">
+                    <button
+                      type="button"
+                      onClick={() => setIsRatingModalOpen(false)}
+                      className="flex-1 rounded-xl border border-border px-4 py-2.5 text-xs font-semibold text-muted-foreground hover:bg-muted transition-colors cursor-pointer"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSubmittingReview}
+                      className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-slate-950 font-bold px-4 py-2.5 text-xs shadow-md shadow-amber-500/20 disabled:opacity-50 transition-all cursor-pointer"
+                    >
+                      {isSubmittingReview ? (
+                        <>
+                          <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Menyimpan...
+                        </>
+                      ) : (
+                        <>
+                          <Star className="h-3.5 w-3.5 fill-slate-950 text-slate-950" /> Kirim Rating ⭐
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>,
+          document.body
         )}
 
       </div>

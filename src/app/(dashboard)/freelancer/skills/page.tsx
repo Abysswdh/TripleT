@@ -62,14 +62,20 @@ export default function FreelancerSkillsPage() {
 
   // Fetch real XP and day streak from Supabase database
   useEffect(() => {
-    fetchUserXPBreakdown().then((data) => {
+    if (!user?.id) {
+      setTotalXP(0);
+      setStreakDays(0);
+      return;
+    }
+
+    fetchUserXPBreakdown(user.id).then((data) => {
       setTotalXP(data.totalXP);
     });
 
-    fetchHeatmapData().then((data) => {
+    fetchHeatmapData(user.id).then((data) => {
       setStreakDays(data.streakDays);
     });
-  }, [user]);
+  }, [user?.id]);
 
   // Listen to live XP events
   useEffect(() => {

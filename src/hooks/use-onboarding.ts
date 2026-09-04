@@ -228,16 +228,21 @@ export function useOnboarding() {
         .eq("id", user.id)
         .maybeSingle();
 
+      const storedFl = typeof window !== "undefined" && localStorage.getItem("triplet_freelancer_onboarded") === "true";
+      const storedCl = typeof window !== "undefined" && localStorage.getItem("triplet_client_onboarded") === "true";
+
       const wasFreelancerOnboarded = Boolean(
         currentUserRow?.freelancer_onboarded ||
-        (currentUserRow?.onboarding_completed && currentUserRow?.role === "freelancer") ||
-        user.user_metadata?.freelancer_onboarded
+        user.user_metadata?.freelancer_onboarded ||
+        storedFl ||
+        (currentUserRow?.onboarding_completed && currentUserRow?.role === "freelancer")
       );
 
       const wasClientOnboarded = Boolean(
         currentUserRow?.client_onboarded ||
-        (currentUserRow?.onboarding_completed && (currentUserRow?.role === "customer" || currentUserRow?.role === "client")) ||
-        user.user_metadata?.client_onboarded
+        user.user_metadata?.client_onboarded ||
+        storedCl ||
+        (currentUserRow?.onboarding_completed && (currentUserRow?.role === "customer" || currentUserRow?.role === "client"))
       );
 
       // Symmetrically set the newly submitted role to true while preserving the other role's status
@@ -254,46 +259,57 @@ export function useOnboarding() {
         : DEFAULT_AVATAR_URL;
       const userBanner = (DEFAULT_BANNER_URL && !isOldStockBanner(DEFAULT_BANNER_URL)) ? DEFAULT_BANNER_URL : null;
 
-      // 1. Update/Upsert public.users table with independent role onboarding flags
-      try {
-        await supabase.from("users").upsert(
+      // 1. Update public.users table with independent role onboarding flags
+      const userUpdatePayload = {
+        full_name: displayName,
+        username: cleanUsername || null,
+        role: data.role,
+        bio: data.bio || (data.role === "freelancer" ? "Siap mengerjakan proyek desain & teknologi." : "Klien pemberi kerja di platform Doable!"),
+        avatar_url: userAvatar,
+        banner_url: userBanner,
+        location: data.locationCity || "Jakarta, Indonesia",
+        onboarding_completed: true,
+        freelancer_onboarded: newFreelancerOnboarded,
+        client_onboarded: newClientOnboarded,
+        is_active: true,
+      };
+
+      const { error: updateError } = await supabase
+        .from("users")
+        .update(userUpdatePayload)
+        .eq("id", user.id);
+
+      if (updateError) {
+        console.warn("Update on users table failed, falling back to upsert:", updateError);
+        const { error: upsertError } = await supabase.from("users").upsert(
           {
             id: user.id,
             email: user.email,
-            full_name: displayName,
-            username: cleanUsername || null,
-            role: data.role,
-            bio: data.bio || (data.role === "freelancer" ? "Siap mengerjakan proyek desain & teknologi." : "Klien pemberi kerja di platform Doable!"),
-            avatar_url: userAvatar,
-            banner_url: userBanner,
-            location: data.locationCity || "Jakarta, Indonesia",
-            onboarding_completed: true,
-            freelancer_onboarded: newFreelancerOnboarded,
-            client_onboarded: newClientOnboarded,
-            is_active: true,
+            ...userUpdatePayload,
             is_verified: false,
           },
           { onConflict: "id" }
         );
-      } catch (upsertErr) {
-        console.warn("Could not upsert users table with role flags, attempting base upsert:", upsertErr);
-        await supabase.from("users").upsert(
-          {
-            id: user.id,
-            email: user.email,
-            full_name: displayName,
-            username: cleanUsername || null,
-            role: data.role,
-            bio: data.bio || (data.role === "freelancer" ? "Siap mengerjakan proyek desain & teknologi." : "Klien pemberi kerja di platform Doable!"),
-            avatar_url: userAvatar,
-            banner_url: userBanner,
-            location: data.locationCity || "Jakarta, Indonesia",
-            onboarding_completed: true,
-            is_active: true,
-            is_verified: false,
-          },
-          { onConflict: "id" }
-        );
+        if (upsertError) {
+          console.warn("Could not upsert users table with role flags, attempting base upsert:", upsertError);
+          await supabase.from("users").upsert(
+            {
+              id: user.id,
+              email: user.email,
+              full_name: displayName,
+              username: cleanUsername || null,
+              role: data.role,
+              bio: data.bio || (data.role === "freelancer" ? "Siap mengerjakan proyek desain & teknologi." : "Klien pemberi kerja di platform Doable!"),
+              avatar_url: userAvatar,
+              banner_url: userBanner,
+              location: data.locationCity || "Jakarta, Indonesia",
+              onboarding_completed: true,
+              is_active: true,
+              is_verified: false,
+            },
+            { onConflict: "id" }
+          );
+        }
       }
 
       // 2. Dual-Role Profile Initializations
@@ -408,6 +424,7 @@ export function useOnboarding() {
       if (typeof window !== "undefined") {
         const targetActiveRole = data.role === "customer" ? "customer" : "freelancer";
         localStorage.setItem("triplet_active_dashboard_role", targetActiveRole);
+        document.cookie = `triplet_active_dashboard_role=${targetActiveRole}; path=/; max-age=31536000; SameSite=Lax`;
         if (newFreelancerOnboarded) localStorage.setItem("triplet_freelancer_onboarded", "true");
         if (newClientOnboarded) localStorage.setItem("triplet_client_onboarded", "true");
         window.dispatchEvent(new Event("profile-updated"));
@@ -435,6 +452,7 @@ export function useOnboarding() {
     const targetRole = data.role === "customer" ? "customer" : "freelancer";
     if (typeof window !== "undefined") {
       localStorage.setItem("triplet_active_dashboard_role", targetRole);
+      document.cookie = `triplet_active_dashboard_role=${targetRole}; path=/; max-age=31536000; SameSite=Lax`;
       if (targetRole === "customer") {
         localStorage.setItem("triplet_client_onboarded", "true");
       } else {

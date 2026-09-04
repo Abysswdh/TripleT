@@ -27,6 +27,7 @@ import {
   ExternalLink,
   Banknote,
   Layers,
+  FolderGit2,
 } from "lucide-react";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import { getClientProjects, type ProjectRecord } from "@/lib/services/projects";
@@ -44,7 +45,7 @@ export interface TalentProfile {
   level: string;
   category: string;
   projectsCount: number;
-  rating: number;
+  rating: number | string;
   reviewsCount: number;
   responseTime?: string;
   earnings: string;
@@ -67,6 +68,11 @@ export interface TalentProfile {
     image: string;
     tags: string[];
     isFeatured?: boolean;
+    isPlatformContract?: boolean;
+    amountDisplay?: string;
+    completedAt?: string;
+    rating?: number;
+    reviewComment?: string;
   }[];
   isVerified?: boolean;
 }
@@ -385,6 +391,10 @@ export function FreelancerProfileView({
   const { user } = useAuth();
   const [liveProfile, setLiveProfile] = useState<TalentProfile | null>(null);
 
+  const targetUserId = (isOwner && user?.id)
+    ? user.id
+    : (talentId && talentId !== "tal-1" ? talentId : (user?.id || talentId || ""));
+
   // Real heatmap & streak data from DB
   const [heatmapData, setHeatmapData] = useState<HeatmapData>({
     weeks: generateEmptyHeatmap(),
@@ -395,8 +405,39 @@ export function FreelancerProfileView({
   });
 
   useEffect(() => {
-    fetchHeatmapData().then((data) => setHeatmapData(data));
-  }, []);
+    const uid = targetUserId || user?.id;
+    if (!uid) {
+      setHeatmapData({
+        weeks: generateEmptyHeatmap(),
+        totalContributions: 0,
+        streakDays: 0,
+        monthLabels: [],
+        activeDates: [],
+      });
+      return;
+    }
+    fetchHeatmapData(uid).then((data) => {
+      if (data) setHeatmapData(data);
+    });
+  }, [targetUserId, user?.id]);
+
+  // Synchronize streak on live activity events across the app
+  useEffect(() => {
+    const handleActivity = () => {
+      const uid = targetUserId || user?.id;
+      if (uid) {
+        fetchHeatmapData(uid).then((data) => {
+          if (data) setHeatmapData(data);
+        });
+      }
+    };
+    window.addEventListener("xp-updated", handleActivity);
+    window.addEventListener("quiz-completed", handleActivity);
+    return () => {
+      window.removeEventListener("xp-updated", handleActivity);
+      window.removeEventListener("quiz-completed", handleActivity);
+    };
+  }, [targetUserId, user?.id]);
 
   const streakDays = heatmapData.streakDays;
   const totalContributions = heatmapData.totalContributions;
@@ -421,7 +462,7 @@ export function FreelancerProfileView({
     level: "Verified Pro",
     category: "Full-Stack Web & Next.js",
     projectsCount: 0,
-    rating: 5.0,
+    rating: "-",
     reviewsCount: 0,
     earnings: "Rp 0",
     workStatus: "available",
@@ -451,8 +492,8 @@ export function FreelancerProfileView({
         level: (meta.is_verified || user.user_metadata?.is_verified) ? "Verified Pro" : "Talenta Muda",
         category: "Web & Tech",
         projectsCount: 0,
-        rating: 5.0,
-        reviewsCount: 0,
+        rating: meta.rating && Number(meta.reviews_count) > 0 ? Number(meta.rating) : "-",
+        reviewsCount: Number(meta.reviews_count) || 0,
         earnings: meta.total_earnings ? `Rp ${Number(meta.total_earnings).toLocaleString("id-ID")}` : "Rp 0",
         workStatus: (meta.availability as "available" | "open" | "busy") || "available",
         startingPrice: meta.starting_price || (meta.hourly_rate ? `Rp ${Number(meta.hourly_rate).toLocaleString("id-ID")}` : "Rp 500.000"),
@@ -465,8 +506,8 @@ export function FreelancerProfileView({
           "Freelancer spesialis terdaftar di platform TripleT. Berpengalaman mengerjakan proyek pengembangan teknologi dan desain modern."
         ],
         streakWeeks: 1,
-        verifiedSkills: meta.skills && meta.skills.length > 0 ? meta.skills : ["React", "TypeScript", "Next.js"],
-        otherSkills: ["Git", "REST API"],
+        verifiedSkills: Array.isArray(meta.skills) && meta.skills.length > 0 ? meta.skills : [],
+        otherSkills: [],
         recentProjects: [],
         isVerified: Boolean(meta.is_verified || user.user_metadata?.is_verified),
       }
@@ -478,7 +519,9 @@ export function FreelancerProfileView({
     async function fetchFromSupabase() {
       try {
         const supabase = createClient();
-        const targetUserId = isOwner ? user?.id : talentId;
+        const targetUserId = (isOwner && user?.id)
+          ? user.id
+          : (talentId && talentId !== "tal-1" ? talentId : (user?.id || talentId || ""));
         if (!targetUserId) return;
 
         let profileData: Record<string, unknown> | null = null;
@@ -574,7 +617,93 @@ export function FreelancerProfileView({
           }
         }
 
-        if (userData || profileData) {
+        // 4b. Fetch actual completed contracts, total earnings, and map platform projects
+        let liveCompletedContractsCount = 0;
+        let liveEarningsSum = 0;
+        let mappedContracts: Array<{
+          id: string;
+          title: string;
+          category: string;
+          description: string;
+          image: string;
+          tags: string[];
+          isFeatured?: boolean;
+          isPlatformContract?: boolean;
+          amountDisplay?: string;
+          completedAt?: string;
+          rating?: number;
+          reviewComment?: string;
+        }> = [];
+
+        if (isValidUuid(targetUserId)) {
+          try {
+            const targetFreelancerId = profileData?.id || userData?.id || targetUserId;
+            const { count: completedCount, data: completedContracts } = await supabase
+              .from("contracts")
+              .select("id, project_id, status, total_amount, amount_display, completed_at, created_at, projects(*), reviews(*)", { count: "exact" })
+              .or(`freelancer_id.eq.${targetUserId},freelancer_id.eq.${targetFreelancerId}`)
+              .eq("status", "completed")
+              .order("completed_at", { ascending: false });
+
+            liveCompletedContractsCount = completedCount || (completedContracts?.length ?? 0);
+
+            if (completedContracts && completedContracts.length > 0) {
+              liveEarningsSum = completedContracts.reduce((acc, curr) => acc + (Number(curr.total_amount) || 0), 0);
+
+              mappedContracts = completedContracts
+                .filter((c) => c.status === "completed" && c.projects)
+                .map((c, index) => {
+                  const proj = (Array.isArray(c.projects) ? c.projects[0] : c.projects) as Record<string, unknown> | null;
+                  const cat = String(proj?.category || "Web & IT Engineering");
+                  let img = "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&auto=format&fit=crop&q=80";
+                  const catLower = cat.toLowerCase();
+                  if (catLower.includes("design") || catLower.includes("ui") || catLower.includes("ux")) {
+                    img = "https://images.unsplash.com/photo-1581291518857-4e27b48ff24e?w=800&auto=format&fit=crop&q=80";
+                  } else if (catLower.includes("mobile") || catLower.includes("android") || catLower.includes("ios") || catLower.includes("flutter")) {
+                    img = "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=800&auto=format&fit=crop&q=80";
+                  } else if (catLower.includes("data") || catLower.includes("ai") || catLower.includes("machine")) {
+                    img = "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop&q=80";
+                  }
+
+                  const requiredSkills = Array.isArray(proj?.required_skills) && proj.required_skills.length > 0
+                    ? (proj.required_skills as string[])
+                    : ["VERIFIED", "COMPLETED"];
+
+                  // Extract latest review for this contract
+                  const revList = Array.isArray(c.reviews) ? c.reviews : (c.reviews ? [c.reviews] : []);
+                  const latestRev = revList.length > 0 ? (revList[0] as Record<string, unknown>) : null;
+                  const contractRating = latestRev?.rating ? Number(latestRev.rating) : undefined;
+                  const contractReviewComment = latestRev?.comment ? String(latestRev.comment) : undefined;
+
+                  return {
+                    id: String(c.id || proj?.id),
+                    title: String(proj?.title || "Proyek Klien TripleT"),
+                    category: cat.toUpperCase(),
+                    description: String(proj?.description || "Proyek berhasil diselesaikan dengan sukses di platform TripleT."),
+                    image: img,
+                    tags: requiredSkills,
+                    isFeatured: index === 0,
+                    isPlatformContract: true,
+                    amountDisplay: String(c.amount_display || (c.total_amount ? `Rp ${Number(c.total_amount).toLocaleString("id-ID")}` : "Rp 0")),
+                    completedAt: c.completed_at ? new Date(c.completed_at).toLocaleDateString("id-ID", { month: "short", year: "numeric" }) : undefined,
+                    rating: contractRating,
+                    reviewComment: contractReviewComment,
+                  };
+                });
+            }
+
+            // Sync streak heatmap data directly
+            fetchHeatmapData(targetUserId).then((data) => {
+              if (data) setHeatmapData(data);
+            });
+          } catch (e) {
+            console.warn("Could not query live completed contracts for profile:", e);
+          }
+        }
+
+        const allRecentProjects = [...mappedContracts, ...mappedPortfolio];
+
+        if (userData || profileData || liveCompletedContractsCount > 0) {
           const u = userData || {};
           const fp = profileData || {};
 
@@ -602,18 +731,53 @@ export function FreelancerProfileView({
             ? (meta.location || (u.location as string) || "Indonesia")
             : ((u.location as string) || "Indonesia");
 
-          const displaySkills = Array.isArray(fp.skills) && fp.skills.length > 0
+          const allSkills = Array.isArray(fp.skills) && fp.skills.length > 0
             ? (fp.skills as string[])
-            : (isOwner && meta.skills && meta.skills.length > 0 ? meta.skills : ["UI/UX Design", "Web Development"]);
+            : (isOwner && Array.isArray(meta.skills) && meta.skills.length > 0 ? meta.skills : []);
 
           const displayVerifiedSkills = Array.isArray(fp.verified_skills) && fp.verified_skills.length > 0
             ? (fp.verified_skills as string[])
-            : displaySkills;
+            : allSkills;
 
-          const totalEarningsNum = Number(fp.total_earnings) || 0;
+          const displayOtherSkills = allSkills.filter((s) => !displayVerifiedSkills.includes(s));
+
+          const totalEarningsNum = Math.max(Number(fp.total_earnings) || 0, liveEarningsSum);
           const formattedEarnings = totalEarningsNum > 0
             ? `Rp ${totalEarningsNum.toLocaleString("id-ID")}`
             : "Rp 0";
+
+          const finalCompletedProjects = Math.max(
+            Number(fp.completed_projects) || 0,
+            liveCompletedContractsCount
+          );
+
+          // Extract review ratings from mapped contracts if fp data not yet updated
+          const reviewedContracts = mappedContracts.filter((c) => typeof c.rating === "number" && c.rating > 0);
+          const liveReviewsCount = reviewedContracts.length;
+          const liveAvgRating = liveReviewsCount > 0
+            ? reviewedContracts.reduce((sum, c) => sum + (c.rating || 0), 0) / liveReviewsCount
+            : 0;
+
+          const finalReviewsCount = Math.max(Number(fp.reviews_count) || 0, liveReviewsCount);
+          const finalRatingNum = Number(fp.rating) > 0 ? Number(fp.rating) : liveAvgRating;
+
+          // Self-heal DB row if out of sync
+          if (isValidUuid(targetUserId)) {
+            const needProjectsUpdate = finalCompletedProjects > (Number(fp.completed_projects) || 0);
+            const needEarningsUpdate = totalEarningsNum > (Number(fp.total_earnings) || 0);
+            const needReviewsUpdate = finalReviewsCount > (Number(fp.reviews_count) || 0);
+            if (needProjectsUpdate || needEarningsUpdate || needReviewsUpdate) {
+              supabase
+                .from("freelancer_profiles")
+                .update({
+                  ...(needProjectsUpdate ? { completed_projects: finalCompletedProjects } : {}),
+                  ...(needEarningsUpdate ? { total_earnings: totalEarningsNum } : {}),
+                  ...(needReviewsUpdate ? { reviews_count: finalReviewsCount, rating: finalRatingNum } : {}),
+                })
+                .eq("user_id", targetUserId)
+                .then(() => {});
+            }
+          }
 
           const rawStatus = (fp.availability as string) || (isOwner ? (meta.availability as string) : "available");
           let parsedWorkStatus: "available" | "open" | "busy" = "available";
@@ -655,6 +819,9 @@ export function FreelancerProfileView({
             ? (meta.portfolio_url || (fp.portfolio_url as string) || "")
             : ((fp.portfolio_url as string) || "");
 
+          const hasValidRating = finalReviewsCount > 0 && !isNaN(finalRatingNum) && finalRatingNum > 0;
+          const finalRating = hasValidRating ? finalRatingNum.toFixed(1) : "-";
+
           setLiveProfile({
             id: targetUserId,
             name: displayName,
@@ -665,9 +832,9 @@ export function FreelancerProfileView({
             organization: (fp.organization as string) || "Member Terdaftar TripleT",
             level: (fp.badge_level as string) || "Verified Pro",
             category: (fp.category as string) || "Full-Stack Web & Next.js",
-            projectsCount: Number(fp.completed_projects) || 0,
-            rating: Number(fp.rating) || 5.0,
-            reviewsCount: Number(fp.reviews_count) || 0,
+            projectsCount: finalCompletedProjects,
+            rating: finalRating,
+            reviewsCount: finalReviewsCount,
             earnings: formattedEarnings,
             workStatus: parsedWorkStatus,
             startingPrice: parsedStartingPrice,
@@ -683,8 +850,8 @@ export function FreelancerProfileView({
             aboutMe: rawAboutMe,
             streakWeeks: Number(fp.streak_weeks) || 1,
             verifiedSkills: displayVerifiedSkills,
-            otherSkills: displaySkills,
-            recentProjects: mappedPortfolio.length > 0 ? mappedPortfolio : (isOwner ? [] : baseProfile.recentProjects),
+            otherSkills: displayOtherSkills,
+            recentProjects: allRecentProjects.length > 0 ? allRecentProjects : (isOwner ? [] : baseProfile.recentProjects),
             isVerified: Boolean(u?.is_verified || (isOwner && (meta.is_verified || user?.user_metadata?.is_verified))),
           });
         }
@@ -694,7 +861,15 @@ export function FreelancerProfileView({
     }
 
     fetchFromSupabase();
-  }, [talentId, isOwner, user?.id, baseProfile, meta]);
+
+    const handleReviewSubmitted = () => {
+      fetchFromSupabase();
+    };
+    window.addEventListener("review-submitted", handleReviewSubmitted);
+    return () => {
+      window.removeEventListener("review-submitted", handleReviewSubmitted);
+    };
+  }, [talentId, isOwner, user?.id]);
 
   const [isSaved, setIsSaved] = useState(false);
   const [isHireModalOpen, setIsHireModalOpen] = useState(false);
@@ -906,11 +1081,17 @@ export function FreelancerProfileView({
 
               {/* Stat 2: Rating */}
               <div className="rounded-2xl border border-border/80 bg-card p-4 text-center space-y-1 shadow-xs hover:border-primary/30 transition-colors">
-                <div className="mx-auto h-7 w-7 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center">
-                  <Star className="h-4 w-4 fill-amber-500" />
+                <div className={`mx-auto h-7 w-7 rounded-lg flex items-center justify-center ${
+                  profile.rating !== "-" && profile.reviewsCount > 0
+                    ? "bg-amber-500/10 text-amber-500"
+                    : "bg-muted text-muted-foreground"
+                }`}>
+                  <Star className={`h-4 w-4 ${profile.rating !== "-" && profile.reviewsCount > 0 ? "fill-amber-500 text-amber-500" : "text-muted-foreground"}`} />
                 </div>
                 <div className="text-lg font-bold text-foreground">{profile.rating}</div>
-                <div className="text-[11px] text-muted-foreground font-medium">Rating Klien</div>
+                <div className="text-[11px] text-muted-foreground font-medium">
+                  {profile.reviewsCount > 0 ? `Rating (${profile.reviewsCount})` : "Rating Klien"}
+                </div>
               </div>
 
               {/* Stat 3: Tarif Mulai Proyek */}
@@ -968,20 +1149,22 @@ export function FreelancerProfileView({
               </div>
             </div>
 
-            {/* 4. Tautan Portofolio & Profesional */}
+            {/* 4. Tautan Portofolio */}
             <div className="rounded-3xl border border-border/80 bg-card p-6 shadow-sm space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <LinkIcon className="h-4 w-4 text-primary" />
-                  <h3 className="text-sm font-bold text-foreground tracking-tight">Tautan Portofolio & Profesional</h3>
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 min-w-0">
+                  <LinkIcon className="h-4 w-4 text-primary shrink-0" />
+                  <h3 className="text-sm font-bold text-foreground tracking-tight truncate">
+                    Tautan Portofolio
+                  </h3>
                 </div>
                 {isOwner && (
                   <Link
                     href="/freelancer/settings?tab=work"
-                    className="text-[11px] font-bold text-primary hover:underline inline-flex items-center gap-1"
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:text-primary/80 bg-primary/10 hover:bg-primary/15 border border-primary/20 px-2.5 py-1 rounded-lg transition-all shrink-0 shadow-2xs"
                   >
                     <span>Edit</span>
-                    <ExternalLink className="h-3 w-3" />
+                    <ExternalLink className="h-2.5 w-2.5" />
                   </Link>
                 )}
               </div>
@@ -1130,6 +1313,7 @@ export function FreelancerProfileView({
               activeDates={heatmapData.activeDates}
               totalContributions={totalContributions}
               isOwner={isOwner}
+              userCreatedAt={user?.created_at}
             />
 
             {/* 3. Recent Projects Portfolio */}
@@ -1137,20 +1321,31 @@ export function FreelancerProfileView({
               <div className="flex items-center justify-between">
                 <h2 className="text-base font-bold text-foreground">Recent Projects</h2>
                 {isOwner ? (
-                  <Link href="/freelancer/my-work" className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline">
-                    <span>PORTFOLIO & MY WORK</span>
-                    <ArrowRight className="h-3 w-3" />
+                  <Link
+                    href="/freelancer/my-work"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-border/70 bg-card hover:bg-muted text-xs font-semibold text-foreground hover:text-primary transition-all shadow-2xs group"
+                  >
+                    <FolderGit2 className="h-3.5 w-3.5 text-primary group-hover:scale-110 transition-transform" />
+                    <span>Pekerjaan & Portofolio</span>
+                    <ArrowRight className="h-3 w-3 ml-0.5 text-muted-foreground group-hover:translate-x-0.5 group-hover:text-primary transition-all" />
                   </Link>
                 ) : (
-                  <button className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline">
-                    <span>VIEW ALL</span>
-                    <ArrowRight className="h-3 w-3" />
+                  <button
+                    onClick={() => {
+                      const el = document.getElementById("portfolio-section");
+                      el?.scrollIntoView({ behavior: "smooth" });
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-border/70 bg-card hover:bg-muted text-xs font-semibold text-foreground hover:text-primary transition-all shadow-2xs group"
+                  >
+                    <FolderGit2 className="h-3.5 w-3.5 text-primary group-hover:scale-110 transition-transform" />
+                    <span>Lihat Portofolio</span>
+                    <ArrowRight className="h-3 w-3 ml-0.5 text-muted-foreground group-hover:translate-x-0.5 group-hover:text-primary transition-all" />
                   </button>
                 )}
               </div>
 
               {/* Featured Project Horizontal Card */}
-              {featuredProject && (
+              {featuredProject ? (
                 <div className="group rounded-3xl border border-border/80 bg-card overflow-hidden shadow-sm hover:border-primary/40 hover:shadow-md transition-all grid grid-cols-1 md:grid-cols-12">
                   <div className="md:col-span-6 relative aspect-video md:aspect-auto overflow-hidden bg-muted">
                     <img
@@ -1161,15 +1356,47 @@ export function FreelancerProfileView({
                   </div>
                   <div className="md:col-span-6 p-6 flex flex-col justify-between space-y-4">
                     <div className="space-y-2">
-                      <span className="text-[10px] font-bold tracking-wider text-primary uppercase">
-                        {featuredProject.category}
-                      </span>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[10px] font-bold tracking-wider text-primary uppercase">
+                          {featuredProject.category}
+                        </span>
+                        {featuredProject.isPlatformContract && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                            <CheckCircle2 className="h-3 w-3" />
+                            Proyek Klien Selesai
+                          </span>
+                        )}
+                        {featuredProject.rating !== undefined && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-500 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full shadow-xs">
+                            <Star className="h-3 w-3 fill-amber-400 text-amber-500" />
+                            <span>⭐ {featuredProject.rating.toFixed(1)} / 5.0</span>
+                          </span>
+                        )}
+                        {featuredProject.amountDisplay && (
+                          <span className="text-[10px] font-semibold text-muted-foreground ml-auto">
+                            {featuredProject.amountDisplay}
+                          </span>
+                        )}
+                      </div>
                       <h3 className="text-lg font-bold text-foreground group-hover:text-primary transition-colors">
                         {featuredProject.title}
                       </h3>
                       <p className="text-xs text-muted-foreground leading-relaxed">
                         {featuredProject.description}
                       </p>
+                      {featuredProject.reviewComment && (
+                        <div className="rounded-2xl bg-amber-500/5 border border-amber-500/20 p-3 text-xs text-foreground/90 flex items-start gap-2.5 mt-2">
+                          <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500 shrink-0 mt-0.5" />
+                          <div className="space-y-0.5">
+                            <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider block">
+                              Ulasan Klien
+                            </span>
+                            <p className="italic text-muted-foreground leading-relaxed">
+                              &ldquo;{featuredProject.reviewComment}&rdquo;
+                            </p>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex flex-wrap gap-1.5 pt-2">
@@ -1184,47 +1411,94 @@ export function FreelancerProfileView({
                     </div>
                   </div>
                 </div>
+              ) : (
+                <div className="rounded-3xl border border-dashed border-border/80 bg-card/60 p-8 text-center space-y-3">
+                  <div className="mx-auto h-12 w-12 rounded-2xl bg-muted/60 text-muted-foreground flex items-center justify-center">
+                    <FolderGit2 className="h-6 w-6" />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-bold text-foreground">Belum Ada Proyek Selesai</h3>
+                    <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                      Proyek yang telah kamu selesaikan dari tawaran klien atau ditambahkan ke portofolio akan muncul di sini.
+                    </p>
+                  </div>
+                  {isOwner && (
+                    <div className="pt-2">
+                      <Link
+                        href="/freelancer/explore"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground font-bold text-xs hover:bg-primary/90 transition-all"
+                      >
+                        <span>Jelajahi Proyek Baru</span>
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </Link>
+                    </div>
+                  )}
+                </div>
               )}
 
               {/* Sub-Projects Grid (2 cols) */}
-              <div className="grid gap-4 sm:grid-cols-2">
-                {otherProjects.map((proj) => (
-                  <div
-                    key={proj.id}
-                    className="group rounded-3xl border border-border/80 bg-card overflow-hidden shadow-sm hover:border-primary/40 hover:shadow-md transition-all flex flex-col justify-between"
-                  >
-                    <div>
-                      <div className="relative aspect-[16/10] w-full overflow-hidden bg-muted">
-                        <img
-                          src={proj.image}
-                          alt={proj.title}
-                          className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
+              {otherProjects.length > 0 && (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {otherProjects.map((proj) => (
+                    <div
+                      key={proj.id}
+                      className="group rounded-3xl border border-border/80 bg-card overflow-hidden shadow-sm hover:border-primary/40 hover:shadow-md transition-all flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="relative aspect-[16/10] w-full overflow-hidden bg-muted">
+                          <img
+                            src={proj.image}
+                            alt={proj.title}
+                            className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                        </div>
+
+                        <div className="p-5 space-y-2">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-[10px] font-bold tracking-wider text-primary uppercase">
+                              {proj.category}
+                            </span>
+                            {proj.isPlatformContract && (
+                              <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-full">
+                                <CheckCircle2 className="h-2.5 w-2.5" />
+                                Selesai
+                              </span>
+                            )}
+                            {proj.rating !== undefined && (
+                              <span className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-500 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded-full shadow-xs">
+                                <Star className="h-2.5 w-2.5 fill-amber-400 text-amber-500" />
+                                <span>⭐ {proj.rating.toFixed(1)}</span>
+                              </span>
+                            )}
+                          </div>
+                          <h4 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">
+                            {proj.title}
+                          </h4>
+                          <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                            {proj.description}
+                          </p>
+                          {proj.reviewComment && (
+                            <div className="rounded-xl bg-amber-500/5 border border-amber-500/20 px-3 py-2 text-[11px] italic text-muted-foreground line-clamp-2 mt-1">
+                              &ldquo;{proj.reviewComment}&rdquo;
+                            </div>
+                          )}
+                        </div>
                       </div>
 
-                      <div className="p-5 space-y-2">
-                        <h4 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">
-                          {proj.title}
-                        </h4>
-                        <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-                          {proj.description}
-                        </p>
+                      <div className="p-5 pt-0 flex flex-wrap gap-1.5">
+                        {proj.tags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="rounded-lg bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground uppercase"
+                          >
+                            {tag}
+                          </span>
+                        ))}
                       </div>
                     </div>
-
-                    <div className="p-5 pt-0 flex flex-wrap gap-1.5">
-                      {proj.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="rounded-lg bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground uppercase"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

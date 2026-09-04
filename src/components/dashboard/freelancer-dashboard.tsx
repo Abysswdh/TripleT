@@ -31,6 +31,8 @@ import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import { fetchHeatmapData, fetchUserXPBreakdown, getLearnedResources, logActivity, type HeatmapData, type XPBreakdown } from "@/lib/services/activity";
 import { getSavedQuizResults, fetchUserQuizResults, SKILL_QUIZZES, type QuizAttemptResult } from "@/lib/services/quizzes";
 import { getFreelancerEarnings, type EarningsSummary } from "@/lib/services/earnings";
+import { getFreelancerProposals, type FreelancerProposalItem } from "@/lib/services/proposals";
+import { formatRelativeTime } from "@/lib/utils";
 import { DoableStreakTracker } from "@/components/dashboard/doable-streak-tracker";
 
 interface QuestOpportunity {
@@ -101,6 +103,7 @@ export function FreelancerDashboard() {
   // Timeline & Missions State
   const [timelineItems, setTimelineItems] = useState<TimelineActionItem[]>(initialTimelineItems);
   const [dailyMissions, setDailyMissions] = useState<DailyMission[]>(initialMissions);
+  const [submittedProposals, setSubmittedProposals] = useState<FreelancerProposalItem[]>([]);
 
   // Submit Modal State
   const [submitModalOpen, setSubmitModalOpen] = useState(false);
@@ -150,32 +153,34 @@ export function FreelancerDashboard() {
         // 2. Load live contracts for timeline & daily missions
         const liveContracts = await getFreelancerContracts();
         if (liveContracts && liveContracts.length > 0) {
-          const mappedTimeline: TimelineActionItem[] = liveContracts.flatMap((c) =>
-            c.milestones.map((m, idx) => ({
-              id: m.id,
-              projectTitle: c.projectTitle,
-              clientName: c.clientName,
-              milestoneTitle: m.title,
-              milestoneNumber: idx + 1,
-              totalMilestones: c.milestones.length || 3,
-              amount: m.amount || Math.round(c.totalAmount / (c.milestones.length || 1)),
-              currency: "IDR" as const,
-              dueDate: m.dueDate || "3 hari lagi",
-              urgency: (m.status === "submitted" ? "review" : "normal") as "review" | "normal" | "urgent",
-              progress: m.status === "completed" ? 100 : m.status === "submitted" ? 100 : c.progress || 35,
-              tasksChecklist: [
-                { id: `${m.id}-1`, title: "Setup arsitektur dan komponen", done: m.status === "completed" || m.status === "submitted" },
-                { id: `${m.id}-2`, title: "Integrasi API & logic", done: m.status === "completed" || m.status === "submitted" },
-                { id: `${m.id}-3`, title: "Testing dan penyerahan", done: m.status === "completed" }
-              ],
-            }))
+          // Only active contracts that are not completed appear in the Pekerjaan Saya dashboard timeline
+          const activeContracts = liveContracts.filter((c) => c.status === "active");
+
+          const mappedTimeline: TimelineActionItem[] = activeContracts.flatMap((c) =>
+            c.milestones
+              .filter((m) => m.status !== "completed")
+              .map((m, idx) => ({
+                id: m.id,
+                projectTitle: c.projectTitle,
+                clientName: c.clientName,
+                milestoneTitle: m.title,
+                milestoneNumber: idx + 1,
+                totalMilestones: c.milestones.length || 3,
+                amount: m.amount || Math.round(c.totalAmount / (c.milestones.length || 1)),
+                currency: "IDR" as const,
+                dueDate: m.dueDate || "3 hari lagi",
+                urgency: (m.status === "submitted" ? "review" : "normal") as "review" | "normal" | "urgent",
+                progress: m.status === "submitted" ? 100 : c.progress || 35,
+                tasksChecklist: [
+                  { id: `${m.id}-1`, title: "Setup arsitektur dan komponen", done: m.status === "submitted" },
+                  { id: `${m.id}-2`, title: "Integrasi API & logic", done: m.status === "submitted" },
+                  { id: `${m.id}-3`, title: "Testing dan penyerahan", done: false }
+                ],
+              }))
           );
-          if (mappedTimeline.length > 0) {
-            setTimelineItems(mappedTimeline);
-          }
+          setTimelineItems(mappedTimeline);
 
           // Daily Missions only populate if freelancer has active client contracts with tasks for today
-          const activeContracts = liveContracts.filter((c) => c.status === "active");
           if (activeContracts.length > 0) {
             const missions: DailyMission[] = [];
 
@@ -224,6 +229,16 @@ export function FreelancerDashboard() {
         } else {
           setTimelineItems([]);
           setDailyMissions([]);
+        }
+
+        // 3. Load live submitted proposals
+        try {
+          const liveProps = await getFreelancerProposals();
+          if (liveProps && liveProps.length > 0) {
+            setSubmittedProposals(liveProps);
+          }
+        } catch (propErr) {
+          console.error("Error loading live proposals:", propErr);
         }
       } catch (err) {
         console.error("Error loading quests from Supabase:", err);
@@ -359,8 +374,18 @@ export function FreelancerDashboard() {
   });
 
   useEffect(() => {
-    fetchHeatmapData().then((data) => setHeatmapData(data));
-  }, []);
+    if (!user?.id) {
+      setHeatmapData({
+        weeks: generateEmptyHeatmap(),
+        totalContributions: 0,
+        streakDays: 0,
+        monthLabels: [],
+        activeDates: [],
+      });
+      return;
+    }
+    fetchHeatmapData(user.id).then((data) => setHeatmapData(data));
+  }, [user?.id]);
 
   const streakDays = heatmapData.streakDays;
   const totalContributions = heatmapData.totalContributions;
@@ -527,28 +552,89 @@ export function FreelancerDashboard() {
               <div className="flex items-center gap-2">
                 <Briefcase className="h-4 w-4 text-primary" />
                 <h2 className="text-lg font-bold tracking-tight text-foreground font-heading">
-                  Pekerjaan Saya ({timelineItems.length})
+                  Pekerjaan Saya ({timelineItems.length > 0 ? timelineItems.length : submittedProposals.length > 0 ? `${submittedProposals.length} Proposal` : 0})
                 </h2>
               </div>
               <Link
                 href="/freelancer/my-work"
                 className="text-xs font-bold text-primary hover:underline inline-flex items-center gap-1"
               >
-                <span>Lihat Detail Kontrak</span>
+                <span>Lihat Pekerjaan & Proposal</span>
                 <ChevronRight className="h-3.5 w-3.5" />
               </Link>
             </div>
 
             {/* Active Contracts & Timeline Items */}
             <div className="space-y-4">
-              {timelineItems.length === 0 ? (
-                <div className="rounded-3xl border border-dashed border-border/80 p-8 text-center bg-card/50 space-y-2">
-                  <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                    <Briefcase className="h-5 w-5" />
+              {/* Proposals Banner when active contracts also exist */}
+              {timelineItems.length > 0 && submittedProposals.length > 0 && (
+                <div className="flex items-center justify-between rounded-2xl border border-amber-500/30 bg-amber-500/5 px-4 py-2.5 text-xs text-foreground">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                    <span>Anda memiliki <strong>{submittedProposals.length} proposal</strong> yang sedang menunggu review klien.</span>
                   </div>
-                  <p className="text-sm font-semibold text-foreground">Belum ada kontrak aktif</p>
-                  <p className="text-xs text-muted-foreground">Jelajahi quest yang tersedia dan ajukan proposal untuk memulai pekerjaan pertama Anda.</p>
+                  <Link href="/freelancer/my-work?tab=proposals" className="font-bold text-primary hover:underline shrink-0">
+                    Lihat Status →
+                  </Link>
                 </div>
+              )}
+
+              {timelineItems.length === 0 ? (
+                submittedProposals.length > 0 ? (
+                  <div className="space-y-3">
+                    {submittedProposals.map((prop) => (
+                      <div
+                        key={prop.id}
+                        className="rounded-3xl border border-amber-500/30 bg-amber-500/5 p-5 shadow-xs hover:border-amber-500/50 transition-all space-y-3"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 border border-amber-500/25 px-2.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-300">
+                            <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                            {prop.status === "pending"
+                              ? "Proposal Menunggu Review Klien"
+                              : prop.status === "accepted"
+                              ? "Proposal Diterima 🎉"
+                              : "Proposal Tidak Terpilih"}
+                          </span>
+                          <span className="text-xs font-bold text-foreground font-heading">
+                            {prop.bidDisplay}
+                          </span>
+                        </div>
+
+                        <div>
+                          <h3 className="text-sm sm:text-base font-bold text-foreground line-clamp-1">
+                            {prop.projectTitle}
+                          </h3>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            Klien: <strong className="text-foreground">{prop.clientName}</strong> • {prop.projectCategory} • Estimasi: {prop.deliveryDays} hari
+                          </p>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-2.5 border-t border-amber-500/20 text-xs">
+                          <span className="text-muted-foreground flex items-center gap-1">
+                            <Clock className="h-3 w-3 text-amber-500" />
+                            <span>Diajukan {formatRelativeTime(prop.createdAt)}</span>
+                          </span>
+                          <Link
+                            href="/freelancer/my-work?tab=proposals"
+                            className="font-bold text-primary hover:underline inline-flex items-center gap-1"
+                          >
+                            <span>Pantau Status di Pekerjaan Saya</span>
+                            <ChevronRight className="h-3.5 w-3.5" />
+                          </Link>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-3xl border border-dashed border-border/80 p-8 text-center bg-card/50 space-y-2">
+                    <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <Briefcase className="h-5 w-5" />
+                    </div>
+                    <p className="text-sm font-semibold text-foreground">Belum ada kontrak aktif</p>
+                    <p className="text-xs text-muted-foreground">Jelajahi quest yang tersedia dan ajukan proposal untuk memulai pekerjaan pertama Anda.</p>
+                  </div>
+                )
               ) : (
                 timelineItems.map((item) => {
                   const isUrgent = item.urgency === "urgent";
@@ -751,6 +837,14 @@ export function FreelancerDashboard() {
                           <span className="rounded-xl bg-muted/80 px-3.5 py-1.5 text-xs font-semibold text-muted-foreground border border-border/50 select-none">
                             Proyek Anda Sendiri
                           </span>
+                        ) : submittedProposals.some((p) => p.projectId === quest.id) ? (
+                          <Link
+                            href={`/freelancer/explore/${quest.id}`}
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30 px-3.5 py-1.5 text-xs font-bold text-amber-700 dark:text-amber-300 hover:bg-amber-500/25 transition-colors"
+                          >
+                            <CheckCircle2 className="h-3.5 w-3.5 text-amber-500" />
+                            <span>Sudah Diajukan</span>
+                          </Link>
                         ) : (
                           <Link
                             href={`/freelancer/explore/${quest.id}`}
@@ -981,6 +1075,7 @@ export function FreelancerDashboard() {
             activeDates={heatmapData.activeDates}
             totalContributions={totalContributions}
             isOwner={true}
+            userCreatedAt={user?.created_at}
           />
           {/* 2. Misi Harian / Daily Quest Checklist */}
           <div id="misi-harian-section" className="rounded-3xl border border-border/70 bg-card p-5 sm:p-6 shadow-sm space-y-4">

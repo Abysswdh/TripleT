@@ -39,10 +39,10 @@ CREATE POLICY "Users can insert own activity"
   ON user_activity_log FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
--- Users can only read their own activity
-CREATE POLICY "Users can read own activity"
+-- Anyone can read activity for heatmaps/streaks
+CREATE POLICY "Anyone can read activity logs for heatmap"
   ON user_activity_log FOR SELECT
-  USING (auth.uid() = user_id);
+  USING (true);
 
 -- 6. Helper view: daily contribution counts per user (last 16 weeks)
 CREATE OR REPLACE VIEW user_daily_contributions AS

@@ -100,11 +100,30 @@ export async function submitProposal(params: {
     console.warn("Anti-self-dealing check notice:", checkErr);
   }
 
+  // Check if freelancer already submitted a proposal for this project
+  try {
+    const { data: existingProp } = await supabase
+      .from("proposals")
+      .select("id")
+      .eq("project_id", params.projectId)
+      .eq("freelancer_id", targetFreelancerId)
+      .maybeSingle();
+
+    if (existingProp) {
+      return {
+        success: false,
+        error: "Anda sudah mengajukan proposal untuk proyek ini sebelumnya.",
+      };
+    }
+  } catch (dupCheckErr) {
+    console.warn("Notice checking existing proposal:", dupCheckErr);
+  }
+
   const bidDisplay = `Rp ${params.bidAmount.toLocaleString("id-ID")}`;
 
   const { data, error } = await supabase
     .from("proposals")
-    .upsert({
+    .insert({
       project_id: params.projectId,
       freelancer_id: targetFreelancerId,
       bid_amount: params.bidAmount,
@@ -113,24 +132,20 @@ export async function submitProposal(params: {
       cover_letter: params.coverLetter,
       skills: params.skills || [],
       status: "pending",
-    }, { onConflict: "project_id,freelancer_id" })
+    })
     .select()
     .single();
 
   if (error) {
     console.error("Error submitting proposal:", error);
+    if (error.code === "23505") {
+      return { success: false, error: "Anda sudah mengajukan proposal untuk proyek ini sebelumnya." };
+    }
     return { success: false, error: error.message };
   }
 
-  // Increment proposals_count on the project
-  try {
-    const { data: proj } = await supabase.from("projects").select("proposals_count").eq("id", params.projectId).single();
-    if (proj) {
-      await supabase.from("projects").update({ proposals_count: (proj.proposals_count || 0) + 1 }).eq("id", params.projectId);
-    }
-  } catch (countErr) {
-    console.info("Notice updating proposal count:", countErr);
-  }
+  // Note: projects.proposals_count is automatically and atomically updated
+  // by database trigger trg_update_project_proposals_count (SECURITY DEFINER) in Supabase.
 
   // Log activity for heatmap & streak + award 100 Work XP
   logActivity("proposal_submitted", {
@@ -206,16 +221,51 @@ export async function acceptProposal(params: {
 }): Promise<{ success: boolean; contractId?: string; error?: string }> {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const clientId = user?.id || "ca000000-0000-0000-0000-000000000001";
 
-  // 1. Update proposal status
-  await supabase.from("proposals").update({ status: "accepted" }).eq("id", params.proposalId);
+  let clientId = user?.id;
+  if (!clientId) {
+    const { data: projData } = await supabase
+      .from("projects")
+      .select("owner_id")
+      .eq("id", params.projectId)
+      .maybeSingle();
+    clientId = projData?.owner_id;
+  }
+
+  if (!clientId) {
+    return { success: false, error: "Tidak dapat mengidentifikasi pengguna klien." };
+  }
+
+  // 1. Update proposal status to accepted
+  const { error: propErr } = await supabase
+    .from("proposals")
+    .update({ status: "accepted" })
+    .eq("id", params.proposalId);
+
+  if (propErr) {
+    console.error("Error updating proposal status:", propErr);
+    return { success: false, error: propErr.message };
+  }
 
   // 2. Update other proposals on this project to rejected
-  await supabase.from("proposals").update({ status: "rejected" }).eq("project_id", params.projectId).neq("id", params.proposalId);
+  await supabase
+    .from("proposals")
+    .update({ status: "rejected" })
+    .eq("project_id", params.projectId)
+    .neq("id", params.proposalId);
 
   // 3. Update project status to in_progress
-  await supabase.from("projects").update({ status: "in_progress", freelancer_id: params.freelancerId }).eq("id", params.projectId);
+  const { error: projErr } = await supabase
+    .from("projects")
+    .update({ status: "in_progress", freelancer_id: params.freelancerId })
+    .eq("id", params.projectId);
+
+  if (projErr) {
+    console.error("Error updating project status:", projErr);
+    // Rollback proposal
+    await supabase.from("proposals").update({ status: "pending" }).eq("id", params.proposalId);
+    return { success: false, error: projErr.message };
+  }
 
   // 4. Create Contract
   const { data: contract, error: contractErr } = await supabase
@@ -236,11 +286,19 @@ export async function acceptProposal(params: {
 
   if (contractErr || !contract) {
     console.error("Error creating contract:", contractErr);
+    // Rollback project and proposal
+    await supabase.from("projects").update({ status: "hiring", freelancer_id: null }).eq("id", params.projectId);
+    await supabase.from("proposals").update({ status: "pending" }).eq("id", params.proposalId);
     return { success: false, error: contractErr?.message };
   }
 
   // 5. Copy project milestones to contract_milestones
-  const { data: projMilestones } = await supabase.from("milestones").select("*").eq("project_id", params.projectId);
+  const { data: projMilestones } = await supabase
+    .from("milestones")
+    .select("*")
+    .eq("project_id", params.projectId)
+    .order("sort_order", { ascending: true });
+
   if (projMilestones && projMilestones.length > 0) {
     const contractMilestones = projMilestones.map((m, idx) => ({
       contract_id: contract.id,
@@ -252,7 +310,184 @@ export async function acceptProposal(params: {
       sort_order: m.sort_order || idx + 1,
     }));
     await supabase.from("contract_milestones").insert(contractMilestones);
+  } else {
+    // If no project milestones exist, create 1 default contract milestone
+    await supabase.from("contract_milestones").insert({
+      contract_id: contract.id,
+      title: "Penyelesaian Proyek",
+      amount: params.bidAmount,
+      percentage: 100,
+      status: "in_progress",
+      sort_order: 1,
+    });
   }
 
   return { success: true, contractId: contract.id };
 }
+
+export interface FreelancerProposalItem {
+  id: string;
+  projectId: string;
+  projectTitle: string;
+  projectCategory: string;
+  projectBudget: string;
+  clientName: string;
+  clientAvatar?: string;
+  bidAmount: number;
+  bidDisplay: string;
+  deliveryDays: number;
+  coverLetter: string;
+  skills: string[];
+  status: "pending" | "accepted" | "rejected";
+  createdAt: string;
+}
+
+/**
+ * Fetch all proposals submitted by the current freelancer
+ */
+export async function getFreelancerProposals(userId?: string): Promise<FreelancerProposalItem[]> {
+  const supabase = createClient();
+  let targetFreelancerId = userId;
+
+  if (!targetFreelancerId) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
+    targetFreelancerId = user.id;
+  }
+
+  const { data, error } = await supabase
+    .from("proposals")
+    .select(`
+      *,
+      project:projects(
+        id,
+        title,
+        category,
+        budget_display,
+        budget_min,
+        status,
+        owner:users!owner_id(
+          id,
+          full_name,
+          avatar_url
+        )
+      )
+    `)
+    .eq("freelancer_id", targetFreelancerId)
+    .order("created_at", { ascending: false });
+
+  if (error || !data) {
+    console.error("Error fetching freelancer proposals:", error);
+    return [];
+  }
+
+  return data.map((p) => {
+    const proj = p.project || {};
+    const owner = proj.owner || {};
+    return {
+      id: p.id,
+      projectId: p.project_id,
+      projectTitle: proj.title || "Proyek",
+      projectCategory: proj.category || "General",
+      projectBudget: proj.budget_display || `Rp ${(proj.budget_min || 0).toLocaleString("id-ID")}`,
+      clientName: owner.full_name || "Klien Terverifikasi",
+      clientAvatar: owner.avatar_url,
+      bidAmount: p.bid_amount,
+      bidDisplay: p.bid_display || `Rp ${(p.bid_amount || 0).toLocaleString("id-ID")}`,
+      deliveryDays: p.delivery_days || 1,
+      coverLetter: p.cover_letter || "",
+      skills: p.skills || [],
+      status: (p.status as "pending" | "accepted" | "rejected") || "pending",
+      createdAt: p.created_at,
+    };
+  });
+}
+
+/**
+ * Check if the user has already submitted a proposal for a specific project
+ */
+export async function getUserProposalForProject(
+  projectId: string,
+  userId?: string
+): Promise<FreelancerProposalItem | null> {
+  const supabase = createClient();
+  let targetFreelancerId = userId;
+
+  if (!targetFreelancerId) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+    targetFreelancerId = user.id;
+  }
+
+  const { data, error } = await supabase
+    .from("proposals")
+    .select(`
+      *,
+      project:projects(
+        id,
+        title,
+        category,
+        budget_display,
+        budget_min,
+        status,
+        owner:users!owner_id(
+          id,
+          full_name,
+          avatar_url
+        )
+      )
+    `)
+    .eq("project_id", projectId)
+    .eq("freelancer_id", targetFreelancerId)
+    .maybeSingle();
+
+  if (error || !data) {
+    return null;
+  }
+
+  const proj = data.project || {};
+  const owner = proj.owner || {};
+
+  return {
+    id: data.id,
+    projectId: data.project_id,
+    projectTitle: proj.title || "Proyek",
+    projectCategory: proj.category || "General",
+    projectBudget: proj.budget_display || `Rp ${(proj.budget_min || 0).toLocaleString("id-ID")}`,
+    clientName: owner.full_name || "Klien Terverifikasi",
+    clientAvatar: owner.avatar_url,
+    bidAmount: data.bid_amount,
+    bidDisplay: data.bid_display || `Rp ${(data.bid_amount || 0).toLocaleString("id-ID")}`,
+    deliveryDays: data.delivery_days || 1,
+    coverLetter: data.cover_letter || "",
+    skills: data.skills || [],
+    status: (data.status as "pending" | "accepted" | "rejected") || "pending",
+    createdAt: data.created_at,
+  };
+}
+
+/**
+ * Fetch list of project IDs that the current freelancer has submitted proposals to
+ */
+export async function getUserSubmittedProjectIds(userId?: string): Promise<string[]> {
+  const supabase = createClient();
+  let targetFreelancerId = userId;
+
+  if (!targetFreelancerId) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
+    targetFreelancerId = user.id;
+  }
+
+  const { data, error } = await supabase
+    .from("proposals")
+    .select("project_id")
+    .eq("freelancer_id", targetFreelancerId);
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data.map((p) => p.project_id);
+}
+

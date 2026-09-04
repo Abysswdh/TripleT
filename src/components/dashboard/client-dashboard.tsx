@@ -17,6 +17,7 @@ import {
   Heart,
   Building2,
   MapPin,
+  Briefcase,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -26,6 +27,7 @@ import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import { createClient } from "@/lib/supabase/client";
 import { matchCategory, DEFAULT_CLIENT_CATEGORIES } from "@/lib/constants/categories";
 import { useCurrency } from "@/context/currency-context";
+import { getOpenProjects } from "@/lib/services/projects";
 
 interface FeaturedTalent {
   id: string;
@@ -89,52 +91,13 @@ interface MarketPeerProject {
   company: string;
   category: string;
   status: string;
-  statusType: "open" | "in_progress";
+  statusType: "open" | "in_progress" | "completed";
   title: string;
   description: string;
   skills: string[];
   budget: string;
   budgetNumeric?: number;
 }
-
-const MARKET_SAMPLE_PROJECTS: MarketPeerProject[] = [
-  {
-    id: "mkt-1",
-    company: "Nexa Corporation",
-    category: "Web Development",
-    status: "Menerima Proposal",
-    statusType: "open",
-    title: "Enterprise SaaS Analytics Dashboard & Billing",
-    description: "Pengembangan dashboard analitik multi-tenant terintegrasi payment gateway, subscription management, dan visualisasi metrik real-time.",
-    skills: ["Next.js 14", "PostgreSQL", "Prisma"],
-    budget: "Rp 18.500.000",
-    budgetNumeric: 18500000,
-  },
-  {
-    id: "mkt-2",
-    company: "Alpha Labs Tech",
-    category: "AI & Machine",
-    status: "Menerima Proposal",
-    statusType: "open",
-    title: "AI Voice Agent Support & Intelligent Ticket Dispatcher",
-    description: "Implementasi agent AI berbasis Large Language Model dan speech-to-text realtime untuk otomatisasi ticketing customer service.",
-    skills: ["Python", "OpenAI Realtime", "LangChain"],
-    budget: "Rp 14.000.000",
-    budgetNumeric: 14000000,
-  },
-  {
-    id: "mkt-3",
-    company: "PT FinTech Solusindo",
-    category: "Mobile Apps",
-    status: "Sedang Berjalan",
-    statusType: "in_progress",
-    title: "Cross-Platform Fintech Mobile App (Wallet & QRIS)",
-    description: "Aplikasi mobile dompet digital dengan modul transaksi QRIS dinamis, integrasi biometric auth, dan settlement audit log.",
-    skills: ["Flutter", "Dart", "Biometrics"],
-    budget: "Rp 25.000.000",
-    budgetNumeric: 25000000,
-  },
-];
 
 import { getTalents } from "@/lib/services/talents";
 
@@ -145,6 +108,8 @@ export function ClientDashboard() {
   // State
   const [projects, setProjects] = useState<ClientProject[]>([]);
   const [featuredTalents, setFeaturedTalents] = useState<FeaturedTalent[]>([]);
+  const [marketProjects, setMarketProjects] = useState<MarketPeerProject[]>([]);
+  const [isMarketLoading, setIsMarketLoading] = useState(true);
   const [projectStatusFilter, setProjectStatusFilter] = useState<"All" | "Hiring" | "In Progress" | "Completed">("All");
   const [talentCategory, setTalentCategory] = useState("Semua");
   const [marketCategory, setMarketCategory] = useState("Semua");
@@ -293,6 +258,35 @@ export function ClientDashboard() {
             }))
           );
         }
+
+        // 3. Load Market Projects (Live from DB)
+        setIsMarketLoading(true);
+        try {
+          const liveMarket = await getOpenProjects();
+          if (liveMarket && liveMarket.length > 0) {
+            setMarketProjects(
+              liveMarket.map((p) => ({
+                id: p.id,
+                company: p.owner?.fullName || "Klien Terverifikasi",
+                category: p.category || "Web Development",
+                status: p.status === "Completed" ? "Selesai" : p.status === "In Progress" ? "Sedang Berjalan" : "Menerima Proposal",
+                statusType: p.status === "Completed" ? "completed" : p.status === "In Progress" ? "in_progress" : "open",
+                title: p.title,
+                description: p.description,
+                skills: p.skills || [],
+                budget: p.budget,
+                budgetNumeric: p.budgetNumeric,
+              }))
+            );
+          } else {
+            setMarketProjects([]);
+          }
+        } catch (mErr) {
+          console.error("Failed to load market projects:", mErr);
+          setMarketProjects([]);
+        } finally {
+          setIsMarketLoading(false);
+        }
       } catch (err) {
         console.error("Failed to load dashboard data from Supabase:", err);
       }
@@ -336,9 +330,9 @@ export function ClientDashboard() {
 
   // Filtered Market Projects using smart category matching
   const filteredMarketProjects = useMemo(() => {
-    if (marketCategory === "Semua") return MARKET_SAMPLE_PROJECTS;
-    return MARKET_SAMPLE_PROJECTS.filter((p) => matchCategory(p.category, marketCategory));
-  }, [marketCategory]);
+    if (marketCategory === "Semua") return marketProjects;
+    return marketProjects.filter((p) => matchCategory(p.category, marketCategory));
+  }, [marketProjects, marketCategory]);
 
   // Toggle Save Talent
   const toggleSaveTalent = (id: string, e: React.MouseEvent) => {
@@ -368,6 +362,21 @@ export function ClientDashboard() {
   // Handle Project Creation Submission Success
   const handleProjectCreated = (newProj: CreatedProject) => {
     setProjects((prev) => [newProj as unknown as ClientProject, ...prev]);
+    setMarketProjects((prev) => [
+      {
+        id: newProj.id,
+        company: "Proyek Anda",
+        category: newProj.category || "Web Development",
+        status: "Menerima Proposal",
+        statusType: "open",
+        title: newProj.title,
+        description: newProj.description,
+        skills: newProj.skills || [],
+        budget: newProj.budget,
+        budgetNumeric: newProj.budgetNumeric,
+      },
+      ...prev,
+    ]);
     setQuickPrompt("");
   };
 
@@ -914,25 +923,30 @@ export function ClientDashboard() {
               <h2 className="text-xl font-bold tracking-tight text-foreground">
                 Jelajahi Proyek yang Sudah Dibuat Sebelumnya
               </h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Lihat referensi proyek dan benchmark kebutuhan teknologi dari ekosistem klien di platform
+              </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-3 self-start sm:self-auto">
-              {/* Category Filter Chips */}
-              <div className="flex flex-wrap items-center gap-1.5">
-                {marketCategoryChips.map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => setMarketCategory(cat)}
-                    className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
-                      marketCategory === cat
-                        ? "bg-primary text-white shadow-xs"
-                        : "border border-border/80 bg-card text-muted-foreground hover:text-foreground hover:bg-muted/60"
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
+              {/* Category Filter Chips (only when market projects exist) */}
+              {marketProjects.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {marketCategoryChips.map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => setMarketCategory(cat)}
+                      className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
+                        marketCategory === cat
+                          ? "bg-primary text-white shadow-xs"
+                          : "border border-border/80 bg-card text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              )}
 
               <Link
                 href="/client/market"
@@ -944,88 +958,145 @@ export function ClientDashboard() {
             </div>
           </div>
 
-          {/* Peer Projects Grid */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredMarketProjects.map((proj) => (
-              <div
-                key={proj.id}
-                className="group flex flex-col justify-between rounded-2xl border border-border/70 bg-card p-5 shadow-xs transition-all hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5 space-y-4"
-              >
-                <div className="space-y-3">
-                  {/* Category & Live Status */}
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="rounded-md bg-primary/10 border border-primary/20 px-2 py-0.5 text-xs font-semibold text-primary">
-                      {proj.category}
-                    </span>
-                    <span
-                      className={`inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-xs font-semibold ${
-                        proj.statusType === "open"
-                          ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
-                          : "bg-blue-500/10 text-blue-600 border border-blue-500/20"
-                      }`}
-                    >
-                      <span
-                        className={`h-1.5 w-1.5 rounded-full ${
-                          proj.statusType === "open"
-                            ? "bg-emerald-500 animate-pulse"
-                            : "bg-blue-500 animate-pulse"
-                        }`}
-                      />
-                      {proj.status}
-                    </span>
-                  </div>
-
-                  {/* Title & Description */}
-                  <div>
-                    <h3 className="font-sans font-bold text-base text-foreground line-clamp-1 group-hover:text-primary transition-colors">
-                      {proj.title}
-                    </h3>
-                    <p className="mt-1.5 text-sm text-muted-foreground line-clamp-2 leading-relaxed">
-                      {proj.description}
-                    </p>
-                  </div>
-
-                  {/* Budget & Client Strip */}
-                  <div className="flex items-center justify-between text-xs py-1.5 border-y border-border/40">
-                    <div>
-                      <span className="text-xs text-muted-foreground block font-medium">Estimasi Budget</span>
-                      <span className="font-bold text-foreground text-sm">{formatMoney(proj.budgetNumeric || 0)}</span>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-xs text-muted-foreground block font-medium">Klien / Perusahaan</span>
-                      <span className="font-semibold text-foreground flex items-center gap-1 justify-end">
-                        <Building2 className="h-3.5 w-3.5 text-primary shrink-0" />
-                        <span className="truncate max-w-[130px]">{proj.company}</span>
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Skills Chips */}
-                  <div className="flex flex-wrap gap-1">
-                    {proj.skills.map((skill) => (
-                      <span
-                        key={skill}
-                        className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
-                      >
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
+          {/* Peer Projects Grid / Empty State */}
+          {filteredMarketProjects.length === 0 ? (
+            marketProjects.length === 0 ? (
+              /* Global Empty State: No projects exist in the database/marketplace yet */
+              <div className="rounded-2xl border border-dashed border-border/80 bg-card/40 p-8 sm:p-10 text-center space-y-4">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <Briefcase className="h-6 w-6" />
                 </div>
-
-                {/* Card Footer Actions */}
-                <div className="pt-3 border-t border-border/40 flex items-center justify-between gap-2">
-                  <Link
-                    href={`/client/market?q=${encodeURIComponent(proj.title)}`}
-                    className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary px-3 py-2 text-xs font-semibold transition-colors"
+                <div className="space-y-1.5 max-w-md mx-auto">
+                  <h3 className="text-base font-bold text-foreground">Belum Ada Proyek di Pasar</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Saat ini belum ada proyek publik yang dipublikasikan di pasar proyek. Pasang proyek pertama Anda untuk mulai mendapatkan tawaran proposal dari talenta terverifikasi.
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center justify-center gap-2.5 pt-1">
+                  <button
+                    onClick={() => setIsCreateModalOpen(true)}
+                    className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-primary-600 transition-all cursor-pointer"
                   >
-                    <span>Detail Scope</span>
+                    <Plus className="h-4 w-4" />
+                    <span>Buat Proyek Baru</span>
+                  </button>
+                  <Link
+                    href="/client/market"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-border/80 bg-card hover:bg-muted/60 px-4 py-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-all"
+                  >
+                    <span>Kunjungi Pasar Proyek</span>
                     <ArrowRight className="h-3.5 w-3.5" />
                   </Link>
                 </div>
               </div>
-            ))}
-          </div>
+            ) : (
+              /* Category Filter Empty State: Projects exist, but none match selected category */
+              <div className="rounded-2xl border border-dashed border-border/80 bg-card/30 p-8 text-center space-y-3">
+                <p className="text-xs text-muted-foreground">
+                  Tidak ada proyek untuk kategori <span className="font-semibold text-foreground">&quot;{marketCategory}&quot;</span>.
+                </p>
+                <button
+                  onClick={() => setMarketCategory("Semua")}
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline cursor-pointer"
+                >
+                  Tampilkan Semua Kategori
+                </button>
+              </div>
+            )
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {filteredMarketProjects.map((proj) => (
+                <div
+                  key={proj.id}
+                  className="group flex flex-col justify-between rounded-2xl border border-border/70 bg-card p-5 shadow-xs transition-all hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5 space-y-4"
+                >
+                  <div className="space-y-3">
+                    {/* Category & Live Status */}
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="rounded-md bg-primary/10 border border-primary/20 px-2 py-0.5 text-xs font-semibold text-primary">
+                        {proj.category}
+                      </span>
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-xs font-semibold ${
+                          proj.statusType === "open"
+                            ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
+                            : proj.statusType === "completed"
+                            ? "bg-purple-500/10 text-purple-600 border border-purple-500/20"
+                            : "bg-blue-500/10 text-blue-600 border border-blue-500/20"
+                        }`}
+                      >
+                        <span
+                          className={`h-1.5 w-1.5 rounded-full ${
+                            proj.statusType === "open"
+                              ? "bg-emerald-500 animate-pulse"
+                              : proj.statusType === "completed"
+                              ? "bg-purple-500"
+                              : "bg-blue-500 animate-pulse"
+                          }`}
+                        />
+                        {proj.status}
+                      </span>
+                    </div>
+
+                    {/* Title & Description */}
+                    <div>
+                      <h3 className="font-sans font-bold text-base text-foreground line-clamp-1 group-hover:text-primary transition-colors">
+                        {proj.title}
+                      </h3>
+                      <p className="mt-1.5 text-sm text-muted-foreground line-clamp-2 leading-relaxed">
+                        {proj.description}
+                      </p>
+                    </div>
+
+                    {/* Budget & Client Strip */}
+                    <div className="flex items-center justify-between text-xs py-1.5 border-y border-border/40">
+                      <div>
+                        <span className="text-xs text-muted-foreground block font-medium">Estimasi Budget</span>
+                        <span className="font-bold text-foreground text-sm">{formatMoney(proj.budgetNumeric || 0)}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-xs text-muted-foreground block font-medium">Klien / Perusahaan</span>
+                        <span className="font-semibold text-foreground flex items-center gap-1 justify-end">
+                          <Building2 className="h-3.5 w-3.5 text-primary shrink-0" />
+                          <span className="truncate max-w-[130px]">{proj.company}</span>
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Skills Chips */}
+                    {proj.skills && proj.skills.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {proj.skills.slice(0, 4).map((skill) => (
+                          <span
+                            key={skill}
+                            className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
+                          >
+                            {skill}
+                          </span>
+                        ))}
+                        {proj.skills.length > 4 && (
+                          <span className="rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
+                            +{proj.skills.length - 4}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Card Footer Actions */}
+                  <div className="pt-3 border-t border-border/40 flex items-center justify-between gap-2">
+                    <Link
+                      href={`/client/market?q=${encodeURIComponent(proj.title)}`}
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary px-3 py-2 text-xs font-semibold transition-colors"
+                    >
+                      <span>Detail Scope</span>
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* ============================================================ */}

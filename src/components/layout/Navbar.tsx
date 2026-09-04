@@ -127,8 +127,21 @@ export function Navbar() {
           if (data.avatar_url !== undefined) {
             setDbAvatarUrl(cleanUrl(data.avatar_url));
           }
-          const isFlOnboarded = !!data.freelancer_onboarded || (!!data.onboarding_completed && data.role === "freelancer");
-          const isClOnboarded = !!data.client_onboarded || (!!data.onboarding_completed && (data.role === "customer" || data.role === "client"));
+          const storedFl = typeof window !== "undefined" && localStorage.getItem("triplet_freelancer_onboarded") === "true";
+          const storedCl = typeof window !== "undefined" && localStorage.getItem("triplet_client_onboarded") === "true";
+
+          const isFlOnboarded = Boolean(
+            data.freelancer_onboarded ||
+            user.user_metadata?.freelancer_onboarded ||
+            storedFl ||
+            (data.onboarding_completed && data.role === "freelancer")
+          );
+          const isClOnboarded = Boolean(
+            data.client_onboarded ||
+            user.user_metadata?.client_onboarded ||
+            storedCl ||
+            (data.onboarding_completed && (data.role === "customer" || data.role === "client"))
+          );
 
           setFreelancerOnboarded(isFlOnboarded);
           setClientOnboarded(isClOnboarded);
@@ -136,6 +149,18 @@ export function Navbar() {
           if (typeof window !== "undefined") {
             if (isFlOnboarded) localStorage.setItem("triplet_freelancer_onboarded", "true");
             if (isClOnboarded) localStorage.setItem("triplet_client_onboarded", "true");
+          }
+
+          // Self-heal DB flags if auth metadata/local state has them true but DB row is false
+          if ((isFlOnboarded && !data.freelancer_onboarded) || (isClOnboarded && !data.client_onboarded)) {
+            supabase
+              .from("users")
+              .update({
+                freelancer_onboarded: isFlOnboarded,
+                client_onboarded: isClOnboarded,
+              })
+              .eq("id", user.id)
+              .then(() => {});
           }
         }
       } catch (err) {
@@ -161,6 +186,9 @@ export function Navbar() {
 
     let isTargetOnboarded = false;
 
+    const storedFl = typeof window !== "undefined" && localStorage.getItem("triplet_freelancer_onboarded") === "true";
+    const storedCl = typeof window !== "undefined" && localStorage.getItem("triplet_client_onboarded") === "true";
+
     // Check with live DB first
     if (user?.id) {
       try {
@@ -172,41 +200,61 @@ export function Navbar() {
           .maybeSingle();
 
         if (data) {
-          const isFl = Boolean(data.freelancer_onboarded || (data.onboarding_completed && data.role === "freelancer"));
-          const isCl = Boolean(data.client_onboarded || (data.onboarding_completed && (data.role === "customer" || data.role === "client")));
+          const isFl = Boolean(
+            data.freelancer_onboarded ||
+            user.user_metadata?.freelancer_onboarded ||
+            storedFl ||
+            (data.onboarding_completed && data.role === "freelancer")
+          );
+          const isCl = Boolean(
+            data.client_onboarded ||
+            user.user_metadata?.client_onboarded ||
+            storedCl ||
+            (data.onboarding_completed && (data.role === "customer" || data.role === "client"))
+          );
           setFreelancerOnboarded(isFl);
           setClientOnboarded(isCl);
           isTargetOnboarded = targetRole === "freelancer" ? isFl : isCl;
+
+          if (isFl && !data.freelancer_onboarded || isCl && !data.client_onboarded) {
+            supabase
+              .from("users")
+              .update({
+                freelancer_onboarded: isFl,
+                client_onboarded: isCl,
+              })
+              .eq("id", user.id)
+              .then(() => {});
+          }
         } else {
           isTargetOnboarded = targetRole === "freelancer"
-            ? Boolean(user.user_metadata?.freelancer_onboarded)
-            : Boolean(user.user_metadata?.client_onboarded || user.user_metadata?.onboarding_completed);
+            ? Boolean(user.user_metadata?.freelancer_onboarded || storedFl)
+            : Boolean(user.user_metadata?.client_onboarded || storedCl || user.user_metadata?.onboarding_completed);
         }
       } catch (err) {
         console.warn("Error checking target role onboarding status:", err);
         isTargetOnboarded = targetRole === "freelancer"
-          ? Boolean(user.user_metadata?.freelancer_onboarded)
-          : Boolean(user.user_metadata?.client_onboarded || user.user_metadata?.onboarding_completed);
+          ? Boolean(user.user_metadata?.freelancer_onboarded || storedFl)
+          : Boolean(user.user_metadata?.client_onboarded || storedCl || user.user_metadata?.onboarding_completed);
       }
     } else {
       isTargetOnboarded = targetRole === "freelancer"
-        ? Boolean(user?.user_metadata?.freelancer_onboarded)
-        : Boolean(user?.user_metadata?.client_onboarded || user?.user_metadata?.onboarding_completed);
+        ? Boolean(user?.user_metadata?.freelancer_onboarded || storedFl)
+        : Boolean(user?.user_metadata?.client_onboarded || storedCl || user?.user_metadata?.onboarding_completed);
+    }
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem("triplet_active_dashboard_role", targetRole);
+      document.cookie = `triplet_active_dashboard_role=${targetRole}; path=/; max-age=31536000; SameSite=Lax`;
     }
 
     // If it's their first time switching to target role, direct to onboarding for that role
     if (!isTargetOnboarded) {
-      if (typeof window !== "undefined") {
-        localStorage.setItem("triplet_active_dashboard_role", targetRole);
-      }
       router.push(`/onboarding?role=${targetRole}`);
       return;
     }
 
     // 3. Target role already onboarded: direct seamless navigation
-    if (typeof window !== "undefined") {
-      localStorage.setItem("triplet_active_dashboard_role", targetRole);
-    }
     if (targetRole === "freelancer") {
       router.push("/freelancer/dashboard");
     } else {

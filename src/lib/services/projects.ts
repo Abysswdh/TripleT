@@ -2,12 +2,17 @@ import { createClient } from "@/lib/supabase/client";
 
 export interface ProjectMilestone {
   id: string;
+  contractMilestoneId?: string;
   title: string;
   amount: string;
   amountNumeric?: number;
   status: "completed" | "in_progress" | "pending";
   dueDate: string;
   deliverables?: string[];
+  deliverableFileUrl?: string;
+  deliverableNote?: string;
+  isSubmittedForReview?: boolean;
+  submittedAt?: string;
 }
 
 export interface ProjectTaskItem {
@@ -22,6 +27,8 @@ export interface ProjectTaskItem {
 export interface ProjectRecord {
   id: string;
   ownerId: string;
+  contractId?: string;
+  contractStatus?: string;
   title: string;
   category: string;
   budget: string;
@@ -138,6 +145,11 @@ export async function getProjectById(projectId: string): Promise<ProjectRecord |
           freelancer_profile:freelancer_profiles(headline, rating, completed_projects, skills)
         ),
         milestones(*),
+        contracts(
+          id,
+          status,
+          contract_milestones(*)
+        ),
         project_tasks(*)
       `)
       .eq("id", projectId)
@@ -174,17 +186,44 @@ function formatProjectRecord(p: any): ProjectRecord {
 
   const status = statusMap[p.status?.toLowerCase()] || "Hiring";
 
-  // Format milestones
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const milestones: ProjectMilestone[] = (p.milestones || []).map((m: any) => ({
-    id: m.id,
-    title: m.title,
-    amount: m.amount_display || `Rp ${(m.amount || 0).toLocaleString("id-ID")}`,
-    amountNumeric: m.amount || 0,
-    status: (m.status as "completed" | "in_progress" | "pending") || "pending",
-    dueDate: m.phase || `${m.percentage || 50}% phase`,
-    deliverables: m.deliverables || [],
-  }));
+  // Merge milestones with contract_milestones if available
+  const contract = Array.isArray(p.contracts) ? p.contracts[0] : p.contracts;
+  const contractMilestones = Array.isArray(contract?.contract_milestones) ? contract.contract_milestones : [];
+
+  const milestones: ProjectMilestone[] = (p.milestones || []).map((m: any) => {
+    const cm = contractMilestones.find(
+      (c: any) => c.milestone_id === m.id || c.title === m.title || c.id === m.id
+    );
+
+    const deliverableFileUrl = m.deliverable_file_url || cm?.deliverable_file_url || undefined;
+    const deliverableNote = m.deliverable_note || cm?.deliverable_note || undefined;
+    const isSubmittedForReview = Boolean(
+      m.is_submitted_for_review || cm?.is_submitted_for_review || cm?.status === "submitted" || m.status === "submitted"
+    );
+
+    const rawStatus = cm?.status || m.status || "pending";
+    const mappedStatus =
+      rawStatus === "completed"
+        ? "completed"
+        : rawStatus === "in_progress" || rawStatus === "submitted"
+        ? "in_progress"
+        : "pending";
+
+    return {
+      id: m.id,
+      contractMilestoneId: cm?.id,
+      title: m.title,
+      amount: m.amount_display || `Rp ${(m.amount || 0).toLocaleString("id-ID")}`,
+      amountNumeric: m.amount || cm?.amount || 0,
+      status: mappedStatus,
+      dueDate: m.phase || `${m.percentage || 50}% phase`,
+      deliverables: m.deliverables || [],
+      deliverableFileUrl,
+      deliverableNote,
+      isSubmittedForReview,
+      submittedAt: m.submitted_at || cm?.submitted_at || undefined,
+    };
+  });
 
   // Format tasks
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -218,6 +257,8 @@ function formatProjectRecord(p: any): ProjectRecord {
   return {
     id: p.id,
     ownerId: p.owner_id,
+    contractId: contract?.id,
+    contractStatus: contract?.status,
     title: p.title,
     category: p.category || "Web Development",
     budget: p.budget_display || `Rp ${(p.budget_min || 0).toLocaleString("id-ID")}`,

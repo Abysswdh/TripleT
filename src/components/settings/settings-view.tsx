@@ -9,6 +9,7 @@ import { useTranslation, type Locale } from "@/context/language-context";
 import { useCurrency, type Currency } from "@/context/currency-context";
 import { createClient } from "@/lib/supabase/client";
 import { uploadProfileMedia } from "@/lib/services/storage";
+import { getFreelancerEarnings } from "@/lib/services/earnings";
 import { UNIFIED_PROJECT_CATEGORIES } from "@/lib/constants/categories";
 import {
   User,
@@ -163,7 +164,18 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState("");
-  const [walletBalance] = useState<number>(0);
+  const [walletBalance, setWalletBalance] = useState<number>(0);
+
+  useEffect(() => {
+    if (user?.id) {
+      getFreelancerEarnings(user.id).then((res) => {
+        if (res) {
+          setWalletBalance(res.availableBalance);
+        }
+      });
+    }
+  }, [user]);
+
   const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 

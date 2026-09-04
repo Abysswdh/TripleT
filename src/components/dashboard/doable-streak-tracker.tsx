@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { ChevronDown, ChevronUp, Flame, Check, X, CircleDot } from "lucide-react";
 import { formatLocalDateKey } from "@/lib/services/activity";
+import { useAuth } from "@/hooks/use-auth";
 
 interface DoableStreakTrackerProps {
   streakDays?: number;
@@ -11,6 +12,7 @@ interface DoableStreakTrackerProps {
   totalContributions?: number;
   className?: string;
   isOwner?: boolean;
+  userCreatedAt?: string | Date | null;
 }
 
 export const DoableStreakTracker: React.FC<DoableStreakTrackerProps> = ({
@@ -19,10 +21,19 @@ export const DoableStreakTracker: React.FC<DoableStreakTrackerProps> = ({
   totalContributions = 0,
   className = "",
   isOwner = true,
+  userCreatedAt,
 }) => {
+  const { user } = useAuth();
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [liveActiveDates, setLiveActiveDates] = useState<string[]>(initialActiveDates);
   const [liveStreakDays, setLiveStreakDays] = useState<number>(streakDays);
+
+  // Determine user account registration date in local calendar format (YYYY-MM-DD)
+  const joinedDateStr = useMemo(() => {
+    const raw = userCreatedAt || (isOwner ? user?.created_at : null);
+    if (!raw) return null;
+    return formatLocalDateKey(raw);
+  }, [userCreatedAt, isOwner, user?.created_at]);
 
   // Sync props to state
   useEffect(() => {
@@ -34,8 +45,13 @@ export const DoableStreakTracker: React.FC<DoableStreakTrackerProps> = ({
   useEffect(() => {
     const handleLiveActivity = () => {
       const todayStr = formatLocalDateKey(new Date());
-      setLiveActiveDates((prev) => (prev.includes(todayStr) ? prev : [...prev, todayStr]));
-      setLiveStreakDays((prev) => (prev > 0 ? prev : 1));
+      setLiveActiveDates((prev) => {
+        if (!prev.includes(todayStr)) {
+          setLiveStreakDays((currStreak) => currStreak + 1);
+          return [...prev, todayStr];
+        }
+        return prev;
+      });
     };
 
     window.addEventListener("xp-updated", handleLiveActivity as EventListener);
@@ -145,12 +161,17 @@ export const DoableStreakTracker: React.FC<DoableStreakTrackerProps> = ({
               const isTodayPending = day.isToday && !day.hasActivity;
               const isPastCompleted = day.isPast && day.hasActivity;
 
-              // Only mark missed (RED) if user had already started active streak before this day
+              // Check if user was already registered on or before this day
+              const isAfterJoin = joinedDateStr !== null ? day.dateStr >= joinedDateStr : false;
+              // Or if user had recorded active history before this day
+              const isAfterFirstActivity = earliestActiveDate !== null ? day.dateStr > earliestActiveDate : false;
+
+              // Mark missed (RED) if user already had an active account on this day (or had prior activity) but had no activity
               const isPastMissed =
-                day.isPast && !day.hasActivity && earliestActiveDate !== null && day.dateStr > earliestActiveDate;
-              // For new users or days before user joined/started, keep it neutral GRAY
+                day.isPast && !day.hasActivity && (isAfterJoin || isAfterFirstActivity);
+              // For past days before user joined / had any activity, keep it neutral GRAY
               const isPastNeutral =
-                day.isPast && !day.hasActivity && (!earliestActiveDate || day.dateStr <= earliestActiveDate);
+                day.isPast && !day.hasActivity && !isPastMissed;
 
               let cardStyle = "bg-muted/15 border border-border/40 text-muted-foreground/50 opacity-60";
               let labelStyle = "text-muted-foreground/60 font-medium";
@@ -173,7 +194,7 @@ export const DoableStreakTracker: React.FC<DoableStreakTrackerProps> = ({
                 labelStyle = "text-rose-500/90 dark:text-rose-400/90 font-bold";
                 numberStyle = "text-rose-600 dark:text-rose-300 font-black";
               } else if (isPastNeutral) {
-                // Neutral gray for new user / days before user started
+                // Neutral gray for days before user joined / had activity
                 cardStyle = "bg-muted/20 border border-border/50 text-muted-foreground/70";
                 labelStyle = "text-muted-foreground/70 font-semibold";
                 numberStyle = "text-muted-foreground/80 font-bold";
@@ -192,7 +213,7 @@ export const DoableStreakTracker: React.FC<DoableStreakTrackerProps> = ({
                       : isPastMissed
                       ? `Terlewat: Tidak ada aktivitas pada ${day.dateStr} (Merah)`
                       : isPastNeutral
-                      ? `Pengguna baru / sebelum mulai: ${day.dateStr} (Abu-abu)`
+                      ? `Sebelum bergabung: ${day.dateStr} (Abu-abu)`
                       : `Mendatang: ${day.dateStr}`
                   }
                   className={`group relative rounded-xl sm:rounded-2xl p-2 sm:p-2.5 text-center transition-all duration-200 flex flex-col items-center justify-between gap-1 hover:scale-105 cursor-default ${cardStyle}`}

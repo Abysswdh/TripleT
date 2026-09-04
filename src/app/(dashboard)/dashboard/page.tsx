@@ -19,12 +19,17 @@ export default function DashboardRedirectPage() {
       ? localStorage.getItem(STORAGE_KEY)
       : null;
 
+    const storedFl = typeof window !== "undefined" && localStorage.getItem("triplet_freelancer_onboarded") === "true";
+    const storedCl = typeof window !== "undefined" && localStorage.getItem("triplet_client_onboarded") === "true";
+
     const isFlOnboarded =
       !!user?.user_metadata?.freelancer_onboarded ||
+      storedFl ||
       (!!user?.user_metadata?.onboarding_completed && user?.user_metadata?.role === "freelancer");
 
     const isClOnboarded =
       !!user?.user_metadata?.client_onboarded ||
+      storedCl ||
       (!!user?.user_metadata?.onboarding_completed &&
         (user?.user_metadata?.role === "customer" || user?.user_metadata?.role === "client"));
 
@@ -53,8 +58,10 @@ export default function DashboardRedirectPage() {
 
   const handleSelectClient = () => {
     setRole("customer");
+    const storedCl = typeof window !== "undefined" && localStorage.getItem("triplet_client_onboarded") === "true";
     const isClOnboarded =
       !!user?.user_metadata?.client_onboarded ||
+      storedCl ||
       (!!user?.user_metadata?.onboarding_completed &&
         (user?.user_metadata?.role === "customer" || user?.user_metadata?.role === "client"));
 
@@ -67,8 +74,10 @@ export default function DashboardRedirectPage() {
 
   const handleSelectFreelancer = () => {
     setRole("freelancer");
+    const storedFl = typeof window !== "undefined" && localStorage.getItem("triplet_freelancer_onboarded") === "true";
     const isFlOnboarded =
       !!user?.user_metadata?.freelancer_onboarded ||
+      storedFl ||
       (!!user?.user_metadata?.onboarding_completed && user?.user_metadata?.role === "freelancer");
 
     if (!isFlOnboarded) {

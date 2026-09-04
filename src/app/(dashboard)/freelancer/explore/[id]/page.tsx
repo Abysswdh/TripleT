@@ -21,11 +21,13 @@ import {
   AlertCircle,
   ChevronRight,
   Check,
-  FileCode
+  FileCode,
+  ArrowRight,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { getProjectById, type ProjectRecord } from "@/lib/services/projects";
-import { submitProposal } from "@/lib/services/proposals";
+import { submitProposal, getUserProposalForProject, type FreelancerProposalItem } from "@/lib/services/proposals";
+import { formatRelativeTime } from "@/lib/utils";
 
 export default function FreelancerProjectDetailPage() {
   const params = useParams();
@@ -43,6 +45,23 @@ export default function FreelancerProjectDetailPage() {
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [activePreset, setActivePreset] = useState<number | null>(1.0);
+  const [existingProposal, setExistingProposal] = useState<FreelancerProposalItem | null>(null);
+
+  // Check if current user already submitted proposal for this project
+  useEffect(() => {
+    async function checkExistingProposal() {
+      if (!projectId) return;
+      try {
+        const myProposal = await getUserProposalForProject(projectId, user?.id);
+        if (myProposal) {
+          setExistingProposal(myProposal);
+        }
+      } catch (err) {
+        console.warn("Notice checking existing proposal:", err);
+      }
+    }
+    checkExistingProposal();
+  }, [projectId, user?.id]);
 
   useEffect(() => {
     async function loadData() {
@@ -56,10 +75,20 @@ export default function FreelancerProjectDetailPage() {
           setActivePreset(1.0);
         }
       }
+
+      try {
+        const myProposal = await getUserProposalForProject(projectId, user?.id);
+        if (myProposal) {
+          setExistingProposal(myProposal);
+        }
+      } catch (err) {
+        console.warn("Notice checking proposal in loadData:", err);
+      }
+
       setLoading(false);
     }
     loadData();
-  }, [projectId]);
+  }, [projectId, user?.id]);
 
   // Calculations
   const platformFeeRate = 0.05; // 5% Platform Fee
@@ -127,6 +156,15 @@ export default function FreelancerProjectDetailPage() {
       return;
     }
 
+    try {
+      const myProposal = await getUserProposalForProject(project.id, user.id);
+      if (myProposal) {
+        setExistingProposal(myProposal);
+      }
+    } catch {
+      // ignore
+    }
+
     setSubmitted(true);
   };
 
@@ -182,13 +220,20 @@ export default function FreelancerProjectDetailPage() {
         </Link>
 
         <div className="flex items-center gap-2">
+          {existingProposal ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 px-3 py-1 text-xs font-bold text-amber-700 dark:text-amber-300">
+              <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+              <span>Proposal Anda: {existingProposal.status === "pending" ? "Menunggu Review" : existingProposal.status === "accepted" ? "Diterima" : "Terkirim"}</span>
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-bold text-primary">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              <span>Status: Terbuka</span>
+            </span>
+          )}
           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 text-xs font-bold text-emerald-600">
             <ShieldCheck className="h-3.5 w-3.5" />
             <span>Garansi Escrow 100%</span>
-          </span>
-          <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-bold text-primary">
-            <CheckCircle2 className="h-3.5 w-3.5" />
-            <span>Status: Terbuka</span>
           </span>
         </div>
       </div>
@@ -411,7 +456,139 @@ export default function FreelancerProjectDetailPage() {
         {/* ========================================================================= */}
         <div className="lg:col-span-5 sticky top-20">
           <div className="rounded-3xl border border-border/80 bg-card p-6 sm:p-7 shadow-xl space-y-6">
-            {submitted ? (
+            {existingProposal ? (
+              <div className="space-y-6 animate-in fade-in duration-300">
+                {/* Header with status badge */}
+                <div className="border-b border-border/60 pb-4 space-y-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                      Status Penawaran
+                    </span>
+                    {existingProposal.status === "pending" && (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 px-3 py-1 text-xs font-bold text-amber-700 dark:text-amber-300">
+                        <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                        Menunggu Ditinjau Klien
+                      </span>
+                    )}
+                    {existingProposal.status === "accepted" && (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-3 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-300">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        Proposal Diterima 🎉
+                      </span>
+                    )}
+                    {existingProposal.status === "rejected" && (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-500/15 border border-rose-500/30 px-3 py-1 text-xs font-bold text-rose-700 dark:text-rose-300">
+                        Tidak Terpilih
+                      </span>
+                    )}
+                  </div>
+
+                  <h2 className="text-xl font-bold text-foreground font-heading">
+                    {submitted ? "Proposal Berhasil Dikirim!" : "Proposal Anda Sudah Diajukan"}
+                  </h2>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {submitted
+                      ? `Penawaran Anda telah diteruskan ke ${project?.owner?.fullName || "Klien"}. Anda akan menerima notifikasi saat klien meninjau proposal Anda.`
+                      : "Anda telah mengajukan penawaran untuk proyek ini sebelumnya. Opsi pengajuan dinonaktifkan untuk mencegah duplikasi proposal."}
+                  </p>
+                </div>
+
+                {/* Submitted Bid Summary Card */}
+                <div className="rounded-2xl bg-muted/40 border border-border/70 p-4 space-y-3.5">
+                  <div className="grid grid-cols-2 gap-3 pb-3 border-b border-border/50">
+                    <div>
+                      <span className="text-[11px] font-semibold text-muted-foreground block">
+                        Tawaran Diajukan
+                      </span>
+                      <span className="text-base sm:text-lg font-black text-primary font-heading">
+                        {existingProposal.bidDisplay}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[11px] font-semibold text-muted-foreground block">
+                        Estimasi Pengerjaan
+                      </span>
+                      <span className="text-sm font-bold text-foreground">
+                        {existingProposal.deliveryDays} hari kerja
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>Waktu Pengajuan:</span>
+                    <strong className="text-foreground">
+                      {formatRelativeTime(existingProposal.createdAt)}
+                    </strong>
+                  </div>
+                </div>
+
+                {/* Cover Letter / Pitch */}
+                {existingProposal.coverLetter && (
+                  <div className="space-y-2">
+                    <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                      <FileText className="h-3.5 w-3.5 text-primary" />
+                      <span>Catatan Penawaran / Pitch Anda:</span>
+                    </span>
+                    <div className="rounded-2xl bg-card border border-border/80 p-4 text-xs text-foreground/90 whitespace-pre-line leading-relaxed max-h-48 overflow-y-auto italic font-light">
+                      &ldquo;{existingProposal.coverLetter}&rdquo;
+                    </div>
+                  </div>
+                )}
+
+                {/* Status Notice Banner */}
+                {existingProposal.status === "pending" && (
+                  <div className="rounded-2xl bg-amber-500/10 border border-amber-500/25 p-4 text-xs text-amber-700 dark:text-amber-300 space-y-1">
+                    <div className="flex items-center gap-1.5 font-bold">
+                      <Clock className="h-4 w-4 shrink-0 text-amber-500" />
+                      <span>Sedang Ditinjau Klien</span>
+                    </div>
+                    <p className="leading-relaxed">
+                      Klien ({project?.owner?.fullName || "Klien"}) sedang meninjau proposal Anda. Anda akan mendapatkan notifikasi otomatis begitu klien memberikan keputusan atau membuat kontrak.
+                    </p>
+                  </div>
+                )}
+
+                {existingProposal.status === "accepted" && (
+                  <div className="rounded-2xl bg-emerald-500/10 border border-emerald-500/25 p-4 text-xs text-emerald-700 dark:text-emerald-300 space-y-1">
+                    <div className="flex items-center gap-1.5 font-bold">
+                      <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+                      <span>Selamat! Proposal Anda Diterima</span>
+                    </div>
+                    <p className="leading-relaxed">
+                      Klien telah menyetujui penawaran Anda dan mendanai rekber (escrow). Anda dapat langsung membuka workspace proyek untuk mulai mengerjakan milestone.
+                    </p>
+                  </div>
+                )}
+
+                {/* Action CTAs */}
+                <div className="pt-2 space-y-2.5">
+                  <Link
+                    href="/freelancer/my-work?tab=proposals"
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-primary py-3 text-xs font-bold text-white shadow-md hover:bg-primary-600 active:scale-[0.99] transition-all"
+                  >
+                    <span>Pantau di Halaman Pekerjaan Saya</span>
+                    <ChevronRight className="h-4 w-4" />
+                  </Link>
+
+                  {existingProposal.status === "accepted" && (
+                    <Link
+                      href={`/freelancer/projects/${project?.id}`}
+                      className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 py-3 text-xs font-bold text-white shadow-md hover:bg-emerald-700 active:scale-[0.99] transition-all"
+                    >
+                      <span>Buka Project Workspace</span>
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  )}
+
+                  <Link
+                    href="/freelancer/explore"
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-border py-2.5 text-xs font-semibold text-muted-foreground hover:bg-muted transition-colors"
+                  >
+                    <span>Jelajahi Proyek Lain</span>
+                  </Link>
+                </div>
+              </div>
+            ) : submitted ? (
               <div className="py-12 text-center space-y-4 animate-in zoom-in-95">
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-emerald-500/15 text-emerald-600 shadow-sm">
                   <CheckCircle2 className="h-9 w-9" />
@@ -419,12 +596,12 @@ export default function FreelancerProjectDetailPage() {
                 <div className="space-y-1.5">
                   <h3 className="text-xl font-bold text-foreground">Proposal Berhasil Diajukan!</h3>
                   <p className="text-xs text-muted-foreground max-w-xs mx-auto leading-relaxed">
-                    Penawaran Anda telah diteruskan ke <strong>{project.owner?.fullName || "Klien"}</strong>. Anda akan menerima notifikasi saat klien meninjau proposal Anda.
+                    Penawaran Anda telah diteruskan ke <strong>{project?.owner?.fullName || "Klien"}</strong>. Anda akan menerima notifikasi saat klien meninjau proposal Anda.
                   </p>
                 </div>
                 <div className="pt-4 flex flex-col gap-2.5">
                   <Link
-                    href="/freelancer/my-work"
+                    href="/freelancer/my-work?tab=proposals"
                     className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-xs font-bold text-white shadow-md hover:bg-primary-600 transition-all"
                   >
                     <span>Lihat Status Proposal Saya</span>
