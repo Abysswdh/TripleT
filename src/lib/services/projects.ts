@@ -17,6 +17,7 @@ export interface ProjectMilestone {
 
 export interface ProjectTaskItem {
   id: string;
+  milestoneId?: string;
   name: string;
   status: "planned" | "in_progress" | "completed";
   startDate?: string;
@@ -229,6 +230,7 @@ function formatProjectRecord(p: any): ProjectRecord {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const tasks: ProjectTaskItem[] = (p.project_tasks || []).map((t: any) => ({
     id: t.id,
+    milestoneId: t.milestone_id || undefined,
     name: t.name,
     status: (t.status as "planned" | "in_progress" | "completed") || "planned",
     startDate: t.start_date,

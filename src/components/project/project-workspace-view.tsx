@@ -72,6 +72,10 @@ import {
   type ReviewRecord,
 } from "@/lib/services/reviews";
 import {
+  updateProjectTaskStatus,
+  subscribeToProjectTasks,
+} from "@/lib/services/project-tasks";
+import {
   GanttProvider,
   GanttSidebar,
   GanttSidebarItem,
@@ -312,6 +316,44 @@ export function ProjectWorkspaceView() {
               ? "In Progress"
               : "Locked";
 
+            // Load tasks linked to this milestone from database project_tasks
+            const matchingDbTasks = (projectData.tasks || []).filter(
+              (t) => t.milestoneId === m.id
+            );
+
+            let milestoneTasks: { id: string; name: string; done: boolean }[] = [];
+
+            if (matchingDbTasks.length > 0) {
+              milestoneTasks = matchingDbTasks.map((t) => ({
+                id: t.id,
+                name: t.name,
+                done: t.status === "completed",
+              }));
+            } else {
+              // Fallback to default milestone tasks, checking saved status from localStorage
+              const defaultDefs = [
+                { id: `t-${m.id}-1`, name: `Kickoff & Ruang Lingkup: ${m.title}`, defaultDone: isCompleted || idx === 0 },
+                { id: `t-${m.id}-2`, name: `Pengerjaan Hasil Utama ${idx + 1}`, defaultDone: isCompleted },
+              ];
+
+              milestoneTasks = defaultDefs.map((dt) => {
+                let isDone = dt.defaultDone;
+                if (typeof window !== "undefined") {
+                  const saved =
+                    localStorage.getItem(`doable_task_status_${projectId}_${dt.id}`) ||
+                    localStorage.getItem(`doable_task_name_${projectId}_${dt.name}`);
+                  if (saved) {
+                    isDone = saved === "completed";
+                  }
+                }
+                return {
+                  id: dt.id,
+                  name: dt.name,
+                  done: isDone,
+                };
+              });
+            }
+
             return {
               id: m.id,
               title: m.title,
@@ -324,10 +366,7 @@ export function ProjectWorkspaceView() {
               deliverableFileUrl: m.deliverableFileUrl,
               deliverableNote: m.deliverableNote,
               isSubmittedForReview: m.isSubmittedForReview ?? Boolean(m.deliverableFileUrl && !isCompleted),
-              tasks: [
-                { id: `t-${idx}-1`, name: `Kickoff & Ruang Lingkup: ${m.title}`, done: isCompleted || idx === 0 },
-                { id: `t-${idx}-2`, name: `Pengerjaan Hasil Utama ${idx + 1}`, done: isCompleted },
-              ],
+              tasks: milestoneTasks,
               comments: [],
             };
           });
@@ -476,6 +515,40 @@ export function ProjectWorkspaceView() {
       unsubscribe();
     };
   }, [projectId, scrollToBottom]);
+
+  // Realtime subscription for project tasks checklist
+  useEffect(() => {
+    if (!projectId) return;
+
+    const unsubscribeTasks = subscribeToProjectTasks(projectId, (taskUpdate) => {
+      setMilestones((prev) =>
+        prev.map((m) => {
+          const hasTask = m.tasks.some(
+            (t) => t.id === taskUpdate.id || t.name === taskUpdate.name
+          );
+          if (!hasTask && m.id !== taskUpdate.milestoneId) return m;
+
+          return {
+            ...m,
+            tasks: m.tasks.map((t) => {
+              if (t.id === taskUpdate.id || t.name === taskUpdate.name) {
+                return {
+                  ...t,
+                  id: taskUpdate.id,
+                  done: taskUpdate.status === "completed",
+                };
+              }
+              return t;
+            }),
+          };
+        })
+      );
+    });
+
+    return () => {
+      unsubscribeTasks();
+    };
+  }, [projectId]);
 
   // Auto-scroll chat to bottom whenever comments change or milestone is opened
   useEffect(() => {
@@ -850,18 +923,71 @@ export function ProjectWorkspaceView() {
     }
   };
 
-  // 8. Toggle Checklist Task
-  const toggleTask = (msId: string, taskId: string) => {
+  // 8. Toggle Checklist Task (Persisted to Database & Realtime Sync)
+  const toggleTask = async (msId: string, taskId: string) => {
+    let nextDone = false;
+    let targetTaskName = "";
+
+    // 1. Optimistic UI update for immediate response
     setMilestones((prev) =>
-      prev.map((m) =>
-        m.id === msId
-          ? {
-              ...m,
-              tasks: m.tasks.map((t) => (t.id === taskId ? { ...t, done: !t.done } : t)),
-            }
-          : m
-      )
+      prev.map((m) => {
+        if (m.id !== msId) return m;
+        const updatedTasks = m.tasks.map((t) => {
+          if (t.id === taskId) {
+            nextDone = !t.done;
+            targetTaskName = t.name;
+            return { ...t, done: nextDone };
+          }
+          return t;
+        });
+        return { ...m, tasks: updatedTasks };
+      })
     );
+
+    if (!targetTaskName) return;
+
+    // 2. Also sync to Gantt chart feature item if matching task exists
+    setFeatures((prev) =>
+      prev.map((f) => {
+        if (f.id === taskId || f.name === targetTaskName) {
+          return {
+            ...f,
+            status: nextDone
+              ? { id: "completed", name: "Completed", color: "#10b981" }
+              : STATUS_ACTIVE,
+          };
+        }
+        return f;
+      })
+    );
+
+    // 3. Persist to database via project-tasks service
+    try {
+      const res = await updateProjectTaskStatus({
+        taskId,
+        projectId,
+        milestoneId: msId,
+        status: nextDone ? "completed" : "in_progress",
+        name: targetTaskName,
+      });
+
+      // If database generated a new UUID (e.g. from a client-side temporary t- id), update it in state
+      if (res.success && res.data?.id && res.data.id !== taskId) {
+        const newId = res.data.id;
+        setMilestones((prev) =>
+          prev.map((m) =>
+            m.id === msId
+              ? {
+                  ...m,
+                  tasks: m.tasks.map((t) => (t.id === taskId ? { ...t, id: newId } : t)),
+                }
+              : m
+          )
+        );
+      }
+    } catch (err) {
+      console.error("Failed to persist checklist task status to database:", err);
+    }
   };
 
   // 9. Gantt Task Shift Handlers
