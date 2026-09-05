@@ -19,10 +19,16 @@ export interface ProjectTaskItem {
   id: string;
   milestoneId?: string;
   name: string;
+  description?: string;
   status: "planned" | "in_progress" | "completed";
   startDate?: string;
   endDate?: string;
   sortOrder: number;
+  progress?: number;
+  priority?: "low" | "medium" | "high" | "urgent";
+  isCancelled?: boolean;
+  cancelReason?: string;
+  dependencyTaskId?: string;
 }
 
 export interface ProjectRecord {
@@ -250,10 +256,16 @@ function formatProjectRecord(p: any): ProjectRecord {
     id: t.id,
     milestoneId: t.milestone_id || undefined,
     name: t.name,
+    description: t.description || undefined,
     status: (t.status as "planned" | "in_progress" | "completed") || "planned",
     startDate: t.start_date,
     endDate: t.end_date,
     sortOrder: t.sort_order || 0,
+    progress: typeof t.progress === "number" ? t.progress : t.status === "completed" ? 100 : 0,
+    priority: t.priority || "medium",
+    isCancelled: Boolean(t.is_cancelled),
+    cancelReason: t.cancel_reason || undefined,
+    dependencyTaskId: t.dependency_task_id || undefined,
   }));
 
   const flUser = p.freelancer;

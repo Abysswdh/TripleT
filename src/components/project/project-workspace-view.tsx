@@ -41,6 +41,8 @@ import {
   Image as ImageIcon,
   Maximize2,
   RotateCcw,
+  Filter,
+  Layers,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useRole } from "@/context/role-context";
@@ -76,6 +78,7 @@ import {
 import {
   updateProjectTaskStatus,
   subscribeToProjectTasks,
+  computeEffectiveStatus,
 } from "@/lib/services/project-tasks";
 import {
   GanttProvider,
@@ -84,14 +87,13 @@ import {
   GanttTimeline,
   GanttHeader,
   GanttFeatureList,
-  GanttFeatureItem,
   GanttToday,
+  GanttStackedFeatureGroup,
   type GanttFeature,
   type GanttStatus,
 } from "@/components/kibo-ui/gantt";
 
 const STATUS_ACTIVE: GanttStatus = { id: "active", name: "In Progress", color: "#3b82f6" };
-const STATUS_PLANNED: GanttStatus = { id: "planned", name: "Planned", color: "#8b5cf6" };
 
 export type { MilestoneComment };
 
@@ -215,14 +217,24 @@ export function ProjectWorkspaceView() {
 
   // Gantt Chart interactive states
   const [ganttRange, setGanttRange] = useState<"daily" | "weekly">("daily");
+  const [ganttStatusFilter, setGanttStatusFilter] = useState<"all" | "in_progress" | "late" | "completed" | "cancelled">("all");
+  const [ganttGrouping, setGanttGrouping] = useState<"milestones" | "flat">("milestones");
   const [selectedTaskToMove, setSelectedTaskToMove] = useState<GanttFeature | null>(null);
   const [shiftStartStr, setShiftStartStr] = useState("");
   const [shiftEndStr, setShiftEndStr] = useState("");
-  const [shiftNote, setShiftNote] = useState("");
+  const [editProgress, setEditProgress] = useState<number>(0);
+  const [editPriority, setEditPriority] = useState<"low" | "medium" | "high" | "urgent">("medium");
+  const [editIsCancelled, setEditIsCancelled] = useState<boolean>(false);
+  const [editCancelReason, setEditCancelReason] = useState<string>("");
+  const [editMilestoneId, setEditMilestoneId] = useState<string>("");
+  const [isSavingTask, setIsSavingTask] = useState<boolean>(false);
+  const [taskSaveSuccess, setTaskSaveSuccess] = useState<string | null>(null);
+
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [newTaskName, setNewTaskName] = useState("");
   const [newTaskStart, setNewTaskStart] = useState("");
   const [newTaskEnd, setNewTaskEnd] = useState("");
+  const [newTaskMilestoneId, setNewTaskMilestoneId] = useState("");
   const [pendingChange, setPendingChange] = useState<{
     targetTaskId: string;
     taskName: string;
@@ -447,13 +459,41 @@ export function ProjectWorkspaceView() {
           sprintTasks = generateSprintTasksForCategory(projectData.category, durationDays, now);
         }
 
-        const mappedGantt: GanttFeature[] = sprintTasks.map((t, idx) => ({
-          id: t.id || `gantt-${idx}`,
-          name: t.name,
-          startAt: t.startDate ? new Date(t.startDate) : new Date(now.getTime() + idx * 3 * 86400000),
-          endAt: t.endDate ? new Date(t.endDate) : new Date(now.getTime() + (idx * 3 + 3) * 86400000),
-          status: idx === 0 ? STATUS_ACTIVE : STATUS_PLANNED,
-        }));
+        const mappedGantt: GanttFeature[] = sprintTasks.map((t, idx) => {
+          const startAt = t.startDate ? new Date(t.startDate) : new Date(now.getTime() + idx * 3 * 86400000);
+          const endAt = t.endDate ? new Date(t.endDate) : new Date(now.getTime() + (idx * 3 + 3) * 86400000);
+          const isCancelled = Boolean(t.isCancelled);
+          const isCompleted = t.status === "completed" || (t.progress ?? 0) >= 100;
+
+          const effective = computeEffectiveStatus({
+            status: t.status,
+            startDate: startAt,
+            endDate: endAt,
+            isCancelled,
+          });
+
+          const assignedMsId = t.milestoneId || (initialMilestones.length > 0 ? initialMilestones[idx % initialMilestones.length].id : undefined);
+          const parentMs = initialMilestones.find((m) => m.id === assignedMsId);
+
+          return {
+            id: t.id || `gantt-${idx}`,
+            milestoneId: assignedMsId,
+            milestoneTitle: parentMs?.title,
+            name: t.name,
+            startAt,
+            endAt,
+            status: {
+              id: effective.status,
+              name: effective.label,
+              color: effective.color,
+            },
+            progress: t.progress ?? (isCompleted ? 100 : 0),
+            priority: t.priority || "medium",
+            isCancelled,
+            cancelReason: t.cancelReason || undefined,
+            dependencyTaskId: t.dependencyTaskId || undefined,
+          };
+        });
 
         setFeatures(mappedGantt);
 
@@ -518,11 +558,12 @@ export function ProjectWorkspaceView() {
     };
   }, [projectId, scrollToBottom]);
 
-  // Realtime subscription for project tasks checklist
+  // Realtime subscription for project tasks checklist & Gantt timeline
   useEffect(() => {
     if (!projectId) return;
 
     const unsubscribeTasks = subscribeToProjectTasks(projectId, (taskUpdate) => {
+      // 1. Update milestones checklist
       setMilestones((prev) =>
         prev.map((m) => {
           const hasTask = m.tasks.some(
@@ -545,6 +586,42 @@ export function ProjectWorkspaceView() {
           };
         })
       );
+
+      // 2. Update Gantt features
+      setFeatures((prev) =>
+        prev.map((f) => {
+          if (f.id === taskUpdate.id || f.name === taskUpdate.name) {
+            const isCancelled = Boolean(taskUpdate.isCancelled ?? f.isCancelled);
+            const isCompleted = taskUpdate.status === "completed" || (taskUpdate.progress ?? f.progress ?? 0) >= 100;
+            const newStart = taskUpdate.startDate ? new Date(taskUpdate.startDate) : f.startAt;
+            const newEnd = taskUpdate.endDate ? new Date(taskUpdate.endDate) : f.endAt;
+
+            const effective = computeEffectiveStatus({
+              status: isCompleted ? "completed" : "in_progress",
+              startDate: newStart,
+              endDate: newEnd,
+              isCancelled,
+            });
+
+            return {
+              ...f,
+              id: taskUpdate.id,
+              startAt: newStart,
+              endAt: newEnd,
+              status: {
+                id: effective.status,
+                name: effective.label,
+                color: effective.color,
+              },
+              progress: taskUpdate.progress !== undefined ? taskUpdate.progress : f.progress,
+              priority: taskUpdate.priority || f.priority,
+              isCancelled,
+              cancelReason: taskUpdate.cancelReason !== undefined ? taskUpdate.cancelReason : f.cancelReason,
+            };
+          }
+          return f;
+        })
+      );
     });
 
     return () => {
@@ -564,8 +641,8 @@ export function ProjectWorkspaceView() {
 
   // Dynamic Gantt bounds calculation
   const ganttBounds = useMemo(() => {
+    const today = new Date();
     if (features.length === 0) {
-      const today = new Date();
       return {
         startDate: new Date(today.getTime() - 2 * 86400000),
         endDate: new Date(today.getTime() + 18 * 86400000),
@@ -575,15 +652,58 @@ export function ProjectWorkspaceView() {
 
     const startTimes = features.map((f) => f.startAt.getTime());
     const endTimes = features.map((f) => f.endAt.getTime());
+    startTimes.push(today.getTime());
+    endTimes.push(today.getTime());
+
     const minStart = new Date(Math.min(...startTimes) - 2 * 86400000);
     const maxEnd = new Date(Math.max(...endTimes) + 3 * 86400000);
 
     return {
       startDate: minStart,
       endDate: maxEnd,
-      todayDate: new Date(),
+      todayDate: today,
     };
   }, [features]);
+
+  // Gantt summary stats and filtered features
+  const ganttStats = useMemo(() => {
+    const now = new Date();
+    const total = features.length;
+    let completed = 0;
+    let inProgress = 0;
+    let late = 0;
+    let cancelled = 0;
+
+    features.forEach((f) => {
+      if (f.isCancelled) {
+        cancelled++;
+      } else if (f.status?.id === "completed" || (f.progress ?? 0) >= 100) {
+        completed++;
+      } else if (new Date(f.endAt) < now) {
+        late++;
+      } else {
+        inProgress++;
+      }
+    });
+
+    return { total, completed, inProgress, late, cancelled };
+  }, [features]);
+
+  const filteredFeatures = useMemo(() => {
+    const now = new Date();
+    return features.filter((f) => {
+      const isCancelled = Boolean(f.isCancelled);
+      const isCompleted = f.status?.id === "completed" || (f.progress ?? 0) >= 100;
+      const isLate = !isCancelled && !isCompleted && new Date(f.endAt) < now;
+
+      if (ganttStatusFilter === "all") return true;
+      if (ganttStatusFilter === "late") return isLate;
+      if (ganttStatusFilter === "cancelled") return isCancelled;
+      if (ganttStatusFilter === "completed") return isCompleted;
+      if (ganttStatusFilter === "in_progress") return !isCancelled && !isCompleted && !isLate;
+      return true;
+    });
+  }, [features, ganttStatusFilter]);
 
   // 3. Hire / Accept Freelancer Action
   const handleHireFreelancer = async (applicant: ProposalItem) => {
@@ -992,40 +1112,122 @@ export function ProjectWorkspaceView() {
     }
   };
 
-  // 9. Gantt Task Shift Handlers
+  // 9. Gantt Task Management & Shift Handlers
   const handleOpenMoveModal = (feat: GanttFeature) => {
     setSelectedTaskToMove(feat);
     setShiftStartStr(feat.startAt.toISOString().split("T")[0]);
     setShiftEndStr(feat.endAt.toISOString().split("T")[0]);
-    setShiftNote("");
+    setEditProgress(feat.progress ?? (feat.status?.id === "completed" ? 100 : 0));
+    setEditPriority(feat.priority || "medium");
+    setEditIsCancelled(Boolean(feat.isCancelled));
+    setEditCancelReason(feat.cancelReason || "");
+    setEditMilestoneId(feat.milestoneId || milestones[0]?.id || "");
   };
 
   const handleQuickShift = (days: number) => {
-    if (!selectedTaskToMove) return;
-    const s = new Date(selectedTaskToMove.startAt.getTime() + days * 86400000);
-    const e = new Date(selectedTaskToMove.endAt.getTime() + days * 86400000);
-    setShiftStartStr(s.toISOString().split("T")[0]);
-    setShiftEndStr(e.toISOString().split("T")[0]);
+    if (!shiftStartStr || !shiftEndStr) return;
+    const s = new Date(shiftStartStr);
+    const e = new Date(shiftEndStr);
+    const newS = new Date(s.getTime() + days * 86400000);
+    const newE = new Date(e.getTime() + days * 86400000);
+    setShiftStartStr(newS.toISOString().split("T")[0]);
+    setShiftEndStr(newE.toISOString().split("T")[0]);
   };
 
-  const handleSubmitShift = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveTaskDetails = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!selectedTaskToMove) return;
+
+    setIsSavingTask(true);
     const start = new Date(shiftStartStr);
     const end = new Date(shiftEndStr);
+    const isCompleted = editProgress >= 100;
 
-    setPendingChange({
-      targetTaskId: selectedTaskToMove.id,
-      taskName: selectedTaskToMove.name,
-      newStart: start,
-      newEnd: end,
-      note: shiftNote,
+    const effective = computeEffectiveStatus({
+      status: isCompleted ? "completed" : "in_progress",
+      startDate: start,
+      endDate: end,
+      isCancelled: editIsCancelled,
     });
-    setSelectedTaskToMove(null);
+
+    const statusObj: GanttStatus = {
+      id: effective.status,
+      name: effective.label,
+      color: effective.color,
+    };
+
+    // Optimistic update of features
+    setFeatures((prev) =>
+      prev.map((f) =>
+        f.id === selectedTaskToMove.id
+          ? {
+              ...f,
+              startAt: start,
+              endAt: end,
+              status: statusObj,
+              progress: editProgress,
+              priority: editPriority,
+              isCancelled: editIsCancelled,
+              cancelReason: editCancelReason,
+              milestoneId: editMilestoneId || f.milestoneId,
+            }
+          : f
+      )
+    );
+
+    // Sync to milestone checklist if task exists there
+    setMilestones((prev) =>
+      prev.map((m) => ({
+        ...m,
+        tasks: m.tasks.map((t) => {
+          if (t.id === selectedTaskToMove.id || t.name === selectedTaskToMove.name) {
+            return {
+              ...t,
+              done: isCompleted,
+            };
+          }
+          return t;
+        }),
+      }))
+    );
+
+    try {
+      const res = await updateProjectTaskStatus({
+        taskId: selectedTaskToMove.id,
+        projectId,
+        milestoneId: editMilestoneId || selectedTaskToMove.milestoneId || milestones[0]?.id || "m-1",
+        name: selectedTaskToMove.name,
+        startDate: shiftStartStr,
+        endDate: shiftEndStr,
+        progress: editProgress,
+        priority: editPriority,
+        isCancelled: editIsCancelled,
+        cancelReason: editCancelReason,
+        status: isCompleted ? "completed" : "in_progress",
+      });
+
+      if (res.success && res.data?.id && res.data.id !== selectedTaskToMove.id) {
+        const newId = res.data.id;
+        setFeatures((prev) =>
+          prev.map((f) => (f.id === selectedTaskToMove.id ? { ...f, id: newId } : f))
+        );
+      }
+
+      setTaskSaveSuccess("Perubahan jadwal & status berhasil disimpan ke database!");
+      setTimeout(() => setTaskSaveSuccess(null), 3500);
+      setSelectedTaskToMove(null);
+    } catch (err) {
+      console.error("Failed to save task updates:", err);
+    } finally {
+      setIsSavingTask(false);
+    }
   };
 
-  const handleApproveGanttChange = () => {
+  const handleApproveGanttChange = async () => {
     if (!pendingChange) return;
+    const startStr = pendingChange.newStart.toISOString().split("T")[0];
+    const endStr = pendingChange.newEnd.toISOString().split("T")[0];
+
     setFeatures((prev) =>
       prev.map((f) =>
         f.id === pendingChange.targetTaskId
@@ -1033,6 +1235,21 @@ export function ProjectWorkspaceView() {
           : f
       )
     );
+
+    try {
+      await updateProjectTaskStatus({
+        taskId: pendingChange.targetTaskId,
+        projectId,
+        milestoneId: milestones[0]?.id || "m-1",
+        name: pendingChange.taskName,
+        startDate: startStr,
+        endDate: endStr,
+        status: "in_progress",
+      });
+    } catch (err) {
+      console.warn("Failed to persist approved gantt change:", err);
+    }
+
     setPendingChange(null);
     setChangeApproved(true);
     setTimeout(() => setChangeApproved(false), 3000);
@@ -1042,23 +1259,78 @@ export function ProjectWorkspaceView() {
     setPendingChange(null);
   };
 
-  const handleAddTask = (e: React.FormEvent) => {
+  const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTaskName.trim()) return;
     const start = newTaskStart ? new Date(newTaskStart) : new Date();
     const end = newTaskEnd ? new Date(newTaskEnd) : new Date(start.getTime() + 3 * 86400000);
+    const targetMilestoneId = newTaskMilestoneId || (milestones[0]?.id ?? "m-1");
+    const tempId = `task-${Date.now()}`;
+
     const newTask: GanttFeature = {
-      id: `task-${Date.now()}`,
-      name: newTaskName,
+      id: tempId,
+      milestoneId: targetMilestoneId,
+      milestoneTitle: milestones.find((m) => m.id === targetMilestoneId)?.title,
+      name: newTaskName.trim(),
       startAt: start,
       endAt: end,
       status: STATUS_ACTIVE,
+      progress: 0,
+      priority: "medium",
+      isCancelled: false,
     };
+
     setFeatures((prev) => [...prev, newTask]);
+
+    setMilestones((prev) =>
+      prev.map((m) =>
+        m.id === targetMilestoneId
+          ? {
+              ...m,
+              tasks: [...m.tasks, { id: tempId, name: newTaskName.trim(), done: false }],
+            }
+          : m
+      )
+    );
+
     setNewTaskName("");
     setNewTaskStart("");
     setNewTaskEnd("");
+    setNewTaskMilestoneId("");
     setIsAddingTask(false);
+
+    try {
+      const res = await updateProjectTaskStatus({
+        taskId: tempId,
+        projectId,
+        milestoneId: targetMilestoneId,
+        name: newTaskName.trim(),
+        startDate: start.toISOString().split("T")[0],
+        endDate: end.toISOString().split("T")[0],
+        progress: 0,
+        priority: "medium",
+        status: "in_progress",
+      });
+
+      if (res.success && res.data?.id) {
+        const dbId = res.data.id;
+        setFeatures((prev) =>
+          prev.map((f) => (f.id === tempId ? { ...f, id: dbId } : f))
+        );
+        setMilestones((prev) =>
+          prev.map((m) =>
+            m.id === targetMilestoneId
+              ? {
+                  ...m,
+                  tasks: m.tasks.map((t) => (t.id === tempId ? { ...t, id: dbId } : t)),
+                }
+              : m
+          )
+        );
+      }
+    } catch (err) {
+      console.warn("Failed to persist newly added task:", err);
+    }
   };
 
 
@@ -1239,7 +1511,7 @@ export function ProjectWorkspaceView() {
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5 max-w-xl">
                   {contractReview?.comment ? (
-                    <span className="italic text-foreground/90 font-medium">"{contractReview.comment}"</span>
+                    <span className="italic text-foreground/90 font-medium">&ldquo;{contractReview.comment}&rdquo;</span>
                   ) : (
                     "Rating & ulasan akan terbit di profil publik freelancer dan portofolio proyek terbarunya."
                   )}
@@ -2302,15 +2574,51 @@ export function ProjectWorkspaceView() {
 
         {/* ── TAB 3: TIMELINE GANTT ── */}
         {activeTab === "timeline" && (
-          <div className="rounded-2xl border border-border/60 bg-card overflow-hidden shadow-xs">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-4 border-b border-border/40 gap-3">
+          <div className="rounded-2xl border border-border/60 bg-card overflow-hidden shadow-xs space-y-4">
+            {/* Header with Title and Control Buttons */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between px-6 py-4 border-b border-border/40 gap-3">
               <div>
-                <h2 className="text-sm font-bold text-foreground">Sprint Gantt Chart</h2>
+                <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
+                  <span>Sprint Gantt Chart & Roadmap</span>
+                  <span className="rounded-full bg-primary/10 text-primary text-[11px] font-semibold px-2 py-0.5">
+                    {features.length} Task
+                  </span>
+                </h2>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Visualisasi jadwal pengerjaan otomatis berbasis durasi proyek ({features.length} task)
+                  Visualisasi jadwal interaktif, penumpukan multi-event otomatis (stacked lanes), dan pelacakan status realtime
                 </p>
               </div>
-              <div className="flex items-center gap-2">
+
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Grouping Toggle (Milestones vs Flat) */}
+                <div className="flex rounded-xl border border-border bg-muted/30 p-0.5 text-xs font-semibold">
+                  <button
+                    onClick={() => setGanttGrouping("milestones")}
+                    className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 transition-all ${
+                      ganttGrouping === "milestones"
+                        ? "bg-background text-foreground shadow-xs font-bold"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    title="Kelompokkan tugas berdasarkan tahapan milestone"
+                  >
+                    <Layers className="h-3.5 w-3.5" />
+                    <span>Per Milestone</span>
+                  </button>
+                  <button
+                    onClick={() => setGanttGrouping("flat")}
+                    className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 transition-all ${
+                      ganttGrouping === "flat"
+                        ? "bg-background text-foreground shadow-xs font-bold"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    title="Tampilkan seluruh jalur tugas proyek dalam satu tampilan terpadu"
+                  >
+                    <LayoutList className="h-3.5 w-3.5" />
+                    <span>Semua Jalur</span>
+                  </button>
+                </div>
+
+                {/* Range Toggle (Daily vs Weekly) */}
                 <div className="flex rounded-xl border border-border bg-muted/30 p-0.5 text-xs font-semibold">
                   {(["daily", "weekly"] as const).map((r) => (
                     <button
@@ -2318,7 +2626,7 @@ export function ProjectWorkspaceView() {
                       onClick={() => setGanttRange(r)}
                       className={`rounded-lg px-3 py-1.5 capitalize transition-all ${
                         ganttRange === r
-                          ? "bg-background text-foreground shadow-xs"
+                          ? "bg-background text-foreground shadow-xs font-bold"
                           : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
@@ -2326,6 +2634,8 @@ export function ProjectWorkspaceView() {
                     </button>
                   ))}
                 </div>
+
+                {/* Add Task Button */}
                 <button
                   onClick={() => setIsAddingTask(!isAddingTask)}
                   className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-2 text-xs font-bold text-white shadow-sm hover:bg-primary/90 transition-all"
@@ -2335,68 +2645,293 @@ export function ProjectWorkspaceView() {
               </div>
             </div>
 
-            {/* Shift Task Form */}
-            {selectedTaskToMove && (
-              <form onSubmit={handleSubmitShift} className="m-5 rounded-xl border border-primary/25 bg-primary/5 p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Edit3 className="h-3.5 w-3.5 text-primary" />
-                    <span className="text-xs font-bold text-primary">
-                      Geser Jadwal: &ldquo;{selectedTaskToMove.name}&rdquo;
-                    </span>
-                  </div>
-                  <button type="button" onClick={() => setSelectedTaskToMove(null)}>
-                    <X className="h-4 w-4 text-muted-foreground" />
-                  </button>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {[1, 2, 3, 5, -1].map((d) => (
-                    <button
-                      key={d}
-                      type="button"
-                      onClick={() => handleQuickShift(d)}
-                      className="rounded-lg border border-border bg-card px-2.5 py-1 text-xs font-medium hover:bg-muted"
+            {/* Quick Filter & Metric Chips */}
+            <div className="px-6 flex flex-wrap items-center gap-2">
+              <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1 mr-1">
+                <Filter className="h-3 w-3" /> Filter:
+              </span>
+              {(
+                [
+                  { id: "all", label: "Semua", count: ganttStats.total, activeColor: "bg-foreground text-background", alert: false },
+                  {
+                    id: "in_progress",
+                    label: "Sedang Berjalan",
+                    count: ganttStats.inProgress,
+                    activeColor: "bg-blue-600 text-white",
+                    alert: false,
+                  },
+                  {
+                    id: "late",
+                    label: "⚠️ Terlambat",
+                    count: ganttStats.late,
+                    activeColor: "bg-rose-600 text-white",
+                    alert: ganttStats.late > 0,
+                  },
+                  {
+                    id: "completed",
+                    label: "Selesai",
+                    count: ganttStats.completed,
+                    activeColor: "bg-emerald-600 text-white",
+                    alert: false,
+                  },
+                  {
+                    id: "cancelled",
+                    label: "Dibatalkan",
+                    count: ganttStats.cancelled,
+                    activeColor: "bg-gray-600 text-white",
+                    alert: false,
+                  },
+                ] as const
+              ).map(({ id, label, count, activeColor, alert }) => {
+                const isActive = ganttStatusFilter === id;
+                return (
+                  <button
+                    key={id}
+                    onClick={() => setGanttStatusFilter(id)}
+                    className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all border ${
+                      isActive
+                        ? `${activeColor} border-transparent shadow-xs font-bold`
+                        : alert
+                        ? "bg-rose-500/10 text-rose-600 border-rose-400/40 hover:bg-rose-500/20 animate-pulse"
+                        : "bg-muted/40 text-muted-foreground border-border hover:bg-muted/80 hover:text-foreground"
+                    }`}
+                  >
+                    <span>{label}</span>
+                    <span
+                      className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                        isActive ? "bg-black/20 text-white" : "bg-muted text-foreground"
+                      }`}
                     >
-                      {d > 0 ? `+${d}` : d} Hari
-                    </button>
-                  ))}
-                </div>
-                <div className="grid sm:grid-cols-2 gap-2">
-                  <input
-                    type="date"
-                    value={shiftStartStr}
-                    onChange={(e) => setShiftStartStr(e.target.value)}
-                    className="h-9 w-full rounded-xl border border-border bg-card px-3 text-xs focus:border-primary focus:outline-none"
-                    required
-                  />
-                  <input
-                    type="date"
-                    value={shiftEndStr}
-                    onChange={(e) => setShiftEndStr(e.target.value)}
-                    className="h-9 w-full rounded-xl border border-border bg-card px-3 text-xs focus:border-primary focus:outline-none"
-                    required
-                  />
-                </div>
-                <input
-                  type="text"
-                  value={shiftNote}
-                  onChange={(e) => setShiftNote(e.target.value)}
-                  placeholder="Catatan penyesuaian jadwal..."
-                  className="h-9 w-full rounded-xl border border-border bg-card px-3 text-xs focus:border-primary focus:outline-none"
-                />
-                <div className="flex justify-end gap-2">
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Success Toast Banner */}
+            {taskSaveSuccess && (
+              <div className="mx-6 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 flex items-center gap-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                <CheckCircle2 className="h-4 w-4 shrink-0" />
+                <span>{taskSaveSuccess}</span>
+              </div>
+            )}
+
+            {/* Task Editor & Schedule Manager Modal */}
+            {selectedTaskToMove && (
+              <form
+                onSubmit={handleSaveTaskDetails}
+                className="mx-6 rounded-2xl border border-primary/30 bg-primary/5 p-5 space-y-4 shadow-sm"
+              >
+                <div className="flex items-center justify-between pb-3 border-b border-primary/20">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-8 w-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                      <Edit3 className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-foreground">
+                        Kelola Jadwal & Status: &ldquo;{selectedTaskToMove.name}&rdquo;
+                      </h3>
+                      <p className="text-[11px] text-muted-foreground">
+                        Perbarui rentang waktu, persentase progres, prioritas, atau batalkan tugas
+                      </p>
+                    </div>
+                  </div>
                   <button
                     type="button"
                     onClick={() => setSelectedTaskToMove(null)}
-                    className="rounded-xl border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-muted"
+                    className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/50"
                   >
-                    Batal
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                {/* Progress & Priority Controls */}
+                <div className="grid sm:grid-cols-2 gap-4">
+                  {/* Progress slider */}
+                  <div className="space-y-2 bg-card/70 p-3.5 rounded-xl border border-border/60">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                        <TrendingUp className="h-3.5 w-3.5 text-primary" />
+                        Progres Pengerjaan
+                      </label>
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-primary/10 text-primary">
+                        {editProgress}%
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="5"
+                      value={editProgress}
+                      onChange={(e) => setEditProgress(parseInt(e.target.value, 10))}
+                      className="w-full accent-primary cursor-pointer"
+                    />
+                    <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-1">
+                      {[0, 25, 50, 75, 100].map((val) => (
+                        <button
+                          key={val}
+                          type="button"
+                          onClick={() => setEditProgress(val)}
+                          className={`px-1.5 py-0.5 rounded hover:bg-muted transition-colors ${
+                            editProgress === val ? "font-bold text-primary bg-primary/10" : ""
+                          }`}
+                        >
+                          {val}%
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Priority selector */}
+                  <div className="space-y-2 bg-card/70 p-3.5 rounded-xl border border-border/60">
+                    <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                      <Target className="h-3.5 w-3.5 text-primary" />
+                      Tingkat Prioritas
+                    </label>
+                    <div className="grid grid-cols-4 gap-1.5 pt-1">
+                      {(
+                        [
+                          { id: "low", label: "Rendah" },
+                          { id: "medium", label: "Sedang" },
+                          { id: "high", label: "Tinggi" },
+                          { id: "urgent", label: "Mendesak" },
+                        ] as const
+                      ).map(({ id, label }) => (
+                        <button
+                          key={id}
+                          type="button"
+                          onClick={() => setEditPriority(id)}
+                          className={`rounded-lg py-1.5 px-2 text-xs font-semibold border transition-all text-center ${
+                            editPriority === id
+                              ? id === "urgent"
+                                ? "bg-rose-500 text-white border-rose-600 shadow-xs"
+                                : id === "high"
+                                ? "bg-amber-500 text-white border-amber-600 shadow-xs"
+                                : "bg-primary text-white border-primary shadow-xs"
+                              : "bg-background border-border text-muted-foreground hover:bg-muted/50"
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Schedule Adjustment */}
+                <div className="space-y-2.5 bg-card/70 p-3.5 rounded-xl border border-border/60">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                      <CalendarDays className="h-3.5 w-3.5 text-primary" />
+                      Rentang Waktu & Jadwal
+                    </label>
+                    <div className="flex flex-wrap items-center gap-1">
+                      <span className="text-[10px] text-muted-foreground mr-1">Geser Cepat:</span>
+                      {[1, 2, 3, 7, -1].map((d) => (
+                        <button
+                          key={d}
+                          type="button"
+                          onClick={() => handleQuickShift(d)}
+                          className="rounded-md border border-border bg-background px-2 py-0.5 text-[11px] font-medium text-foreground hover:bg-muted transition-colors"
+                        >
+                          {d > 0 ? `+${d}h` : `${d}h`}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid sm:grid-cols-2 gap-3 pt-1">
+                    <div>
+                      <span className="block text-[10px] text-muted-foreground font-medium mb-1">
+                        Tanggal Mulai
+                      </span>
+                      <input
+                        type="date"
+                        value={shiftStartStr}
+                        onChange={(e) => setShiftStartStr(e.target.value)}
+                        className="h-9 w-full rounded-xl border border-border bg-background px-3 text-xs focus:border-primary focus:outline-none"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <span className="block text-[10px] text-muted-foreground font-medium mb-1">
+                        Target Selesai
+                      </span>
+                      <input
+                        type="date"
+                        value={shiftEndStr}
+                        onChange={(e) => setShiftEndStr(e.target.value)}
+                        className="h-9 w-full rounded-xl border border-border bg-background px-3 text-xs focus:border-primary focus:outline-none"
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Milestone Assignment & Cancellation */}
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5 bg-card/70 p-3.5 rounded-xl border border-border/60">
+                    <label className="text-xs font-semibold text-foreground block">
+                      Kaitkan ke Tahapan Milestone
+                    </label>
+                    <select
+                      value={editMilestoneId}
+                      onChange={(e) => setEditMilestoneId(e.target.value)}
+                      className="h-9 w-full rounded-xl border border-border bg-background px-3 text-xs focus:border-primary focus:outline-none text-foreground"
+                    >
+                      {milestones.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-2 bg-card/70 p-3.5 rounded-xl border border-border/60">
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={editIsCancelled}
+                        onChange={(e) => setEditIsCancelled(e.target.checked)}
+                        className="rounded border-border text-rose-500 focus:ring-rose-500 h-4 w-4"
+                      />
+                      <span className="text-xs font-semibold text-foreground">
+                        Tandai Tugas Dibatalkan (Void)
+                      </span>
+                    </label>
+                    {editIsCancelled && (
+                      <input
+                        type="text"
+                        value={editCancelReason}
+                        onChange={(e) => setEditCancelReason(e.target.value)}
+                        placeholder="Alasan pembatalan tugas ini..."
+                        className="h-8 w-full rounded-lg border border-rose-300 bg-rose-500/5 px-2.5 text-xs text-foreground focus:border-rose-500 focus:outline-none"
+                      />
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-primary/20">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedTaskToMove(null)}
+                    className="rounded-xl border border-border bg-background px-4 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted"
+                  >
+                    Tutup
                   </button>
                   <button
                     type="submit"
-                    className="rounded-xl bg-primary px-4 py-1.5 text-xs font-bold text-white hover:bg-primary/90"
+                    disabled={isSavingTask}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-primary/90 transition-all disabled:opacity-50"
                   >
-                    Ajukan Pergeseran
+                    {isSavingTask ? (
+                      <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                    )}
+                    {isSavingTask ? "Menyimpan..." : "Simpan Perubahan ke Database"}
                   </button>
                 </div>
               </form>
@@ -2404,24 +2939,38 @@ export function ProjectWorkspaceView() {
 
             {/* Add Task Form */}
             {isAddingTask && (
-              <form onSubmit={handleAddTask} className="m-5 rounded-xl border border-primary/25 bg-primary/5 p-4 space-y-3">
+              <form onSubmit={handleAddTask} className="mx-6 rounded-xl border border-primary/25 bg-primary/5 p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Plus className="h-3.5 w-3.5 text-primary" />
-                    <span className="text-xs font-bold text-primary">Tambah Task Baru ke Roadmap</span>
+                    <span className="text-xs font-bold text-primary">Tambah Task Baru ke Roadmap Proyek</span>
                   </div>
                   <button type="button" onClick={() => setIsAddingTask(false)}>
                     <X className="h-4 w-4 text-muted-foreground" />
                   </button>
                 </div>
-                <input
-                  type="text"
-                  value={newTaskName}
-                  onChange={(e) => setNewTaskName(e.target.value)}
-                  placeholder="Nama tahapan / task baru..."
-                  className="h-9 w-full rounded-xl border border-border bg-card px-3 text-xs focus:border-primary focus:outline-none"
-                  required
-                />
+                <div className="grid sm:grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    value={newTaskName}
+                    onChange={(e) => setNewTaskName(e.target.value)}
+                    placeholder="Nama tahapan / task baru..."
+                    className="h-9 w-full rounded-xl border border-border bg-card px-3 text-xs focus:border-primary focus:outline-none"
+                    required
+                  />
+                  <select
+                    value={newTaskMilestoneId}
+                    onChange={(e) => setNewTaskMilestoneId(e.target.value)}
+                    className="h-9 w-full rounded-xl border border-border bg-card px-3 text-xs focus:border-primary focus:outline-none text-foreground"
+                  >
+                    <option value="">Pilih Tahapan Milestone (Opsional)</option>
+                    {milestones.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 <div className="grid sm:grid-cols-2 gap-2">
                   <input
                     type="date"
@@ -2457,11 +3006,11 @@ export function ProjectWorkspaceView() {
             )}
 
             {/* Dynamic Gantt Chart Component */}
-            <div className="p-5 pt-0">
-              <div className="w-full overflow-hidden rounded-xl border border-border">
+            <div className="p-6 pt-2">
+              <div className="w-full overflow-hidden rounded-xl border border-border shadow-xs">
                 <GanttProvider
-                  key={ganttRange}
-                  className="h-[400px] w-full"
+                  key={`${ganttRange}-${ganttGrouping}`}
+                  className="min-h-[440px] w-full"
                   range={ganttRange}
                   zoom={100}
                   startDate={ganttBounds.startDate}
@@ -2469,34 +3018,78 @@ export function ProjectWorkspaceView() {
                   todayDate={ganttBounds.todayDate}
                 >
                   <GanttSidebar>
-                    {features.map((f) => (
-                      <GanttSidebarItem key={f.id} feature={f} onClick={handleOpenMoveModal} />
-                    ))}
+                    {filteredFeatures.length === 0 ? (
+                      <div className="p-6 text-center text-xs text-muted-foreground">
+                        Tidak ada tugas yang sesuai filter status ini.
+                      </div>
+                    ) : (
+                      filteredFeatures.map((f) => (
+                        <GanttSidebarItem key={f.id} feature={f} onClick={handleOpenMoveModal} />
+                      ))
+                    )}
                   </GanttSidebar>
                   <GanttTimeline>
                     <GanttHeader />
                     <GanttFeatureList>
-                      {features.map((f) => (
-                        <GanttFeatureItem key={f.id} {...f} onClick={handleOpenMoveModal} />
-                      ))}
+                      {filteredFeatures.length === 0 ? (
+                        <div className="p-12 text-center text-xs text-muted-foreground italic">
+                          Tidak ada task untuk kriteria filter yang dipilih.
+                        </div>
+                      ) : ganttGrouping === "flat" ? (
+                        <GanttStackedFeatureGroup
+                          features={filteredFeatures}
+                          onClick={handleOpenMoveModal}
+                        />
+                      ) : (
+                        milestones.map((m) => {
+                          const msFeats = filteredFeatures.filter((f) => f.milestoneId === m.id);
+                          if (msFeats.length === 0) return null;
+                          return (
+                            <GanttStackedFeatureGroup
+                              key={m.id}
+                              title={m.title}
+                              features={msFeats}
+                              onClick={handleOpenMoveModal}
+                            />
+                          );
+                        })
+                      )}
+                      {/* Orphan features if any in milestone grouping mode */}
+                      {ganttGrouping === "milestones" &&
+                        filteredFeatures.filter((f) => !milestones.some((m) => m.id === f.milestoneId)).length > 0 && (
+                          <GanttStackedFeatureGroup
+                            title="Tugas Tambahan / Ad-Hoc"
+                            features={filteredFeatures.filter(
+                              (f) => !milestones.some((m) => m.id === f.milestoneId)
+                            )}
+                            onClick={handleOpenMoveModal}
+                          />
+                        )}
                     </GanttFeatureList>
                     <GanttToday />
                   </GanttTimeline>
                 </GanttProvider>
               </div>
 
-              <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground mt-3">
-                {[
-                  { color: "bg-emerald-500", label: "Selesai" },
-                  { color: "bg-blue-500", label: "Dikerjakan" },
-                  { color: "bg-amber-500", label: "Review" },
-                  { color: "bg-purple-500", label: "Direncanakan" },
-                ].map(({ color, label }) => (
-                  <div key={label} className="flex items-center gap-1.5">
-                    <span className={`h-2 w-2 rounded-full ${color}`} />
-                    <span>{label}</span>
-                  </div>
-                ))}
+              {/* Status Legend & Interaction Tip */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-muted-foreground mt-3 px-1">
+                <div className="flex flex-wrap items-center gap-4">
+                  {[
+                    { color: "bg-emerald-500", label: "Selesai (100%)" },
+                    { color: "bg-blue-500", label: "Dikerjakan" },
+                    { color: "bg-rose-500 animate-pulse", label: "⚠️ Terlambat (Overdue)" },
+                    { color: "bg-gray-500", label: "Dibatalkan" },
+                    { color: "bg-purple-500", label: "Direncanakan" },
+                  ].map(({ color, label }) => (
+                    <div key={label} className="flex items-center gap-1.5">
+                      <span className={`h-2.5 w-2.5 rounded-full ${color}`} />
+                      <span>{label}</span>
+                    </div>
+                  ))}
+                </div>
+                <span className="text-[11px] text-muted-foreground/80 italic">
+                  💡 Tip: Klik pada task atau sidebar untuk menggeser jadwal, mengatur progres, atau membatalkan task
+                </span>
               </div>
             </div>
           </div>

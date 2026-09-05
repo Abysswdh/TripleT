@@ -1,6 +1,12 @@
 "use client";
 
 import React, { createContext, useContext, useMemo } from "react";
+import {
+  AlertTriangle,
+  Check,
+  CheckCircle2,
+  X,
+} from "lucide-react";
 
 export interface GanttStatus {
   id: string;
@@ -10,16 +16,78 @@ export interface GanttStatus {
 
 export interface GanttFeature {
   id: string;
+  milestoneId?: string;
+  milestoneTitle?: string;
   name: string;
   startAt: Date;
   endAt: Date;
   status?: GanttStatus;
   progress?: number;
+  priority?: "low" | "medium" | "high" | "urgent";
+  isCancelled?: boolean;
+  cancelReason?: string | null;
   isPendingApproval?: boolean;
   approvalNote?: string;
   assignee?: {
     name: string;
     avatar?: string;
+  };
+  dependencyTaskId?: string;
+  laneIndex?: number;
+}
+
+/**
+ * Interval Scheduling / Lane Packing Algorithm
+ * Organizes overlapping tasks into clean horizontal lanes (sub-rows)
+ * so that tasks occurring on the same day never collide or obscure each other.
+ */
+export function computeFeatureLanes(features: GanttFeature[]): {
+  features: (GanttFeature & { laneIndex: number })[];
+  totalLanes: number;
+} {
+  if (!features || features.length === 0) {
+    return { features: [], totalLanes: 1 };
+  }
+
+  // Sort by startAt ascending, then by duration descending
+  const sorted = [...features].sort((a, b) => {
+    const diff = a.startAt.getTime() - b.startAt.getTime();
+    if (diff !== 0) return diff;
+    const durA = a.endAt.getTime() - a.startAt.getTime();
+    const durB = b.endAt.getTime() - b.startAt.getTime();
+    return durB - durA;
+  });
+
+  const laneEndTimes: number[] = [];
+  const assigned = sorted.map((feat) => {
+    const featStart = feat.startAt.getTime();
+    const featEnd = feat.endAt.getTime();
+
+    // Find the first lane where this task can fit without collision
+    let targetLane = -1;
+    for (let i = 0; i < laneEndTimes.length; i++) {
+      if (featStart >= laneEndTimes[i]) {
+        targetLane = i;
+        laneEndTimes[i] = featEnd;
+        break;
+      }
+    }
+
+    // If no existing lane fits, create a new stacked lane
+    if (targetLane === -1) {
+      targetLane = laneEndTimes.length;
+      laneEndTimes.push(featEnd);
+    }
+
+    return {
+      ...feat,
+      laneIndex: targetLane,
+    };
+  });
+
+  return {
+    features: assigned,
+    totalLanes: Math.max(1, laneEndTimes.length),
   };
 }
 
@@ -64,30 +132,24 @@ export function GanttProvider({
   endDate,
   todayDate,
 }: GanttProviderProps) {
-  // Compute timeline boundaries (default 14 to 28 days for portfolio-focused sprints)
   const minDate = useMemo(() => {
     if (startDate) return new Date(startDate);
-    const d = new Date("2026-03-01");
+    const d = new Date();
+    d.setDate(d.getDate() - 3);
     return d;
   }, [startDate]);
 
   const maxDate = useMemo(() => {
     if (endDate) return new Date(endDate);
-    const d = new Date("2026-03-21");
+    const d = new Date();
+    d.setDate(d.getDate() + 18);
     return d;
   }, [endDate]);
 
   const today = useMemo(() => {
     if (todayDate) return new Date(todayDate);
-    const realNow = new Date();
-    if (realNow >= minDate && realNow <= maxDate) {
-      return realNow;
-    }
-    // Mid sprint active day (e.g. Day 6 of the sprint)
-    const mid = new Date(minDate);
-    mid.setDate(mid.getDate() + 5);
-    return mid;
-  }, [todayDate, minDate, maxDate]);
+    return new Date();
+  }, [todayDate]);
 
   const totalDays = useMemo(() => {
     const diff = maxDate.getTime() - minDate.getTime();
@@ -159,27 +221,31 @@ export function GanttProvider({
     return cols;
   }, [range, minDate, maxDate]);
 
+  // Calculate percentage position of a task inside timeline
   const calculatePosition = (startAt: Date, endAt: Date) => {
-    const startTime = new Date(startAt).getTime();
-    const endTime = new Date(endAt).getTime();
-    const minTime = minDate.getTime();
-    const totalTime = maxDate.getTime() - minTime;
+    const startMs = new Date(startAt).getTime();
+    const endMs = new Date(endAt).getTime();
+    const minMs = minDate.getTime();
+    const maxMs = maxDate.getTime();
+    const totalMs = Math.max(1, maxMs - minMs);
 
-    const startOffset = Math.max(0, startTime - minTime);
-    const duration = Math.max(1000 * 60 * 60 * 24, endTime - startTime);
+    const left = Math.max(0, Math.min(100, ((startMs - minMs) / totalMs) * 100));
+    const width = Math.max(2, Math.min(100 - left, ((endMs - startMs) / totalMs) * 100));
 
-    const leftPercent = (startOffset / totalTime) * 100;
-    const widthPercent = Math.max(3, (duration / totalTime) * 100);
-
-    return { leftPercent, widthPercent };
+    return {
+      leftPercent: Number(left.toFixed(2)),
+      widthPercent: Number(width.toFixed(2)),
+    };
   };
 
   const calculateDatePosition = (date: Date) => {
-    const time = new Date(date).getTime();
-    const minTime = minDate.getTime();
-    const totalTime = maxDate.getTime() - minTime;
-    const rawPercent = ((time - minTime) / totalTime) * 100;
-    return Math.min(95, Math.max(5, rawPercent));
+    const dMs = new Date(date).getTime();
+    const minMs = minDate.getTime();
+    const maxMs = maxDate.getTime();
+    const totalMs = Math.max(1, maxMs - minMs);
+
+    const pos = Math.max(0, Math.min(100, ((dMs - minMs) / totalMs) * 100));
+    return Number(pos.toFixed(2));
   };
 
   return (
@@ -217,16 +283,16 @@ export function GanttSidebar({
 }) {
   return (
     <div
-      className={`w-full md:w-64 lg:w-72 shrink-0 border-b md:border-b-0 md:border-r border-border bg-card/80 flex flex-col ${className}`}
+      className={`w-full md:w-72 lg:w-80 shrink-0 border-b md:border-b-0 md:border-r border-border bg-card flex flex-col ${className}`}
     >
       <div className="h-16 border-b border-border/80 px-4 flex items-center justify-between text-xs font-bold uppercase tracking-wider text-muted-foreground bg-muted/20">
         <div className="space-y-0.5">
-          <span className="block text-foreground font-bold">Task & Deliverables</span>
-          <span className="text-[10px] font-medium lowercase text-muted-foreground">Sprint Organizer</span>
+          <span className="block text-foreground font-bold">Daftar Tugas & Sprint</span>
+          <span className="text-[10px] font-medium lowercase text-muted-foreground">Status & Progress</span>
         </div>
-        <span>Status</span>
+        <span>Aksi</span>
       </div>
-      <div className="flex flex-col divide-y divide-border/40 overflow-y-auto max-h-[380px] md:max-h-none">
+      <div className="flex flex-col divide-y divide-border/40 overflow-y-auto max-h-[420px] md:max-h-none">
         {children}
       </div>
     </div>
@@ -245,50 +311,79 @@ export function GanttSidebarItem({
   onClick?: (feature: GanttFeature) => void;
   className?: string;
 }) {
-  const statusColor = feature.status?.color || "#3b82f6";
+  const { today } = useGantt();
   const startStr = new Date(feature.startAt).toLocaleDateString("id-ID", { day: "numeric", month: "short" });
   const endStr = new Date(feature.endAt).toLocaleDateString("id-ID", { day: "numeric", month: "short" });
+
+  const isCompleted = feature.status?.id === "completed" || (feature.progress ?? 0) >= 100;
+  const isCancelled = Boolean(feature.isCancelled);
+  const isLate = !isCancelled && !isCompleted && new Date(feature.endAt) < today;
+
+  const effectiveStatus = isCancelled
+    ? "cancelled"
+    : isCompleted
+    ? "completed"
+    : isLate
+    ? "late"
+    : feature.status?.id || "planned";
 
   return (
     <div
       onClick={() => onClick?.(feature)}
-      className={`h-12 px-4 flex items-center justify-between gap-3 text-xs hover:bg-muted/60 cursor-pointer transition-colors ${className}`}
-      title="Klik untuk menggeser atau menyesuaikan jadwal task ini"
+      className={`min-h-[52px] py-2 px-3.5 flex items-center justify-between gap-2.5 text-xs hover:bg-muted/50 cursor-pointer transition-colors ${
+        isCancelled ? "opacity-60 bg-muted/20" : ""
+      } ${className}`}
+      title="Klik untuk menggeser jadwal atau memperbarui status tugas ini"
     >
       <div className="flex items-center gap-2.5 min-w-0">
         <span
           className={`h-2.5 w-2.5 rounded-full shrink-0 shadow-xs ${
-            feature.isPendingApproval ? "animate-pulse" : ""
+            isLate ? "bg-rose-500 animate-ping" : isCompleted ? "bg-emerald-500" : isCancelled ? "bg-gray-400" : "bg-blue-500"
           }`}
-          style={{ backgroundColor: statusColor }}
         />
         <div className="min-w-0">
-          <p className="font-semibold text-foreground truncate flex items-center gap-1.5">
-            <span>{feature.name}</span>
-            {feature.isPendingApproval && (
-              <span className="rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 text-[9px] font-bold px-1.5 py-0.2 border border-amber-500/30 shrink-0">
-                Menunggu Review
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span
+              className={`font-semibold truncate max-w-[160px] sm:max-w-[180px] ${
+                isCancelled ? "line-through text-muted-foreground" : "text-foreground"
+              }`}
+            >
+              {feature.name}
+            </span>
+            {feature.priority === "urgent" && (
+              <span className="rounded bg-rose-500/15 text-rose-600 text-[9px] font-bold px-1.5 py-0.2">
+                Urgent
               </span>
             )}
-          </p>
-          <p className="text-[10px] text-muted-foreground truncate">
-            {startStr} – {endStr}
+          </div>
+          <p className="text-[10px] text-muted-foreground truncate flex items-center gap-1 mt-0.5">
+            <span>{startStr} – {endStr}</span>
+            {feature.progress !== undefined && !isCancelled && (
+              <span className="font-semibold text-foreground/80">• {feature.progress}%</span>
+            )}
           </p>
         </div>
       </div>
 
-      {feature.status && !feature.isPendingApproval && (
-        <span
-          className="rounded-full px-2 py-0.5 text-[10px] font-bold shrink-0 border"
-          style={{
-            color: statusColor,
-            backgroundColor: `${statusColor}15`,
-            borderColor: `${statusColor}30`,
-          }}
-        >
-          {feature.status.name}
-        </span>
-      )}
+      <div className="shrink-0 flex items-center gap-1">
+        {effectiveStatus === "late" ? (
+          <span className="rounded-full px-2 py-0.5 text-[10px] font-bold bg-rose-500/15 text-rose-600 border border-rose-500/30 flex items-center gap-1">
+            <AlertTriangle className="h-3 w-3" /> Terlambat
+          </span>
+        ) : effectiveStatus === "cancelled" ? (
+          <span className="rounded-full px-2 py-0.5 text-[10px] font-bold bg-muted text-muted-foreground border border-border">
+            Dibatalkan
+          </span>
+        ) : effectiveStatus === "completed" ? (
+          <span className="rounded-full px-2 py-0.5 text-[10px] font-bold bg-emerald-500/15 text-emerald-600 border border-emerald-500/30 flex items-center gap-1">
+            <Check className="h-3 w-3" /> Selesai
+          </span>
+        ) : (
+          <span className="rounded-full px-2 py-0.5 text-[10px] font-bold bg-blue-500/15 text-blue-600 border border-blue-500/30">
+            {feature.progress ? `${feature.progress}%` : "In Progress"}
+          </span>
+        )}
+      </div>
     </div>
   );
 }
@@ -304,7 +399,7 @@ export function GanttTimeline({
   className?: string;
 }) {
   const { range } = useGantt();
-  const minWidth = range === "daily" ? "min-w-[960px]" : "min-w-[600px]";
+  const minWidth = range === "daily" ? "min-w-[1020px]" : "min-w-[650px]";
 
   return (
     <div className={`flex-1 overflow-x-auto overflow-y-hidden relative bg-muted/10 ${className}`}>
@@ -314,7 +409,7 @@ export function GanttTimeline({
 }
 
 // -------------------------------------------------------------
-// GanttHeader (2-Tier Header with Dedicated Top Space for Today marker)
+// GanttHeader (2-Tier Header with Dedicated Top Track for Today marker)
 // -------------------------------------------------------------
 export function GanttHeader({ className = "" }: { className?: string }) {
   const { timeColumns, range, today } = useGantt();
@@ -323,8 +418,8 @@ export function GanttHeader({ className = "" }: { className?: string }) {
     <div className={`h-16 border-b border-border/80 flex flex-col bg-muted/20 ${className}`}>
       {/* Top Track dedicated for markers and sprint info */}
       <div className="h-6 border-b border-border/30 px-3 flex items-center justify-between text-[10px] font-semibold text-muted-foreground/75 bg-muted/30">
-        <span>Sprint Timeline (Maret 2026)</span>
-        <span>{range === "daily" ? "Mode: Harian (Daily)" : "Mode: Mingguan (Weekly)"}</span>
+        <span>Timeline Proyek</span>
+        <span>{range === "daily" ? "Tampilan: Harian (Daily)" : "Tampilan: Mingguan (Weekly)"}</span>
       </div>
 
       {/* Date Columns Bottom Track */}
@@ -335,7 +430,7 @@ export function GanttHeader({ className = "" }: { className?: string }) {
           return (
             <div
               key={col.id}
-              className={`flex-1 border-r border-border/40 last:border-r-0 px-1.5 flex flex-col justify-center text-center transition-colors ${
+              className={`flex-1 border-r border-border/40 last:border-r-0 px-1 flex flex-col justify-center text-center transition-colors ${
                 isTodayCol
                   ? "bg-rose-500/10 text-rose-600 font-bold"
                   : idx % 2 === 0
@@ -366,7 +461,7 @@ export function GanttHeader({ className = "" }: { className?: string }) {
 }
 
 // -------------------------------------------------------------
-// GanttFeatureList
+// GanttFeatureList (Stacked Lane Container)
 // -------------------------------------------------------------
 export function GanttFeatureList({
   children,
@@ -378,7 +473,7 @@ export function GanttFeatureList({
   const { timeColumns } = useGantt();
 
   return (
-    <div className={`relative flex flex-col divide-y divide-border/40 ${className}`}>
+    <div className={`relative flex-1 min-h-[320px] ${className}`}>
       {/* Background Vertical Grid Columns */}
       <div className="absolute inset-0 flex pointer-events-none">
         {timeColumns.map((col, idx) => (
@@ -392,7 +487,54 @@ export function GanttFeatureList({
       </div>
 
       {/* Foreground Tasks */}
-      <div className="relative z-10 flex flex-col divide-y divide-border/40">{children}</div>
+      <div className="relative z-10 p-2 space-y-2">{children}</div>
+    </div>
+  );
+}
+
+// -------------------------------------------------------------
+// GanttStackedFeatureGroup
+// Renders multiple tasks within a milestone/group in stacked lanes
+// -------------------------------------------------------------
+export function GanttStackedFeatureGroup({
+  title,
+  features,
+  onClick,
+  className = "",
+}: {
+  title?: string;
+  features: GanttFeature[];
+  onClick?: (feature: GanttFeature) => void;
+  className?: string;
+}) {
+  const { features: stackedFeatures, totalLanes } = useMemo(
+    () => computeFeatureLanes(features),
+    [features]
+  );
+
+  const groupHeight = Math.max(48, totalLanes * 38 + 14);
+
+  return (
+    <div className={`rounded-xl border border-border/50 bg-card/60 relative overflow-hidden transition-all ${className}`}>
+      {title && (
+        <div className="px-3 py-1.5 bg-muted/40 border-b border-border/40 text-[11px] font-bold text-foreground flex items-center justify-between">
+          <span>{title}</span>
+          <span className="text-[10px] text-muted-foreground font-normal">
+            {features.length} Tugas • {totalLanes} Jalur Waktu
+          </span>
+        </div>
+      )}
+
+      <div className="relative" style={{ height: `${groupHeight}px` }}>
+        {stackedFeatures.map((feat) => (
+          <GanttFeatureItem
+            key={feat.id}
+            {...feat}
+            laneIndex={feat.laneIndex}
+            onClick={onClick}
+          />
+        ))}
+      </div>
     </div>
   );
 }
@@ -403,40 +545,102 @@ export function GanttFeatureList({
 export function GanttFeatureItem({
   onClick,
   className = "",
+  laneIndex = 0,
   ...props
 }: GanttFeature & {
   onClick?: (feature: GanttFeature) => void;
   className?: string;
+  laneIndex?: number;
 }) {
-  const { calculatePosition } = useGantt();
+  const { calculatePosition, today } = useGantt();
   const { leftPercent, widthPercent } = calculatePosition(props.startAt, props.endAt);
 
-  const statusColor = props.status?.color || "#3b82f6";
   const startStr = new Date(props.startAt).toLocaleDateString("id-ID", { day: "numeric", month: "short" });
   const endStr = new Date(props.endAt).toLocaleDateString("id-ID", { day: "numeric", month: "short" });
 
+  const isCompleted = props.status?.id === "completed" || (props.progress ?? 0) >= 100;
+  const isCancelled = Boolean(props.isCancelled);
+  const isLate = !isCancelled && !isCompleted && new Date(props.endAt) < today;
+
+  let daysLate = 0;
+  if (isLate) {
+    const diffMs = Math.abs(today.getTime() - new Date(props.endAt).getTime());
+    daysLate = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+  }
+
+  // Visual styling based on status
+  let barGradient = "bg-gradient-to-r from-blue-600 to-indigo-600 text-white";
+  let borderStyle = "border border-blue-400/40 shadow-sm shadow-blue-500/10";
+  let statusBadge = `${props.progress || 0}%`;
+
+  if (isCancelled) {
+    barGradient = "bg-gray-700/80 text-gray-300";
+    borderStyle = "border border-gray-600 border-dashed opacity-60";
+    statusBadge = "Dibatalkan";
+  } else if (isCompleted) {
+    barGradient = "bg-gradient-to-r from-emerald-600 to-teal-600 text-white";
+    borderStyle = "border border-emerald-400/50 shadow-sm shadow-emerald-500/20";
+    statusBadge = "Selesai";
+  } else if (isLate) {
+    barGradient = "bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 text-white animate-pulse";
+    borderStyle = "border-2 border-rose-300 shadow-md shadow-rose-500/30";
+    statusBadge = `⚠️ Terlambat ${daysLate}h`;
+  }
+
+  const topOffset = laneIndex * 38 + 6;
+
   return (
-    <div className="h-12 relative flex items-center px-1">
-      <div
-        onClick={() => onClick?.(props)}
-        className={`group absolute h-8 rounded-xl flex items-center justify-between px-3 text-xs font-semibold text-white shadow-sm transition-all hover:scale-[1.02] hover:shadow-md cursor-pointer ${
-          props.isPendingApproval ? "border-2 border-dashed border-amber-300 ring-2 ring-amber-400/40" : ""
-        } ${className}`}
-        style={{
-          left: `${leftPercent}%`,
-          width: `${Math.max(8, widthPercent)}%`,
-          backgroundColor: props.isPendingApproval ? "#f59e0b" : statusColor,
-        }}
-        title={`Klik untuk menggeser jadwal: ${props.name} (${startStr} - ${endStr})`}
-      >
-        <span className="truncate pr-1 drop-shadow-xs flex items-center gap-1.5">
-          <span>{props.name}</span>
-          {props.isPendingApproval && (
-            <span className="text-[10px] bg-black/20 rounded px-1 font-bold">⏳ Draft</span>
-          )}
+    <div
+      onClick={() => onClick?.(props)}
+      className={`group absolute h-[30px] rounded-xl flex items-center justify-between px-2.5 text-xs font-semibold select-none cursor-pointer transition-all hover:scale-[1.015] hover:z-30 hover:shadow-lg overflow-hidden ${barGradient} ${borderStyle} ${className}`}
+      style={{
+        left: `${leftPercent}%`,
+        width: `${Math.max(6, widthPercent)}%`,
+        top: `${topOffset}px`,
+        ...(isCancelled
+          ? {
+              backgroundImage:
+                "repeating-linear-gradient(45deg, rgba(55,65,81,0.9), rgba(55,65,81,0.9) 8px, rgba(75,85,99,0.9) 8px, rgba(75,85,99,0.9) 16px)",
+            }
+          : {}),
+      }}
+      title={`Klik untuk mengedit atau menggeser: ${props.name} (${startStr} - ${endStr})`}
+    >
+      {/* Progress fill bar inside the task */}
+      {!isCancelled && !isCompleted && props.progress !== undefined && props.progress > 0 && (
+        <div
+          className="absolute inset-y-0 left-0 bg-white/20 pointer-events-none transition-all"
+          style={{ width: `${props.progress}%` }}
+        />
+      )}
+
+      {/* Content */}
+      <div className="relative z-10 flex items-center gap-1.5 truncate pr-1">
+        {isCompleted ? (
+          <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-white" />
+        ) : isLate ? (
+          <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-200 animate-bounce" />
+        ) : isCancelled ? (
+          <X className="h-3 w-3 shrink-0 text-gray-400" />
+        ) : (
+          <span className="h-1.5 w-1.5 rounded-full bg-white shrink-0 shadow-xs" />
+        )}
+
+        <span
+          className={`truncate font-semibold text-[11px] drop-shadow-xs ${
+            isCancelled ? "line-through" : ""
+          }`}
+        >
+          {props.name}
         </span>
-        <span className="text-[10px] opacity-90 shrink-0 font-normal hidden sm:inline">
-          {startStr} – {endStr}
+      </div>
+
+      <div className="relative z-10 flex items-center gap-1 shrink-0 text-[10px]">
+        <span className="opacity-80 font-normal hidden lg:inline">
+          {startStr}–{endStr}
+        </span>
+        <span className="rounded bg-black/25 px-1.5 py-0.2 font-bold text-[9px] backdrop-blur-xs">
+          {statusBadge}
         </span>
       </div>
     </div>
