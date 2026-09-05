@@ -11,7 +11,6 @@ import {
   CheckCircle2,
   ShieldCheck,
   Star,
-  Clock,
   Award,
   ArrowRight,
   Heart,
@@ -19,7 +18,6 @@ import {
   Check,
   Edit3,
   Share2,
-  Zap,
   Briefcase,
   Camera,
   Globe,
@@ -449,6 +447,21 @@ export function FreelancerProfileView({
   const cleanAvatar = (url?: string | null) => (url && !isOldStockAvatar(url) && typeof url === "string" && (url.startsWith("http") || url.startsWith("/"))) ? url : DEFAULT_AVATAR;
   const cleanBanner = (url?: string | null) => (url && !isOldStockBanner(url) && typeof url === "string" && (url.startsWith("http") || url.startsWith("/"))) ? url : DEFAULT_BANNER;
 
+  const sanitizeUrl = (url?: string | null, prefix?: string) => {
+    if (!url || typeof url !== "string") return "";
+    const trimmed = url.trim();
+    if (!trimmed) return "";
+    if (prefix && (trimmed === prefix || trimmed === `${prefix}/`)) return "";
+    if (trimmed === "https://" || trimmed === "http://") return "";
+    if (trimmed.length <= 8) return "";
+    return trimmed.startsWith("http://") || trimmed.startsWith("https://") ? trimmed : `https://${trimmed}`;
+  };
+
+  const formatDisplayLink = (url?: string) => {
+    if (!url) return "";
+    return url.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
+  };
+
   const meta = user?.user_metadata || {};
 
   const neutralPlaceholder: TalentProfile = {
@@ -498,9 +511,9 @@ export function FreelancerProfileView({
         workStatus: (meta.availability as "available" | "open" | "busy") || "available",
         startingPrice: meta.starting_price || (meta.hourly_rate ? `Rp ${Number(meta.hourly_rate).toLocaleString("id-ID")}` : "Rp 500.000"),
         experienceLevel: meta.experience_level || "intermediate",
-        githubUrl: meta.github_url || "",
-        linkedinUrl: meta.linkedin_url || "",
-        portfolioUrl: meta.portfolio_url || "",
+        githubUrl: sanitizeUrl(meta.github_url, "https://github.com"),
+        linkedinUrl: sanitizeUrl(meta.linkedin_url, "https://linkedin.com/in"),
+        portfolioUrl: sanitizeUrl(meta.portfolio_url),
         availability: formatAvailabilityHours(meta.weekly_availability),
         aboutMe: meta.bio ? [meta.bio] : [
           "Freelancer spesialis terdaftar di platform TripleT. Berpengalaman mengerjakan proyek pengembangan teknologi dan desain modern."
@@ -807,17 +820,13 @@ export function FreelancerProfileView({
           if (rawExp.includes("start") || rawExp.includes("pemula") || rawExp.includes("junior")) parsedExp = "starter";
           else if (rawExp.includes("expert") || rawExp.includes("lead") || rawExp.includes("ahli") || rawExp.includes("senior")) parsedExp = "expert";
 
-          const parsedGithub = isOwner
-            ? (meta.github_url || (fp.github_url as string) || "")
-            : ((fp.github_url as string) || "");
+          const rawGithub = (fp.github_url as string) || (isOwner ? (meta.github_url as string) : "") || "";
+          const rawLinkedin = (fp.linkedin_url as string) || (isOwner ? (meta.linkedin_url as string) : "") || "";
+          const rawPortfolio = (fp.portfolio_url as string) || (isOwner ? (meta.portfolio_url as string) : "") || "";
 
-          const parsedLinkedin = isOwner
-            ? (meta.linkedin_url || (fp.linkedin_url as string) || "")
-            : ((fp.linkedin_url as string) || "");
-
-          const parsedPortfolio = isOwner
-            ? (meta.portfolio_url || (fp.portfolio_url as string) || "")
-            : ((fp.portfolio_url as string) || "");
+          const parsedGithub = sanitizeUrl(rawGithub, "https://github.com");
+          const parsedLinkedin = sanitizeUrl(rawLinkedin, "https://linkedin.com/in");
+          const parsedPortfolio = sanitizeUrl(rawPortfolio);
 
           const hasValidRating = finalReviewsCount > 0 && !isNaN(finalRatingNum) && finalRatingNum > 0;
           const finalRating = hasValidRating ? finalRatingNum.toFixed(1) : "-";
@@ -878,6 +887,91 @@ export function FreelancerProfileView({
   const [copiedLink, setCopiedLink] = useState(false);
   const [clientProjects, setClientProjects] = useState<ProjectRecord[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string>("");
+
+  // Links Modal State
+  const [isLinksModalOpen, setIsLinksModalOpen] = useState(false);
+  const [linksGithub, setLinksGithub] = useState("");
+  const [linksLinkedin, setLinksLinkedin] = useState("");
+  const [linksPortfolio, setLinksPortfolio] = useState("");
+  const [isSavingLinks, setIsSavingLinks] = useState(false);
+  const [linksSaveSuccess, setLinksSaveSuccess] = useState(false);
+
+  const handleOpenLinksModal = () => {
+    setLinksGithub(profile.githubUrl && profile.githubUrl !== "https://github.com/" ? profile.githubUrl : "");
+    setLinksLinkedin(profile.linkedinUrl && profile.linkedinUrl !== "https://linkedin.com/in/" ? profile.linkedinUrl : "");
+    setLinksPortfolio(profile.portfolioUrl && profile.portfolioUrl !== "https://" ? profile.portfolioUrl : "");
+    setLinksSaveSuccess(false);
+    setIsLinksModalOpen(true);
+  };
+
+  const handleSaveLinks = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingLinks(true);
+    try {
+      const cleanUrl = (url: string) => {
+        const trimmed = url.trim();
+        if (!trimmed) return "";
+        if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) {
+          return `https://${trimmed}`;
+        }
+        return trimmed;
+      };
+
+      const finalGithub = cleanUrl(linksGithub);
+      const finalLinkedin = cleanUrl(linksLinkedin);
+      const finalPortfolio = cleanUrl(linksPortfolio);
+
+      const supabase = createClient();
+      const targetId = user?.id || targetUserId;
+
+      if (targetId && isValidUuid(targetId)) {
+        // 1. Update direct database table freelancer_profiles
+        const { error: dbErr } = await supabase
+          .from("freelancer_profiles")
+          .update({
+            github_url: finalGithub || null,
+            linkedin_url: finalLinkedin || null,
+            portfolio_url: finalPortfolio || null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("user_id", targetId);
+
+        if (dbErr) {
+          console.warn("Could not update freelancer_profiles links:", dbErr);
+        }
+
+        // 2. Also sync with auth metadata
+        await supabase.auth.updateUser({
+          data: {
+            github_url: finalGithub,
+            linkedin_url: finalLinkedin,
+            portfolio_url: finalPortfolio,
+          },
+        });
+      }
+
+      // 3. Immediately reflect in live profile state
+      setLiveProfile((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          githubUrl: finalGithub,
+          linkedinUrl: finalLinkedin,
+          portfolioUrl: finalPortfolio,
+        };
+      });
+
+      setLinksSaveSuccess(true);
+      setTimeout(() => {
+        setIsLinksModalOpen(false);
+        setLinksSaveSuccess(false);
+      }, 1000);
+    } catch (err) {
+      console.error("Error saving portfolio links:", err);
+    } finally {
+      setIsSavingLinks(false);
+    }
+  };
 
   useEffect(() => {
     async function loadClientProjects() {
@@ -1159,19 +1253,20 @@ export function FreelancerProfileView({
                   </h3>
                 </div>
                 {isOwner && (
-                  <Link
-                    href="/freelancer/settings?tab=work"
-                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:text-primary/80 bg-primary/10 hover:bg-primary/15 border border-primary/20 px-2.5 py-1 rounded-lg transition-all shrink-0 shadow-2xs"
+                  <button
+                    type="button"
+                    onClick={handleOpenLinksModal}
+                    className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-primary hover:text-primary/80 bg-primary/10 hover:bg-primary/15 border border-primary/20 px-2.5 py-1 rounded-lg transition-all shrink-0 shadow-2xs group cursor-pointer"
                   >
+                    <Edit3 className="h-3 w-3 group-hover:scale-110 transition-transform" />
                     <span>Edit</span>
-                    <ExternalLink className="h-2.5 w-2.5" />
-                  </Link>
+                  </button>
                 )}
               </div>
 
               <div className="space-y-2.5">
                 {/* GitHub */}
-                {profile.githubUrl && profile.githubUrl !== "https://github.com/" && profile.githubUrl.trim().length > 8 ? (
+                {profile.githubUrl ? (
                   <a
                     href={profile.githubUrl.startsWith("http") ? profile.githubUrl : `https://${profile.githubUrl}`}
                     target="_blank"
@@ -1186,18 +1281,19 @@ export function FreelancerProfileView({
                       </div>
                       <div className="min-w-0">
                         <div className="text-xs font-bold truncate">GitHub Profile</div>
-                        <div className="text-[10px] text-muted-foreground truncate">{profile.githubUrl.replace(/^https?:\/\//, "")}</div>
+                        <div className="text-[10px] text-muted-foreground truncate">{formatDisplayLink(profile.githubUrl)}</div>
                       </div>
                     </div>
                     <ExternalLink className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary shrink-0 transition-colors" />
                   </a>
                 ) : isOwner ? (
-                  <Link
-                    href="/freelancer/settings?tab=work"
-                    className="flex items-center justify-between p-3 rounded-2xl border border-dashed border-border/70 bg-muted/10 hover:bg-muted/30 text-muted-foreground transition-all group"
+                  <button
+                    type="button"
+                    onClick={handleOpenLinksModal}
+                    className="w-full text-left flex items-center justify-between p-3 rounded-2xl border border-dashed border-border/70 bg-muted/10 hover:bg-muted/30 text-muted-foreground hover:text-foreground transition-all group cursor-pointer"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="h-8 w-8 rounded-xl bg-muted text-muted-foreground flex items-center justify-center shrink-0">
+                      <div className="h-8 w-8 rounded-xl bg-muted text-muted-foreground group-hover:text-foreground flex items-center justify-center shrink-0 transition-colors">
                         <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
                           <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
                         </svg>
@@ -1207,12 +1303,12 @@ export function FreelancerProfileView({
                         <div className="text-[10px] text-muted-foreground truncate">+ Tambahkan tautan GitHub</div>
                       </div>
                     </div>
-                    <ExternalLink className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary shrink-0 transition-colors" />
-                  </Link>
+                    <Edit3 className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary shrink-0 transition-colors" />
+                  </button>
                 ) : null}
 
                 {/* LinkedIn */}
-                {profile.linkedinUrl && profile.linkedinUrl !== "https://linkedin.com/in/" && profile.linkedinUrl.trim().length > 10 ? (
+                {profile.linkedinUrl ? (
                   <a
                     href={profile.linkedinUrl.startsWith("http") ? profile.linkedinUrl : `https://${profile.linkedinUrl}`}
                     target="_blank"
@@ -1227,18 +1323,19 @@ export function FreelancerProfileView({
                       </div>
                       <div className="min-w-0">
                         <div className="text-xs font-bold truncate">LinkedIn Profile</div>
-                        <div className="text-[10px] text-muted-foreground truncate">{profile.linkedinUrl.replace(/^https?:\/\//, "")}</div>
+                        <div className="text-[10px] text-muted-foreground truncate">{formatDisplayLink(profile.linkedinUrl)}</div>
                       </div>
                     </div>
                     <ExternalLink className="h-3.5 w-3.5 text-muted-foreground group-hover:text-blue-600 shrink-0 transition-colors" />
                   </a>
                 ) : isOwner ? (
-                  <Link
-                    href="/freelancer/settings?tab=work"
-                    className="flex items-center justify-between p-3 rounded-2xl border border-dashed border-border/70 bg-muted/10 hover:bg-muted/30 text-muted-foreground transition-all group"
+                  <button
+                    type="button"
+                    onClick={handleOpenLinksModal}
+                    className="w-full text-left flex items-center justify-between p-3 rounded-2xl border border-dashed border-border/70 bg-muted/10 hover:bg-muted/30 text-muted-foreground hover:text-foreground transition-all group cursor-pointer"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="h-8 w-8 rounded-xl bg-muted text-muted-foreground flex items-center justify-center shrink-0">
+                      <div className="h-8 w-8 rounded-xl bg-muted text-muted-foreground group-hover:text-foreground flex items-center justify-center shrink-0 transition-colors">
                         <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
                           <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
                         </svg>
@@ -1248,12 +1345,12 @@ export function FreelancerProfileView({
                         <div className="text-[10px] text-muted-foreground truncate">+ Tambahkan tautan LinkedIn</div>
                       </div>
                     </div>
-                    <ExternalLink className="h-3.5 w-3.5 text-muted-foreground group-hover:text-blue-600 shrink-0 transition-colors" />
-                  </Link>
+                    <Edit3 className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary shrink-0 transition-colors" />
+                  </button>
                 ) : null}
 
                 {/* Personal Portfolio */}
-                {profile.portfolioUrl && profile.portfolioUrl !== "https://" && profile.portfolioUrl.trim().length > 8 ? (
+                {profile.portfolioUrl ? (
                   <a
                     href={profile.portfolioUrl.startsWith("http") ? profile.portfolioUrl : `https://${profile.portfolioUrl}`}
                     target="_blank"
@@ -1266,18 +1363,19 @@ export function FreelancerProfileView({
                       </div>
                       <div className="min-w-0">
                         <div className="text-xs font-bold truncate">Website Portofolio</div>
-                        <div className="text-[10px] text-muted-foreground truncate">{profile.portfolioUrl.replace(/^https?:\/\//, "")}</div>
+                        <div className="text-[10px] text-muted-foreground truncate">{formatDisplayLink(profile.portfolioUrl)}</div>
                       </div>
                     </div>
                     <ExternalLink className="h-3.5 w-3.5 text-muted-foreground group-hover:text-emerald-600 shrink-0 transition-colors" />
                   </a>
                 ) : isOwner ? (
-                  <Link
-                    href="/freelancer/settings?tab=work"
-                    className="flex items-center justify-between p-3 rounded-2xl border border-dashed border-border/70 bg-muted/10 hover:bg-muted/30 text-muted-foreground transition-all group"
+                  <button
+                    type="button"
+                    onClick={handleOpenLinksModal}
+                    className="w-full text-left flex items-center justify-between p-3 rounded-2xl border border-dashed border-border/70 bg-muted/10 hover:bg-muted/30 text-muted-foreground hover:text-foreground transition-all group cursor-pointer"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="h-8 w-8 rounded-xl bg-muted text-muted-foreground flex items-center justify-center shrink-0">
+                      <div className="h-8 w-8 rounded-xl bg-muted text-muted-foreground group-hover:text-foreground flex items-center justify-center shrink-0 transition-colors">
                         <Globe className="h-4 w-4" />
                       </div>
                       <div className="min-w-0">
@@ -1285,9 +1383,16 @@ export function FreelancerProfileView({
                         <div className="text-[10px] text-muted-foreground truncate">+ Tambahkan tautan Website Portofolio</div>
                       </div>
                     </div>
-                    <ExternalLink className="h-3.5 w-3.5 text-muted-foreground group-hover:text-emerald-600 shrink-0 transition-colors" />
-                  </Link>
+                    <Edit3 className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary shrink-0 transition-colors" />
+                  </button>
                 ) : null}
+
+                {/* If non-owner and no links */}
+                {!isOwner && !profile.githubUrl && !profile.linkedinUrl && !profile.portfolioUrl && (
+                  <div className="rounded-2xl border border-dashed border-border/70 p-4 text-center text-xs text-muted-foreground">
+                    Belum ada tautan portofolio yang dibagikan.
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -1605,6 +1710,111 @@ export function FreelancerProfileView({
                   </div>
                 </form>
               </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Portfolio Links Edit Modal */}
+      {isLinksModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-md rounded-3xl bg-card border border-border/80 p-6 sm:p-7 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
+            <ModalCloseButton onClick={() => setIsLinksModalOpen(false)} />
+
+            <div>
+              <div className="flex items-center gap-2 text-primary mb-1">
+                <LinkIcon className="h-5 w-5" />
+                <h3 className="text-lg font-bold text-foreground">Kelola Tautan Portofolio</h3>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Tautan ini akan tersimpan di database dan ditampilkan langsung pada profil freelancer Anda.
+              </p>
+            </div>
+
+            {linksSaveSuccess ? (
+              <div className="py-6 text-center space-y-2">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600">
+                  <CheckCircle2 className="h-7 w-7" />
+                </div>
+                <h4 className="text-sm font-bold text-foreground">Tautan Berhasil Disimpan!</h4>
+                <p className="text-xs text-muted-foreground">Data profil telah diperbarui secara otomatis.</p>
+              </div>
+            ) : (
+              <form onSubmit={handleSaveLinks} className="space-y-4">
+                {/* GitHub */}
+                <div className="space-y-1.5">
+                  <label className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                    <svg className="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24">
+                      <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+                    </svg>
+                    <span>GitHub Profile URL</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={linksGithub}
+                    onChange={(e) => setLinksGithub(e.target.value)}
+                    placeholder="https://github.com/username"
+                    className="w-full rounded-xl border border-border bg-muted/40 px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+
+                {/* LinkedIn */}
+                <div className="space-y-1.5">
+                  <label className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                    <svg className="h-3.5 w-3.5 fill-[#0A66C2]" viewBox="0 0 24 24">
+                      <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
+                    </svg>
+                    <span>LinkedIn Profile URL</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={linksLinkedin}
+                    onChange={(e) => setLinksLinkedin(e.target.value)}
+                    placeholder="https://linkedin.com/in/username"
+                    className="w-full rounded-xl border border-border bg-muted/40 px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+
+                {/* Website Portofolio */}
+                <div className="space-y-1.5">
+                  <label className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                    <Globe className="h-3.5 w-3.5 text-emerald-600" />
+                    <span>Website Portofolio Pribadi</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={linksPortfolio}
+                    onChange={(e) => setLinksPortfolio(e.target.value)}
+                    placeholder="https://portofolio-kamu.com"
+                    className="w-full rounded-xl border border-border bg-muted/40 px-3.5 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+
+                <div className="flex items-center gap-3 pt-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsLinksModalOpen(false)}
+                    disabled={isSavingLinks}
+                    className="flex-1 rounded-xl border border-border/80 py-2.5 text-xs font-semibold text-muted-foreground hover:bg-muted transition-colors disabled:opacity-50"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSavingLinks}
+                    className="flex-1 rounded-xl bg-primary py-2.5 text-xs font-bold text-white shadow-md shadow-primary/20 hover:bg-primary-600 transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
+                  >
+                    {isSavingLinks ? (
+                      <>
+                        <span className="animate-spin h-3.5 w-3.5 border-2 border-white border-t-transparent rounded-full" />
+                        <span>Menyimpan...</span>
+                      </>
+                    ) : (
+                      <span>Simpan Tautan</span>
+                    )}
+                  </button>
+                </div>
+              </form>
             )}
           </div>
         </div>

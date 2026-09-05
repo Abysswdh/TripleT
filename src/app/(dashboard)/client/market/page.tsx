@@ -104,6 +104,19 @@ function ProjectMarketContent() {
     };
   }, []);
 
+  // Close modal on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setActiveProject(null);
+      }
+    };
+    if (activeProject) {
+      window.addEventListener("keydown", handleKeyDown);
+    }
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeProject]);
+
   useEffect(() => {
     async function loadMarket() {
       try {
@@ -147,14 +160,23 @@ function ProjectMarketContent() {
           description: p.description,
           objectives: p.objectives && p.objectives.length > 0 ? p.objectives : ["Menyelesaikan milestone sesuai timeline"],
           skills: p.skills,
-          milestones: p.milestones.map((m) => ({
-            phase: m.dueDate,
-            title: m.title,
-            percentage: 50,
-            amount: m.amount,
-            amountNumeric: m.amountNumeric || (p.budgetNumeric * 0.5),
-            deliverables: m.deliverables && m.deliverables.length > 0 ? m.deliverables : ["Source Code", "Dokumentasi"],
-          })),
+          milestones: p.milestones.map((m, idx) => {
+            const count = p.milestones.length || 1;
+            const amt = m.amountNumeric || (p.budgetNumeric ? p.budgetNumeric / count : 0);
+            const pct = p.budgetNumeric > 0 
+              ? Math.round((amt / p.budgetNumeric) * 100) 
+              : Math.round(100 / count);
+            const rawPhase = (m.dueDate || "").trim();
+            const hasPhaseWord = rawPhase.toLowerCase().startsWith("milestone") || rawPhase.toLowerCase().startsWith("tahap");
+            return {
+              phase: hasPhaseWord ? rawPhase : `Milestone ${idx + 1}`,
+              title: m.title,
+              percentage: pct,
+              amount: m.amount,
+              amountNumeric: amt,
+              deliverables: m.deliverables && m.deliverables.length > 0 ? m.deliverables : ["Source Code", "Dokumentasi"],
+            };
+          }),
           benchmarkScore: "Benchmark Terverifikasi",
           benchmarkNote: "Spesifikasi proyek terverifikasi dengan sistem termin rekber.",
         }));
@@ -425,17 +447,17 @@ function ProjectMarketContent() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 pt-1">
+                <div className="flex items-center gap-2 pt-1">
                   <button
                     onClick={() => setActiveProject(proj)}
-                    className="w-full flex items-center justify-center gap-1 rounded-xl border border-border/80 bg-muted/40 hover:bg-muted px-2.5 py-2 text-xs font-semibold text-foreground transition-all hover:border-primary/40"
+                    className="w-full flex items-center justify-center gap-1 rounded-xl border border-border/80 bg-muted/40 hover:bg-muted px-2.5 py-2 text-xs font-semibold text-foreground transition-all hover:border-primary/40 cursor-pointer"
                   >
                     <Eye className="h-3.5 w-3.5 text-primary" />
                     <span>Lihat Scope</span>
                   </button>
 
                   <Link
-                    href={`/client/projects`}
+                    href={`/client/projects?create=true&title=${encodeURIComponent(proj.title)}&category=${encodeURIComponent(proj.category)}`}
                     className="w-full flex items-center justify-center gap-1 rounded-xl bg-primary/10 hover:bg-primary/20 border border-primary/20 px-2.5 py-2 text-xs font-semibold text-primary transition-all hover:scale-102"
                   >
                     <Copy className="h-3.5 w-3.5" />
@@ -469,12 +491,17 @@ function ProjectMarketContent() {
 
       {/* 5. PROJECT DETAIL & BENCHMARK MODAL */}
       {activeProject && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in">
-          <div className="relative w-full max-w-3xl max-h-[90vh] flex flex-col rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-2xl overflow-hidden animate-in zoom-in-95">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setActiveProject(null);
+          }}
+        >
+          <div className="relative w-full max-w-3xl max-h-[90vh] flex flex-col rounded-3xl border border-border bg-card shadow-2xl overflow-hidden animate-in zoom-in-95">
             <ModalCloseButton onClick={() => setActiveProject(null)} />
 
-            {/* Modal Header */}
-            <div className="space-y-3 border-b border-border/60 pb-5">
+            {/* Modal Header (Fixed at top) */}
+            <div className="p-6 sm:px-8 sm:pt-7 sm:pb-5 border-b border-border/60 shrink-0 space-y-3 pr-14">
               <div className="flex items-center gap-2">
                 <span className="rounded-full bg-primary/10 px-3 py-1 text-[11px] font-bold text-primary border border-primary/20">
                   {activeProject.category}
@@ -482,9 +509,9 @@ function ProjectMarketContent() {
                 <span className="text-xs text-muted-foreground">• Diposting {activeProject.postedAt}</span>
               </div>
 
-              <h2 className="text-xl sm:text-2xl font-bold text-foreground">{activeProject.title}</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-foreground leading-tight">{activeProject.title}</h2>
 
-              <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1.5 font-medium text-foreground">
                   <Building2 className="h-4 w-4 text-primary" />
                   <span>{activeProject.clientName}</span>
@@ -496,8 +523,8 @@ function ProjectMarketContent() {
               </div>
             </div>
 
-            {/* Modal Body */}
-            <div className="py-5 space-y-6">
+            {/* Modal Body (Scrollable!) */}
+            <div className="flex-1 overflow-y-auto min-h-0 p-6 sm:p-8 space-y-6">
               {/* Benchmark Assessment Badge */}
               <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 flex items-start gap-3">
                 <TrendingUp className="h-5 w-5 text-emerald-600 mt-0.5 shrink-0" />
@@ -573,14 +600,16 @@ function ProjectMarketContent() {
                       key={idx}
                       className="rounded-2xl border border-border/80 bg-muted/20 p-4 space-y-2.5"
                     >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="rounded-md bg-primary text-primary-foreground px-2 py-0.5 text-[10px] font-bold">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="rounded-md bg-primary text-primary-foreground px-2 py-0.5 text-[10px] font-bold shrink-0">
                             {ms.phase}
                           </span>
-                          <span className="text-xs font-bold text-foreground">{ms.title}</span>
+                          <span className="text-xs font-bold text-foreground">
+                            {ms.title.replace(new RegExp(`^${ms.phase}\\s*[:\\-]?\\s*`, "i"), "")}
+                          </span>
                         </div>
-                        <div className="text-right">
+                        <div className="text-right shrink-0">
                           <span className="text-xs font-bold text-primary">
                             {formatMoney(ms.amountNumeric || (activeProject.rawBudget * ms.percentage) / 100)}
                           </span>
@@ -588,13 +617,13 @@ function ProjectMarketContent() {
                         </div>
                       </div>
 
-                      <div className="border-t border-border/40 pt-2 space-y-1.5">
-                        <p className="text-[11px] font-medium text-muted-foreground">Deliverables Kunci:</p>
-                        <div className="grid sm:grid-cols-2 gap-1.5">
+                      <div className="border-t border-border/40 pt-2.5 space-y-1.5">
+                        <p className="text-[11px] font-semibold text-muted-foreground">Deliverables Kunci:</p>
+                        <div className="grid sm:grid-cols-2 gap-2">
                           {ms.deliverables.map((del, dIdx) => (
-                            <div key={dIdx} className="flex items-center gap-1.5 text-xs text-foreground/90">
-                              <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                              <span>{del}</span>
+                            <div key={dIdx} className="flex items-start gap-2 text-xs text-foreground/90">
+                              <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0 mt-1.5" />
+                              <span className="leading-snug">{del}</span>
                             </div>
                           ))}
                         </div>
@@ -605,11 +634,11 @@ function ProjectMarketContent() {
               </div>
             </div>
 
-            {/* Modal Footer Actions */}
-            <div className="border-t border-border/60 pt-5 flex flex-col sm:flex-row items-center justify-between gap-3">
+            {/* Modal Footer Actions (Fixed at bottom) */}
+            <div className="p-4 sm:px-8 border-t border-border/60 shrink-0 bg-muted/20 flex flex-col sm:flex-row items-center justify-between gap-3">
               <button
                 onClick={() => handleCopyLink(activeProject.id)}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-border bg-card px-4 py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-border bg-card px-4 py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
               >
                 {copiedId === activeProject.id ? (
                   <>
@@ -627,13 +656,13 @@ function ProjectMarketContent() {
               <div className="w-full sm:w-auto flex items-center gap-2">
                 <button
                   onClick={() => setActiveProject(null)}
-                  className="flex-1 sm:flex-none rounded-xl border border-border px-4 py-2.5 text-xs font-semibold text-muted-foreground hover:bg-muted transition-colors"
+                  className="flex-1 sm:flex-none rounded-xl border border-border bg-card px-4 py-2.5 text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
                 >
                   Tutup
                 </button>
                 <Link
-                  href="/client/projects"
-                  className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-primary-foreground shadow-md hover:bg-primary/90 transition-all hover:scale-102"
+                  href={`/client/projects?create=true&title=${encodeURIComponent(activeProject.title)}&category=${encodeURIComponent(activeProject.category)}`}
+                  className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-white shadow-md hover:bg-primary-600 transition-all hover:scale-102"
                 >
                   <Plus className="h-4 w-4" />
                   <span>Buat Proyek dengan Format Ini</span>
