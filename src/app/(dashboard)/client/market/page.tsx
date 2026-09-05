@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, Suspense } from "react";
+import { createPortal } from "react-dom";
 import { useSearchParams } from "next/navigation";
 import {
   Search,
@@ -68,8 +69,13 @@ function ProjectMarketContent() {
   // Selected project for inspection modal
   const [activeProject, setActiveProject] = useState<MarketProject | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
   const { t } = useTranslation();
   const { formatMoney } = useCurrency();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Sync with search parameter in URL
   useEffect(() => {
@@ -488,9 +494,9 @@ function ProjectMarketContent() {
       </div>
 
       {/* 5. PROJECT DETAIL & BENCHMARK MODAL */}
-      {activeProject && (
+      {mounted && activeProject && typeof document !== "undefined" && createPortal(
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in"
           onClick={(e) => {
             if (e.target === e.currentTarget) setActiveProject(null);
           }}
@@ -499,7 +505,7 @@ function ProjectMarketContent() {
             <ModalCloseButton onClick={() => setActiveProject(null)} />
 
             {/* Modal Header (Fixed at top) */}
-            <div className="p-6 sm:px-8 sm:pt-7 sm:pb-5 border-b border-border/60 shrink-0 space-y-3 pr-14">
+            <div className="p-6 sm:px-8 sm:pt-7 sm:pb-5 border-b border-border/60 shrink-0 space-y-3 pr-14 bg-card">
               <div className="flex items-center gap-2">
                 <span className="rounded-full bg-primary/10 px-3 py-1 text-[11px] font-bold text-primary border border-primary/20">
                   {activeProject.category}
@@ -633,7 +639,7 @@ function ProjectMarketContent() {
             </div>
 
             {/* Modal Footer Actions (Fixed at bottom) */}
-            <div className="p-4 sm:px-8 border-t border-border/60 shrink-0 bg-muted/20 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="p-4 sm:px-8 border-t border-border bg-card shrink-0 flex flex-col sm:flex-row items-center justify-between gap-3">
               <button
                 onClick={() => handleCopyLink(activeProject.id)}
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-border bg-card px-4 py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
@@ -668,7 +674,8 @@ function ProjectMarketContent() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
