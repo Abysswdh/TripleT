@@ -402,6 +402,26 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
           if (clProfile.billing_address) setBillingAddress(clProfile.billing_address);
           if (clProfile.tax_id) setTaxId(clProfile.tax_id);
         }
+
+        // 4. Fetch notification settings row
+        const { data: notifSettings } = await supabase
+          .from("user_notification_settings")
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (notifSettings) {
+          setNotifications({
+            emailProposals: notifSettings.email_proposals ?? true,
+            emailMilestones: notifSettings.email_milestones ?? true,
+            emailMessages: notifSettings.email_messages ?? true,
+            emailMarketing: notifSettings.email_marketing ?? false,
+            inAppMilestones: notifSettings.in_app_milestones ?? true,
+            inAppChat: notifSettings.in_app_chat ?? true,
+            inAppGamification: true,
+            soundEffects: notifSettings.sound_effects ?? true,
+          });
+        }
       } catch (err) {
         console.warn("Could not fetch profile from tables:", err);
       }
@@ -619,6 +639,24 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
               { onConflict: "user_id" }
             );
           }
+
+          // 4. User notification settings upsert
+          await supabase.from("user_notification_settings").upsert(
+            {
+              user_id: user.id,
+              email_proposals: notifications.emailProposals,
+              email_milestones: notifications.emailMilestones,
+              email_messages: notifications.emailMessages,
+              email_marketing: notifications.emailMarketing,
+              in_app_milestones: notifications.inAppMilestones,
+              in_app_chat: notifications.inAppChat,
+              sound_effects: notifications.soundEffects,
+              language: language,
+              currency: currency,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "user_id" }
+          );
         } catch (dbErr) {
           console.info("Direct DB table sync notice:", dbErr);
         }

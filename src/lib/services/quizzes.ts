@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { logActivity, getCurrentUserId } from "@/lib/services/activity";
+import { createNotification } from "@/lib/services/notifications";
 
 export interface QuizQuestion {
   id: string;
@@ -608,6 +609,27 @@ export async function saveQuizResult(result: QuizAttemptResult, userId?: string)
       xp_earned: result.earnedXp,
       badge_name: result.badgeName,
     });
+
+    // 4. Trigger verified badge notification
+    if (result.passed && result.badgeName) {
+      try {
+        const uid = await getCurrentUserId();
+        if (uid) {
+          await createNotification({
+            userId: uid,
+            type: "badge",
+            title: "Badge Keahlian Terverifikasi! 🏆",
+            message: `Selamat! Anda berhasil lulus tes kompetensi '${result.badgeName}' dengan skor ${result.score}%.`,
+            linkUrl: "/freelancer/skills",
+            referenceType: "quiz",
+            referenceId: result.quizId,
+            roleTarget: "freelancer",
+          });
+        }
+      } catch (notifErr) {
+        console.warn("Could not send quiz badge notification:", notifErr);
+      }
+    }
 
     window.dispatchEvent(new CustomEvent("quiz-completed", { detail: result }));
   } catch (err) {

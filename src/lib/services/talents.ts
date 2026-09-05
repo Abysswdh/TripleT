@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { createNotification } from "@/lib/services/notifications";
 
 export interface TalentFilterOptions {
   searchQuery?: string;
@@ -243,6 +244,37 @@ export async function inviteTalentToProject(params: {
   if (error) {
     console.error("Error sending talent invitation:", error);
     return { success: false, error: error.message };
+  }
+
+  // Trigger notification for the invited freelancer
+  try {
+    const { data: proj } = await supabase
+      .from("projects")
+      .select("title")
+      .eq("id", params.projectId)
+      .maybeSingle();
+
+    const { data: clientUser } = await supabase
+      .from("users")
+      .select("full_name")
+      .eq("id", clientId)
+      .maybeSingle();
+
+    const clientName = clientUser?.full_name || "Klien";
+    const projTitle = proj?.title || "Proyek Rekomendasi";
+
+    await createNotification({
+      userId: params.freelancerId,
+      type: "invitation",
+      title: "Undangan Proyek Khusus ✉️",
+      message: `${clientName} mengundang Anda untuk mengajukan penawaran pada proyek '${projTitle}'.`,
+      linkUrl: `/freelancer/explore/${params.projectId}`,
+      referenceType: "project",
+      referenceId: params.projectId,
+      roleTarget: "freelancer",
+    });
+  } catch (notifErr) {
+    console.warn("Could not send talent invitation notification:", notifErr);
   }
 
   return { success: true };

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { logActivity } from "@/lib/services/activity";
+import { createNotification } from "@/lib/services/notifications";
 
 export interface ProposalItem {
   id: string;
@@ -153,6 +154,40 @@ export async function submitProposal(params: {
     bid_amount: params.bidAmount,
     xp_earned: 100,
   });
+
+  // Trigger in-app notification for the project owner
+  try {
+    const { data: projData } = await supabase
+      .from("projects")
+      .select("owner_id, title")
+      .eq("id", params.projectId)
+      .maybeSingle();
+
+    if (projData?.owner_id && projData.owner_id !== targetFreelancerId) {
+      const { data: senderUser } = await supabase
+        .from("users")
+        .select("full_name, avatar_url")
+        .eq("id", targetFreelancerId)
+        .maybeSingle();
+
+      const senderName = senderUser?.full_name || "Freelancer";
+      const projectTitle = projData.title || "Proyek Anda";
+
+      await createNotification({
+        userId: projData.owner_id,
+        type: "proposal",
+        title: "Proposal Baru Masuk! 📄",
+        message: `${senderName} mengajukan penawaran ${bidDisplay} pada proyek '${projectTitle}'.`,
+        linkUrl: `/client/projects/${params.projectId}`,
+        referenceType: "proposal",
+        referenceId: data?.id,
+        avatar: senderUser?.avatar_url || undefined,
+        roleTarget: "customer",
+      });
+    }
+  } catch (notifErr) {
+    console.warn("Could not send proposal notification:", notifErr);
+  }
 
   return { success: true, data };
 }
@@ -320,6 +355,28 @@ export async function acceptProposal(params: {
       status: "in_progress",
       sort_order: 1,
     });
+  }
+
+  // Trigger in-app notification for the hired freelancer
+  try {
+    const { data: projInfo } = await supabase
+      .from("projects")
+      .select("title")
+      .eq("id", params.projectId)
+      .maybeSingle();
+
+    await createNotification({
+      userId: params.freelancerId,
+      type: "contract",
+      title: "Proposal Diterima & Kontrak Dimulai! 🎉",
+      message: `Selamat! Proposal Anda untuk proyek '${projInfo?.title || "Proyek"}' telah disetujui klien. Kontrak kerja telah aktif.`,
+      linkUrl: "/freelancer/my-work",
+      referenceType: "contract",
+      referenceId: contract.id,
+      roleTarget: "freelancer",
+    });
+  } catch (notifErr) {
+    console.warn("Could not send contract notification:", notifErr);
   }
 
   return { success: true, contractId: contract.id };

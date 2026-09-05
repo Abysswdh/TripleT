@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { logActivity } from "@/lib/services/activity";
+import { createNotification } from "@/lib/services/notifications";
 
 export interface ContractMilestoneItem {
   id: string;
@@ -181,6 +182,32 @@ export async function submitMilestoneDeliverable(params: {
     milestone_id: params.milestoneId || targetId,
     xp_earned: 150,
   });
+
+  // 5. Trigger notification for client to review deliverable
+  if (params.projectId) {
+    try {
+      const { data: proj } = await supabase
+        .from("projects")
+        .select("owner_id, title")
+        .eq("id", params.projectId)
+        .maybeSingle();
+
+      if (proj?.owner_id) {
+        await createNotification({
+          userId: proj.owner_id,
+          type: "milestone",
+          title: "Hasil Karya Milestone Dikirim 🚀",
+          message: `Freelancer telah menyerahkan hasil karya untuk proyek '${proj.title || "Proyek"}'. Silakan tinjau dan verifikasi deliverable.`,
+          linkUrl: `/client/projects/${params.projectId}`,
+          referenceType: "milestone",
+          referenceId: params.milestoneId || targetId,
+          roleTarget: "customer",
+        });
+      }
+    } catch (notifErr) {
+      console.warn("Could not send milestone deliverable notification:", notifErr);
+    }
+  }
 
   return { success: true };
 }
@@ -369,6 +396,31 @@ export async function approveMilestone(params: {
     content: `[HASIL KARYA DISETUJUI]: Klien telah menyetujui hasil karya milestone ini dan dana escrow sebesar Rp ${params.amount.toLocaleString("id-ID")} telah dicairkan ke saldo freelancer.`,
   });
 
+  // 7. Trigger notification for freelancer
+  try {
+    const { data: proj } = await supabase
+      .from("projects")
+      .select("title, freelancer_id")
+      .eq("id", params.projectId)
+      .maybeSingle();
+
+    const targetFreelancerId = proj?.freelancer_id;
+    if (targetFreelancerId) {
+      await createNotification({
+        userId: targetFreelancerId,
+        type: "payment",
+        title: "Milestone Disetujui & Pembayaran Cair! 💰",
+        message: `Milestone proyek '${proj.title || "Proyek"}' telah disetujui! Dana sebesar Rp ${params.amount.toLocaleString("id-ID")} telah masuk ke saldo Anda.`,
+        linkUrl: "/freelancer/earnings",
+        referenceType: "milestone",
+        referenceId: params.milestoneId,
+        roleTarget: "freelancer",
+      });
+    }
+  } catch (notifErr) {
+    console.warn("Could not send milestone approval notification:", notifErr);
+  }
+
   return { success: true };
 }
 
@@ -410,6 +462,30 @@ export async function requestMilestoneRevision(params: {
     role: "client",
     content: `[PERMINTAAN REVISI]: ${params.note}`,
   });
+
+  // 4. Trigger notification for freelancer
+  try {
+    const { data: proj } = await supabase
+      .from("projects")
+      .select("freelancer_id, title")
+      .eq("id", params.projectId)
+      .maybeSingle();
+
+    if (proj?.freelancer_id) {
+      await createNotification({
+        userId: proj.freelancer_id,
+        type: "milestone",
+        title: "Permintaan Revisi Milestone 📝",
+        message: `Klien meminta revisi pada milestone proyek '${proj.title || "Proyek"}': "${params.note}".`,
+        linkUrl: "/freelancer/my-work",
+        referenceType: "milestone",
+        referenceId: params.milestoneId,
+        roleTarget: "freelancer",
+      });
+    }
+  } catch (notifErr) {
+    console.warn("Could not send milestone revision notification:", notifErr);
+  }
 
   return { success: true };
 }

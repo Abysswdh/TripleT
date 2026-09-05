@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { createNotification } from "@/lib/services/notifications";
 
 export interface ReviewRecord {
   id: string;
@@ -114,7 +115,32 @@ export async function submitContractReview(
       }
     }
 
-    // 3. Dispatch global event so active profile/dashboard views re-sync
+    // 3. Trigger notification for reviewee
+    try {
+      const supabase = createClient();
+      const { data: revUser } = await supabase
+        .from("users")
+        .select("full_name, avatar_url")
+        .eq("id", params.reviewerId)
+        .maybeSingle();
+
+      const reviewerName = revUser?.full_name || "Klien";
+      await createNotification({
+        userId: params.revieweeId,
+        type: "review",
+        title: "Ulasan Baru Diterima ⭐",
+        message: `${reviewerName} memberikan ulasan bintang ${cleanRating} untuk hasil kerja Anda.`,
+        linkUrl: "/freelancer/profile",
+        referenceType: "review",
+        referenceId: savedReview?.id,
+        avatar: revUser?.avatar_url || undefined,
+        roleTarget: "freelancer",
+      });
+    } catch (notifErr) {
+      console.warn("Could not send review notification:", notifErr);
+    }
+
+    // 4. Dispatch global event so active profile/dashboard views re-sync
     if (typeof window !== "undefined") {
       window.dispatchEvent(
         new CustomEvent("review-submitted", {

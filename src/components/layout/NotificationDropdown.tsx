@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   Bell,
@@ -11,23 +11,60 @@ import {
   Trophy,
   Sparkles,
   Trash2,
+  FileCheck,
+  Star,
+  MessageSquare,
+  CheckCheck,
+  X,
+  Loader2,
 } from "lucide-react";
 import {
   getNotifications,
   markNotificationAsRead,
   markAllNotificationsAsRead,
+  deleteNotification,
   clearAllNotifications,
+  subscribeToNotifications,
   type AppNotification,
   type NotificationType,
 } from "@/lib/services/notifications";
 import { useDashboardRole } from "@/context/role-context";
+import { useAuth } from "@/hooks/use-auth";
+
+// Simple Web Audio API synthesizer for clean notification chime
+function playNotificationChime() {
+  if (typeof window === "undefined") return;
+  try {
+    const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const ctx = new AudioContextClass();
+    const now = ctx.currentTime;
+
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = "sine";
+    osc1.frequency.setValueAtTime(587.33, now); // D5
+    osc1.frequency.exponentialRampToValueAtTime(880, now + 0.15); // A5
+    gain1.gain.setValueAtTime(0.08, now);
+    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.start(now);
+    osc1.stop(now + 0.35);
+  } catch {
+    // Audio playback not permitted or user didn't interact yet
+  }
+}
 
 export function NotificationDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState<"all" | "unread">("all");
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const { user } = useAuth();
 
   let role = "customer";
   try {
@@ -37,10 +74,16 @@ export function NotificationDropdown() {
     // Graceful fallback
   }
 
-  const loadNotifs = () => {
-    const data = getNotifications(role as "customer" | "freelancer");
-    setNotifications(data);
-  };
+  const loadNotifs = useCallback(async () => {
+    try {
+      const data = await getNotifications(role as "customer" | "freelancer", user?.id);
+      setNotifications(data);
+    } catch (err) {
+      console.warn("Failed to load notifications:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [role, user?.id]);
 
   useEffect(() => {
     loadNotifs();
@@ -51,11 +94,31 @@ export function NotificationDropdown() {
 
     window.addEventListener("notification-updated", handleUpdate);
     window.addEventListener("quiz-completed", handleUpdate);
+    window.addEventListener("payment-completed", handleUpdate);
+
     return () => {
       window.removeEventListener("notification-updated", handleUpdate);
       window.removeEventListener("quiz-completed", handleUpdate);
+      window.removeEventListener("payment-completed", handleUpdate);
     };
-  }, [role]);
+  }, [loadNotifs]);
+
+  // Realtime Supabase Subscription
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const unsubscribe = subscribeToNotifications(user.id, (newNotif) => {
+      setNotifications((prev) => {
+        if (prev.some((n) => n.id === newNotif.id)) return prev;
+        return [newNotif, ...prev];
+      });
+      playNotificationChime();
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [user?.id]);
 
   // Click outside listener
   useEffect(() => {
@@ -79,12 +142,32 @@ export function NotificationDropdown() {
     return true;
   });
 
-  const handleNotificationClick = (notif: AppNotification) => {
-    markNotificationAsRead(notif.id);
+  const handleNotificationClick = async (notif: AppNotification) => {
+    // Optimistic UI update
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === notif.id ? { ...n, read: true } : n))
+    );
+    await markNotificationAsRead(notif.id);
     setIsOpen(false);
     if (notif.linkUrl) {
       router.push(notif.linkUrl);
     }
+  };
+
+  const handleMarkAllRead = async () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    await markAllNotificationsAsRead(user?.id);
+  };
+
+  const handleDeleteItem = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+    await deleteNotification(id);
+  };
+
+  const handleClearAll = async () => {
+    setNotifications([]);
+    await clearAllNotifications(user?.id);
   };
 
   const getIconForType = (type: NotificationType) => {
@@ -99,6 +182,12 @@ export function NotificationDropdown() {
         return <Mail className="h-4 w-4 text-purple-500" />;
       case "badge":
         return <Trophy className="h-4 w-4 text-amber-500" />;
+      case "contract":
+        return <FileCheck className="h-4 w-4 text-indigo-500" />;
+      case "review":
+        return <Star className="h-4 w-4 text-amber-400 fill-amber-400" />;
+      case "chat":
+        return <MessageSquare className="h-4 w-4 text-sky-500" />;
       case "system":
       default:
         return <Sparkles className="h-4 w-4 text-primary" />;
@@ -131,9 +220,13 @@ export function NotificationDropdown() {
           <div className="flex items-center justify-between border-b border-border/50 pb-3 mb-3">
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-bold text-foreground">Notifikasi</h3>
-              {unreadCount > 0 && (
+              {unreadCount > 0 ? (
                 <span className="rounded-full bg-primary/10 text-primary text-[10px] font-bold px-2 py-0.5">
                   {unreadCount} baru
+                </span>
+              ) : (
+                <span className="rounded-full bg-emerald-500/10 text-emerald-500 text-[10px] font-bold px-2 py-0.5">
+                  Semua terbaca
                 </span>
               )}
             </div>
@@ -141,10 +234,12 @@ export function NotificationDropdown() {
             <div className="flex items-center gap-1.5">
               {unreadCount > 0 && (
                 <button
-                  onClick={() => markAllNotificationsAsRead()}
-                  className="text-[11px] font-semibold text-primary hover:text-primary/80 transition-colors px-2 py-1 rounded-lg hover:bg-primary/10"
+                  type="button"
+                  onClick={handleMarkAllRead}
+                  className="text-[11px] font-semibold text-primary hover:text-primary/80 transition-colors px-2 py-1 rounded-lg hover:bg-primary/10 flex items-center gap-1"
                 >
-                  Tandai Dibaca
+                  <CheckCheck className="h-3 w-3" />
+                  <span>Tandai Dibaca</span>
                 </button>
               )}
             </div>
@@ -153,6 +248,7 @@ export function NotificationDropdown() {
           {/* Filter Tabs */}
           <div className="flex items-center gap-1.5 mb-3">
             <button
+              type="button"
               onClick={() => setActiveFilter("all")}
               className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors ${
                 activeFilter === "all"
@@ -163,6 +259,7 @@ export function NotificationDropdown() {
               Semua ({notifications.length})
             </button>
             <button
+              type="button"
               onClick={() => setActiveFilter("unread")}
               className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors ${
                 activeFilter === "unread"
@@ -176,14 +273,19 @@ export function NotificationDropdown() {
 
           {/* Notification List */}
           <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
-            {filteredNotifications.length === 0 ? (
+            {isLoading ? (
+              <div className="py-8 text-center space-y-2">
+                <Loader2 className="h-6 w-6 text-primary animate-spin mx-auto" />
+                <p className="text-xs text-muted-foreground">Memuat notifikasi...</p>
+              </div>
+            ) : filteredNotifications.length === 0 ? (
               <div className="py-8 text-center space-y-2">
                 <Bell className="h-8 w-8 text-muted-foreground/40 mx-auto" />
                 <p className="text-xs font-semibold text-muted-foreground">
-                  {activeFilter === "unread" ? "Tidak ada notifikasi baru" : "Belum ada aktivitas"}
+                  {activeFilter === "unread" ? "Tidak ada notifikasi baru" : "Belum ada notifikasi"}
                 </p>
                 <p className="text-[11px] text-muted-foreground/70">
-                  Aktivitas proyek, pembayaran, dan pencapaian akan muncul di sini.
+                  Aktivitas proposal, kontrak, milestone, dan pembayaran akan muncul di sini secara real-time.
                 </p>
               </div>
             ) : (
@@ -225,6 +327,16 @@ export function NotificationDropdown() {
                       {item.message}
                     </p>
                   </div>
+
+                  {/* Delete individual notification button */}
+                  <button
+                    type="button"
+                    title="Hapus notifikasi ini"
+                    onClick={(e) => handleDeleteItem(e, item.id)}
+                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-destructive/10 hover:text-destructive text-muted-foreground rounded-lg transition-opacity"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
                 </div>
               ))
             )}
@@ -234,13 +346,14 @@ export function NotificationDropdown() {
           {notifications.length > 0 && (
             <div className="pt-3 mt-2 border-t border-border/50 flex items-center justify-between text-xs">
               <button
-                onClick={() => clearAllNotifications()}
+                type="button"
+                onClick={handleClearAll}
                 className="text-[11px] text-muted-foreground hover:text-destructive flex items-center gap-1 transition-colors"
               >
                 <Trash2 className="h-3 w-3" />
-                <span>Hapus Riwayat</span>
+                <span>Hapus Semua Riwayat</span>
               </button>
-              <span className="text-[10px] text-muted-foreground">Doable! Notifications</span>
+              <span className="text-[10px] text-muted-foreground">Doable Realtime</span>
             </div>
           )}
         </div>
