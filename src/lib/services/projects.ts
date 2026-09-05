@@ -51,6 +51,10 @@ export interface ProjectRecord {
     avatarUrl?: string;
     location?: string;
     isVerified?: boolean;
+    companyName?: string;
+    industry?: string;
+    companySize?: string;
+    clientType?: string;
   };
   freelancer?: {
     id: string;
@@ -75,7 +79,14 @@ export async function getOpenProjects(): Promise<ProjectRecord[]> {
     .from("projects")
     .select(`
       *,
-      owner:users!owner_id(id, full_name, avatar_url, location, is_verified),
+      owner:users!owner_id(
+        id,
+        full_name,
+        avatar_url,
+        location,
+        is_verified,
+        client_profile:client_profiles(company_name, company_size, industry, client_type)
+      ),
       milestones(*),
       project_tasks(*)
     `)
@@ -137,7 +148,14 @@ export async function getProjectById(projectId: string): Promise<ProjectRecord |
       .from("projects")
       .select(`
         *,
-        owner:users!owner_id(id, full_name, avatar_url, location, is_verified),
+        owner:users!owner_id(
+          id,
+          full_name,
+          avatar_url,
+          location,
+          is_verified,
+          client_profile:client_profiles(company_name, company_size, industry, client_type)
+        ),
         freelancer:users!freelancer_id(
           id,
           full_name,
@@ -277,13 +295,38 @@ function formatProjectRecord(p: any): ProjectRecord {
     milestones,
     tasks,
     owner: p.owner
-      ? {
-          id: p.owner.id,
-          fullName: p.owner.full_name || "Klien Doable!",
-          avatarUrl: p.owner.avatar_url,
-          location: p.owner.location,
-          isVerified: Boolean(p.owner.is_verified),
-        }
+      ? (() => {
+          const isOldStock = (url?: string | null) =>
+            !url ||
+            url.includes("photo-1534528741775") ||
+            url.includes("photo-1472099645785") ||
+            url.includes("photo-1557804506");
+
+          const rawCp = Array.isArray(p.owner.client_profile)
+            ? p.owner.client_profile[0]
+            : p.owner.client_profile;
+
+          const rawAvatar = p.owner.avatar_url;
+          const cleanAvatar =
+            rawAvatar &&
+            !isOldStock(rawAvatar) &&
+            typeof rawAvatar === "string" &&
+            (rawAvatar.startsWith("http") || rawAvatar.startsWith("/"))
+              ? rawAvatar
+              : undefined;
+
+          return {
+            id: p.owner.id,
+            fullName: p.owner.full_name || "Klien Doable!",
+            avatarUrl: cleanAvatar,
+            location: p.owner.location || "Indonesia",
+            isVerified: Boolean(p.owner.is_verified),
+            companyName: rawCp?.company_name || p.owner.full_name,
+            industry: rawCp?.industry || "Teknologi & Bisnis",
+            companySize: rawCp?.company_size || "1-10 Karyawan",
+            clientType: rawCp?.client_type || "Startup",
+          };
+        })()
       : undefined,
     freelancer,
   };

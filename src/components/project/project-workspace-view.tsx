@@ -6,6 +6,8 @@ import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import {
   ArrowLeft,
+  ArrowRight,
+  Building2,
   Clock,
   ShieldCheck,
   CheckCircle2,
@@ -2156,33 +2158,85 @@ export function ProjectWorkspaceView() {
               ) : (
                 /* Freelancer view: Show Client info & Career Impact */
                 <>
-                  <div className="rounded-2xl border border-border/60 bg-card p-4 space-y-3">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                      Klien (Pemberi Kerja)
-                    </p>
+                  <div className="rounded-2xl border border-border/60 bg-card p-4 space-y-3 shadow-2xs">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                        Klien (Pemberi Kerja)
+                      </p>
+                      {project.owner?.id && (
+                        <Link
+                          href={`/client/profile/${project.owner.id}`}
+                          className="text-[10px] font-semibold text-primary hover:underline flex items-center gap-0.5"
+                        >
+                          <span>Profil</span>
+                          <ArrowRight className="h-3 w-3" />
+                        </Link>
+                      )}
+                    </div>
+
                     <div className="flex items-center gap-3">
-                      <img
-                        src={
-                          project.owner?.avatarUrl ||
-                          "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80"
-                        }
-                        alt={project.owner?.fullName || "Klien"}
-                        className="h-10 w-10 rounded-full object-cover border border-border shrink-0"
-                      />
-                      <div>
-                        <p className="text-xs font-bold text-foreground">
-                          {project.owner?.fullName || "Klien Doable!"}
-                        </p>
+                      {project.owner?.avatarUrl ? (
+                        <img
+                          src={project.owner.avatarUrl}
+                          alt={project.owner.fullName || "Klien"}
+                          className="h-10 w-10 rounded-full object-cover border border-border shrink-0"
+                        />
+                      ) : (
+                        <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-primary to-indigo-600 text-white font-black text-sm flex items-center justify-center shadow-xs border border-primary/20 shrink-0">
+                          {(project.owner?.fullName || "K").charAt(0).toUpperCase()}
+                        </div>
+                      )}
+
+                      <div className="min-w-0 flex-1">
+                        {project.owner?.id ? (
+                          <Link
+                            href={`/client/profile/${project.owner.id}`}
+                            className="text-xs font-bold text-foreground hover:text-primary transition-colors block truncate"
+                          >
+                            {project.owner.fullName || "Klien Doable!"}
+                          </Link>
+                        ) : (
+                          <p className="text-xs font-bold text-foreground truncate">
+                            {project.owner?.fullName || "Klien Doable!"}
+                          </p>
+                        )}
+
                         {project.owner?.isVerified && (
-                          <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
+                          <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1 mt-0.5">
                             <ShieldCheck className="h-3 w-3" /> Klien Terverifikasi
                           </span>
                         )}
-                        <p className="text-[10px] text-muted-foreground mt-0.5">
+
+                        <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
+                          {project.owner?.industry ? `${project.owner.industry} • ` : ""}
                           {project.owner?.location || "Indonesia"}
                         </p>
                       </div>
                     </div>
+
+                    {project.owner?.id && (
+                      <div className="pt-1 flex gap-2">
+                        <Link
+                          href={`/client/profile/${project.owner.id}`}
+                          className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-border/80 bg-muted/40 hover:bg-muted px-2.5 py-1.5 text-[11px] font-semibold text-foreground hover:text-primary transition-colors"
+                        >
+                          <span>Lihat Profil Klien</span>
+                          <ExternalLink className="h-3 w-3" />
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const firstMs = milestones[0]?.id;
+                            if (firstMs) setExpandedMilestoneId(firstMs);
+                            window.scrollTo({ top: 400, behavior: "smooth" });
+                          }}
+                          className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 px-3 py-1.5 text-[11px] font-bold transition-all cursor-pointer"
+                        >
+                          <MessageSquare className="h-3 w-3" />
+                          <span>Diskusi</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   <div className="rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-500/5 to-card p-4 space-y-3">

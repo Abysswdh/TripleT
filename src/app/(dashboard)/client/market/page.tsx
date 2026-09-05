@@ -42,7 +42,6 @@ interface MarketProject {
   category: string;
   budget: string;
   rawBudget: number;
-  budgetType: "Fixed Scope" | "Milestone Scope";
   timeline: string;
   status: "Menerima Proposal" | "Sedang Dikerjakan" | "Selesai (Blueprint)";
   difficulty: "Starter" | "Standard" | "Enterprise";
@@ -151,7 +150,6 @@ function ProjectMarketContent() {
           category: p.category || "Desain & Branding",
           budget: p.budget,
           rawBudget: p.budgetNumeric,
-          budgetType: "Fixed Scope",
           timeline: p.dueDate,
           status: p.status === "Completed" ? "Selesai (Blueprint)" : p.status === "In Progress" ? "Sedang Dikerjakan" : "Menerima Proposal",
           difficulty: p.difficulty,
@@ -545,12 +543,12 @@ function ProjectMarketContent() {
                   <p className="text-sm font-bold text-foreground mt-0.5">{formatMoney(activeProject.rawBudget)}</p>
                 </div>
                 <div className="rounded-xl border border-border/60 bg-muted/20 p-3">
-                  <p className="text-[11px] text-muted-foreground">Model Kontrak</p>
-                  <p className="text-sm font-bold text-foreground mt-0.5">{activeProject.budgetType}</p>
-                </div>
-                <div className="rounded-xl border border-border/60 bg-muted/20 p-3">
                   <p className="text-[11px] text-muted-foreground">Target Durasi</p>
                   <p className="text-sm font-bold text-foreground mt-0.5">{activeProject.timeline}</p>
+                </div>
+                <div className="rounded-xl border border-border/60 bg-muted/20 p-3">
+                  <p className="text-[11px] text-muted-foreground">Total Pelamar</p>
+                  <p className="text-sm font-bold text-foreground mt-0.5">{activeProject.proposalsCount} Proposal</p>
                 </div>
                 <div className="rounded-xl border border-border/60 bg-muted/20 p-3">
                   <p className="text-[11px] text-muted-foreground">Tingkat Kesulitan</p>

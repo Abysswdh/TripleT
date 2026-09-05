@@ -607,13 +607,15 @@ export function FreelancerProfileView({
           isFeatured?: boolean;
         }> = [];
 
-        if (isValidUuid(targetUserId)) {
+        const actualUserId = (userData?.id as string) || (profileData?.user_id as string) || (isValidUuid(targetUserId) ? targetUserId : "");
+
+        if (actualUserId && isValidUuid(actualUserId)) {
           try {
-            const targetFreelancerId = profileData?.id || userData?.id || targetUserId;
             const { data: portData } = await supabase
               .from("portfolio_projects")
               .select("*")
-              .or(`freelancer_id.eq.${targetFreelancerId},freelancer_id.eq.${targetUserId}`);
+              .eq("user_id", actualUserId)
+              .order("created_at", { ascending: false });
 
             if (portData && Array.isArray(portData)) {
               mappedPortfolio = portData.map((p) => ({
@@ -622,7 +624,8 @@ export function FreelancerProfileView({
                 category: String(p.category || "PROJECT"),
                 description: String(p.description || ""),
                 image: String(p.image_url || "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop&q=80"),
-                tags: (p.technologies as string[]) || ["TECH"]
+                tags: Array.isArray(p.tags) && p.tags.length > 0 ? (p.tags as string[]) : ["PORTFOLIO"],
+                isFeatured: Boolean(p.is_featured),
               }));
             }
           } catch (e) {
@@ -648,13 +651,21 @@ export function FreelancerProfileView({
           reviewComment?: string;
         }> = [];
 
-        if (isValidUuid(targetUserId)) {
+        const candidateFreelancerIds = Array.from(
+          new Set(
+            [actualUserId, targetUserId, profileData?.id as string, userData?.id as string].filter(
+              (id): id is string => Boolean(id && isValidUuid(id))
+            )
+          )
+        );
+
+        if (candidateFreelancerIds.length > 0) {
           try {
-            const targetFreelancerId = profileData?.id || userData?.id || targetUserId;
+            const orClause = candidateFreelancerIds.map((id) => `freelancer_id.eq.${id}`).join(",");
             const { count: completedCount, data: completedContracts } = await supabase
               .from("contracts")
               .select("id, project_id, status, total_amount, amount_display, completed_at, created_at, projects(*), reviews(*)", { count: "exact" })
-              .or(`freelancer_id.eq.${targetUserId},freelancer_id.eq.${targetFreelancerId}`)
+              .or(orClause)
               .eq("status", "completed")
               .order("completed_at", { ascending: false });
 
@@ -706,9 +717,12 @@ export function FreelancerProfileView({
             }
 
             // Sync streak heatmap data directly
-            fetchHeatmapData(targetUserId).then((data) => {
-              if (data) setHeatmapData(data);
-            });
+            const heatmapTargetId = actualUserId || targetUserId;
+            if (heatmapTargetId) {
+              fetchHeatmapData(heatmapTargetId).then((data) => {
+                if (data) setHeatmapData(data);
+              });
+            }
           } catch (e) {
             console.warn("Could not query live completed contracts for profile:", e);
           }
@@ -775,7 +789,8 @@ export function FreelancerProfileView({
           const finalRatingNum = Number(fp.rating) > 0 ? Number(fp.rating) : liveAvgRating;
 
           // Self-heal DB row if out of sync
-          if (isValidUuid(targetUserId)) {
+          const dbTargetUserId = actualUserId || targetUserId;
+          if (isValidUuid(dbTargetUserId)) {
             const needProjectsUpdate = finalCompletedProjects > (Number(fp.completed_projects) || 0);
             const needEarningsUpdate = totalEarningsNum > (Number(fp.total_earnings) || 0);
             const needReviewsUpdate = finalReviewsCount > (Number(fp.reviews_count) || 0);
@@ -787,8 +802,36 @@ export function FreelancerProfileView({
                   ...(needEarningsUpdate ? { total_earnings: totalEarningsNum } : {}),
                   ...(needReviewsUpdate ? { reviews_count: finalReviewsCount, rating: finalRatingNum } : {}),
                 })
-                .eq("user_id", targetUserId)
+                .eq("user_id", dbTargetUserId)
                 .then(() => {});
+            }
+
+            // If owner viewing profile, sync any missing links from auth metadata to DB
+            if (isOwner) {
+              const metaGithub = meta.github_url ? String(meta.github_url).trim() : "";
+              const metaLinkedin = meta.linkedin_url ? String(meta.linkedin_url).trim() : "";
+              const metaPortfolio = meta.portfolio_url ? String(meta.portfolio_url).trim() : "";
+
+              const dbGithub = (fp.github_url as string) || "";
+              const dbLinkedin = (fp.linkedin_url as string) || "";
+              const dbPortfolio = (fp.portfolio_url as string) || "";
+
+              const shouldSyncGithub = metaGithub && !dbGithub;
+              const shouldSyncLinkedin = metaLinkedin && !dbLinkedin;
+              const shouldSyncPortfolio = metaPortfolio && !dbPortfolio;
+
+              if (shouldSyncGithub || shouldSyncLinkedin || shouldSyncPortfolio) {
+                supabase
+                  .from("freelancer_profiles")
+                  .update({
+                    ...(shouldSyncGithub ? { github_url: metaGithub } : {}),
+                    ...(shouldSyncLinkedin ? { linkedin_url: metaLinkedin } : {}),
+                    ...(shouldSyncPortfolio ? { portfolio_url: metaPortfolio } : {}),
+                    updated_at: new Date().toISOString(),
+                  })
+                  .eq("user_id", dbTargetUserId)
+                  .then(() => {});
+              }
             }
           }
 
@@ -832,7 +875,7 @@ export function FreelancerProfileView({
           const finalRating = hasValidRating ? finalRatingNum.toFixed(1) : "-";
 
           setLiveProfile({
-            id: targetUserId,
+            id: actualUserId || targetUserId,
             name: displayName,
             avatar: displayAvatar,
             coverImage: displayBanner,
@@ -998,7 +1041,11 @@ export function FreelancerProfileView({
 
   const handleCopyLink = () => {
     if (typeof window !== "undefined") {
-      navigator.clipboard.writeText(window.location.href);
+      const shareableId = profile.id || targetUserId || user?.id || "";
+      const shareUrl = shareableId && shareableId !== "tal-1"
+        ? `${window.location.origin}/client/talent/${shareableId}`
+        : window.location.href;
+      navigator.clipboard.writeText(shareUrl);
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2000);
     }
@@ -1244,7 +1291,7 @@ export function FreelancerProfileView({
             </div>
 
             {/* 4. Tautan Portofolio */}
-            <div className="rounded-3xl border border-border/80 bg-card p-6 shadow-sm space-y-4">
+            <div id="portfolio-links" className="rounded-3xl border border-border/80 bg-card p-6 shadow-sm space-y-4">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2 min-w-0">
                   <LinkIcon className="h-4 w-4 text-primary shrink-0" />
@@ -1422,7 +1469,7 @@ export function FreelancerProfileView({
             />
 
             {/* 3. Recent Projects Portfolio */}
-            <div className="space-y-4">
+            <div id="portfolio-section" className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-base font-bold text-foreground">Recent Projects</h2>
                 {isOwner ? (
@@ -1438,9 +1485,9 @@ export function FreelancerProfileView({
                   <button
                     onClick={() => {
                       const el = document.getElementById("portfolio-section");
-                      el?.scrollIntoView({ behavior: "smooth" });
+                      el?.scrollIntoView({ behavior: "smooth", block: "start" });
                     }}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-border/70 bg-card hover:bg-muted text-xs font-semibold text-foreground hover:text-primary transition-all shadow-2xs group"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-border/70 bg-card hover:bg-muted text-xs font-semibold text-foreground hover:text-primary transition-all shadow-2xs group cursor-pointer"
                   >
                     <FolderGit2 className="h-3.5 w-3.5 text-primary group-hover:scale-110 transition-transform" />
                     <span>Lihat Portofolio</span>
@@ -1524,7 +1571,9 @@ export function FreelancerProfileView({
                   <div className="space-y-1">
                     <h3 className="text-sm font-bold text-foreground">Belum Ada Proyek Selesai</h3>
                     <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                      Proyek yang telah kamu selesaikan dari tawaran klien atau ditambahkan ke portofolio akan muncul di sini.
+                      {isOwner
+                        ? "Proyek yang telah kamu selesaikan dari tawaran klien atau ditambahkan ke portofolio akan muncul di sini."
+                        : "Freelancer ini belum menambahkan proyek portofolio atau menyelesaikan kontrak di platform TripleT."}
                     </p>
                   </div>
                   {isOwner && (

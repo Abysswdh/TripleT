@@ -580,7 +580,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
           );
 
           // 2. Freelancer profile upsert
-          if (currentRole === "freelancer" || selectedSkills.length > 0 || startingPrice) {
+          if (currentRole === "freelancer" || selectedSkills.length > 0 || startingPrice || githubUrl || linkedinUrl || portfolioUrl) {
             await supabase.from("freelancer_profiles").upsert(
               {
                 user_id: user.id,
