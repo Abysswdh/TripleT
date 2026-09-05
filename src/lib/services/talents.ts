@@ -6,6 +6,7 @@ export interface TalentFilterOptions {
   level?: string;
   rateTier?: string;
   sortBy?: "rating" | "reviews" | "rate_asc" | "rate_desc" | "name";
+  excludeUserId?: string;
 }
 
 export interface TalentRecord {
@@ -41,6 +42,18 @@ export interface TalentRecord {
 export async function getTalents(filters?: TalentFilterOptions): Promise<TalentRecord[]> {
   const supabase = createClient();
 
+  let excludeUserId = filters?.excludeUserId;
+  if (!excludeUserId) {
+    try {
+      const { data: authData } = await supabase.auth.getUser();
+      if (authData?.user?.id) {
+        excludeUserId = authData.user.id;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
   let query = supabase
     .from("freelancer_profiles")
     .select(`
@@ -73,6 +86,10 @@ export async function getTalents(filters?: TalentFilterOptions): Promise<TalentR
     }
     const uid = user.id || item.user_id;
     if (!uid || seenUserIds.has(uid)) {
+      return false;
+    }
+    // Never show current logged in user in talent search
+    if (excludeUserId && (uid === excludeUserId || item.user_id === excludeUserId || item.id === excludeUserId)) {
       return false;
     }
     seenUserIds.add(uid);
@@ -176,6 +193,9 @@ export async function inviteTalentToProject(params: {
   const { data: { user } } = await supabase.auth.getUser();
 
   const clientId = user?.id || "ca000000-0000-0000-0000-000000000001";
+  if (user?.id && params.freelancerId === user.id) {
+    return { success: false, error: "Anda tidak dapat mengundang diri sendiri ke proyek." };
+  }
 
   const { error } = await supabase.from("talent_invitations").insert({
     project_id: params.projectId,

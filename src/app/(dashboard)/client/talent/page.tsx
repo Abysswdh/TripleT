@@ -12,6 +12,7 @@ import { useCurrency } from "@/context/currency-context";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import { createClient } from "@/lib/supabase/client";
 import { matchCategory, DEFAULT_CLIENT_CATEGORIES } from "@/lib/constants/categories";
+import { useAuth } from "@/hooks/use-auth";
 
 function ClientTalentContent() {
   const [mounted, setMounted] = useState(false);
@@ -34,6 +35,7 @@ function ClientTalentContent() {
   const [isSubmittingInvite, setIsSubmittingInvite] = useState(false);
   const { t, locale } = useTranslation();
   const { formatMoney } = useCurrency();
+  const { user } = useAuth();
 
   useEffect(() => {
     setMounted(true);
@@ -48,7 +50,7 @@ function ClientTalentContent() {
 
     async function loadData() {
       const [talentData, projData] = await Promise.all([
-        getTalents(),
+        getTalents({ excludeUserId: user?.id }),
         getClientProjects()
       ]);
       if (talentData && talentData.length > 0) {
@@ -105,6 +107,11 @@ function ClientTalentContent() {
   const filtered = useMemo(() => {
     return talents
       .filter((talent) => {
+        // Exclude current logged in client/user from candidate talents (cannot hire yourself)
+        if (user?.id && (talent.userId === user.id || talent.id === user.id)) {
+          return false;
+        }
+
         // 1. Search Query
         const q = searchQuery.toLowerCase();
         const matchesSearch =
@@ -143,7 +150,7 @@ function ClientTalentContent() {
         if (sortBy === "name") return a.name.localeCompare(b.name);
         return b.rating - a.rating; // default highest rating
       });
-  }, [talents, searchQuery, selectedCategory, selectedLevel, selectedRateTier, sortBy]);
+  }, [talents, searchQuery, selectedCategory, selectedLevel, selectedRateTier, sortBy, user?.id]);
 
   const handleSendInvite = async (e: React.FormEvent) => {
     e.preventDefault();

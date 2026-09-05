@@ -43,7 +43,15 @@ export default function RegisterPage() {
       await signUp(email, password, fullName);
       setSuccess(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Registration failed");
+      if (err instanceof Error) {
+        if (err.message.toLowerCase().includes("failed to fetch")) {
+          setError("Gagal terhubung ke Supabase (Failed to fetch). Pastikan Environment Variables sudah ditambahkan di Vercel Dashboard dan proyek sudah di-redeploy.");
+        } else {
+          setError(err.message);
+        }
+      } else {
+        setError("Pendaftaran gagal.");
+      }
     } finally {
       setLoading(false);
     }

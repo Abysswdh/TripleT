@@ -34,7 +34,15 @@ export default function LoginPage() {
     try {
       await signIn(email, password);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Invalid email or password");
+      if (err instanceof Error) {
+        if (err.message.toLowerCase().includes("failed to fetch")) {
+          setError("Gagal terhubung ke Supabase (Failed to fetch). Pastikan Environment Variables (NEXT_PUBLIC_SUPABASE_URL & NEXT_PUBLIC_SUPABASE_ANON_KEY) sudah ditambahkan di Vercel Dashboard dan proyek sudah di-redeploy.");
+        } else {
+          setError(err.message);
+        }
+      } else {
+        setError("Email atau kata sandi tidak valid.");
+      }
     } finally {
       setLoading(false);
     }

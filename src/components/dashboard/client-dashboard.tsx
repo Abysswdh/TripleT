@@ -236,8 +236,8 @@ export function ClientDashboard() {
           }
         }
 
-        // 2. Load Talents
-        const liveTalents = await getTalents();
+        // 2. Load Talents (Exclude current logged-in client from talent recommendations)
+        const liveTalents = await getTalents({ excludeUserId: user?.id });
         if (liveTalents && liveTalents.length > 0) {
           setFeaturedTalents(
             liveTalents.map((t) => ({

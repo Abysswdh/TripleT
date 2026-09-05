@@ -1054,6 +1054,7 @@ export function FreelancerProfileView({
   const featuredProject = profile.recentProjects.find((p) => p.isFeatured) || profile.recentProjects[0];
   const otherProjects = profile.recentProjects.filter((p) => p.id !== featuredProject?.id);
 
+  const isSelf = Boolean(user?.id && (user.id === targetUserId || user.id === profile.id));
   const isStandaloneProfile = pathname === "/freelancer/profile";
   const shouldShowBack = showBackButton !== undefined ? showBackButton : !isStandaloneProfile;
 
@@ -1183,6 +1184,15 @@ export function FreelancerProfileView({
                     >
                       {copiedLink ? <Check className="h-4 w-4 text-emerald-500" /> : <Share2 className="h-4 w-4" />}
                     </button>
+                  </div>
+                ) : isSelf ? (
+                  <div className="flex items-center gap-2 pt-2">
+                    <Link
+                      href="/freelancer/profile"
+                      className="flex-1 rounded-2xl bg-muted hover:bg-muted/80 text-foreground font-bold text-xs py-3 text-center border border-border/80 transition-all"
+                    >
+                      Buka Profil Freelancer Saya
+                    </Link>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2 pt-2">
