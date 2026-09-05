@@ -139,8 +139,17 @@ export function ProjectWorkspaceView() {
   const [milestones, setMilestones] = useState<MilestoneState[]>([]);
   const [features, setFeatures] = useState<GanttFeature[]>([]);
 
-  // Active Tab: if project is in "Hiring", open proposals tab by default
+  // Active Tab
   const [activeTab, setActiveTab] = useState<"overview" | "proposals" | "timeline" | "files">("overview");
+
+  // Check if a proposal has been accepted (contract ongoing or freelancer hired)
+  const isProposalAccepted = useMemo(() => {
+    return Boolean(
+      proposals.some((p) => p.status === "accepted") ||
+      (project && project.status !== "Hiring" && project.status !== "Draft" && project.status !== "Open") ||
+      project?.freelancer
+    );
+  }, [proposals, project]);
 
   // Interactive state
   const [expandedMilestoneId, setExpandedMilestoneId] = useState<string>("");
@@ -276,8 +285,14 @@ export function ProjectWorkspaceView() {
       if (projectData) {
         setProject(projectData);
 
-        // Auto-select tab: if Hiring and proposals exist, show proposals by default
-        if (projectData.status === "Hiring" && proposalsData.length > 0) {
+        // Auto-select tab: if proposal not yet accepted, show proposals by default; otherwise show overview
+        const proposalAlreadyAccepted = Boolean(
+          proposalsData.some((p) => p.status === "accepted") ||
+          (projectData.status !== "Hiring" && projectData.status !== "Draft" && projectData.status !== "Open") ||
+          projectData.freelancer
+        );
+
+        if (!proposalAlreadyAccepted) {
           setActiveTab("proposals");
         } else {
           setActiveTab("overview");
@@ -1291,62 +1306,127 @@ export function ProjectWorkspaceView() {
 
         {/* ── TAB NAVIGATION ── */}
         <div className="flex items-center gap-1 border-b border-border mb-6 overflow-x-auto">
-          <button
-            onClick={() => setActiveTab("overview")}
-            className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 -mb-px transition-colors whitespace-nowrap ${
-              activeTab === "overview"
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <LayoutList className="h-3.5 w-3.5" />
-            Tahapan Milestone ({milestones.length})
-          </button>
+          {!isProposalAccepted ? (
+            /* Sebelum proposal diterima: Proposal Masuk di depan, Tahapan Milestone kedua */
+            <>
+              <button
+                onClick={() => setActiveTab("proposals")}
+                className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 -mb-px transition-colors whitespace-nowrap ${
+                  activeTab === "proposals"
+                    ? "border-primary text-primary"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Users className="h-3.5 w-3.5" />
+                Proposal Masuk
+                <span
+                  className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${
+                    activeTab === "proposals"
+                      ? "bg-primary text-white"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {proposals.length}
+                </span>
+              </button>
 
-          <button
-            onClick={() => setActiveTab("proposals")}
-            className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 -mb-px transition-colors whitespace-nowrap ${
-              activeTab === "proposals"
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Users className="h-3.5 w-3.5" />
-            Proposal Masuk
-            <span
-              className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${
-                activeTab === "proposals"
-                  ? "bg-primary text-white"
-                  : "bg-muted text-muted-foreground"
-              }`}
-            >
-              {proposals.length}
-            </span>
-          </button>
+              <button
+                onClick={() => setActiveTab("overview")}
+                className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 -mb-px transition-colors whitespace-nowrap ${
+                  activeTab === "overview"
+                    ? "border-primary text-primary"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <LayoutList className="h-3.5 w-3.5" />
+                Tahapan Milestone ({milestones.length})
+              </button>
 
-          <button
-            onClick={() => setActiveTab("timeline")}
-            className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 -mb-px transition-colors whitespace-nowrap ${
-              activeTab === "timeline"
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <CalendarDays className="h-3.5 w-3.5" />
-            Timeline Gantt
-          </button>
+              <button
+                onClick={() => setActiveTab("timeline")}
+                className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 -mb-px transition-colors whitespace-nowrap ${
+                  activeTab === "timeline"
+                    ? "border-primary text-primary"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <CalendarDays className="h-3.5 w-3.5" />
+                Timeline Gantt
+              </button>
 
-          <button
-            onClick={() => setActiveTab("files")}
-            className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 -mb-px transition-colors whitespace-nowrap ${
-              activeTab === "files"
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Paperclip className="h-3.5 w-3.5" />
-            File & Deliverable
-          </button>
+              <button
+                onClick={() => setActiveTab("files")}
+                className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 -mb-px transition-colors whitespace-nowrap ${
+                  activeTab === "files"
+                    ? "border-primary text-primary"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Paperclip className="h-3.5 w-3.5" />
+                File & Deliverable
+              </button>
+            </>
+          ) : (
+            /* Setelah proposal diterima: Tahapan Milestone di depan, Proposal Masuk dibawa ke belakang di sebelah deliverable */
+            <>
+              <button
+                onClick={() => setActiveTab("overview")}
+                className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 -mb-px transition-colors whitespace-nowrap ${
+                  activeTab === "overview"
+                    ? "border-primary text-primary"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <LayoutList className="h-3.5 w-3.5" />
+                Tahapan Milestone ({milestones.length})
+              </button>
+
+              <button
+                onClick={() => setActiveTab("timeline")}
+                className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 -mb-px transition-colors whitespace-nowrap ${
+                  activeTab === "timeline"
+                    ? "border-primary text-primary"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <CalendarDays className="h-3.5 w-3.5" />
+                Timeline Gantt
+              </button>
+
+              <button
+                onClick={() => setActiveTab("files")}
+                className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 -mb-px transition-colors whitespace-nowrap ${
+                  activeTab === "files"
+                    ? "border-primary text-primary"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Paperclip className="h-3.5 w-3.5" />
+                File & Deliverable
+              </button>
+
+              <button
+                onClick={() => setActiveTab("proposals")}
+                className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 -mb-px transition-colors whitespace-nowrap ${
+                  activeTab === "proposals"
+                    ? "border-primary text-primary"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Users className="h-3.5 w-3.5" />
+                Proposal Masuk
+                <span
+                  className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${
+                    activeTab === "proposals"
+                      ? "bg-primary text-white"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {proposals.length}
+                </span>
+              </button>
+            </>
+          )}
         </div>
 
         {/* ── TAB 1: PROPOSAL REVIEW ── */}
