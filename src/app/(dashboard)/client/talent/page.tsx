@@ -90,7 +90,7 @@ function ClientTalentContent() {
     return () => {
       window.removeEventListener("doable-preferences-updated", handlePref);
     };
-  }, [urlProjectId]);
+  }, [urlProjectId, user?.id]);
 
   const categoryTabs = useMemo(() => {
     if (preferredCategories.length > 0) {
@@ -105,10 +105,15 @@ function ClientTalentContent() {
 
   // Filter & Sort Logic
   const filtered = useMemo(() => {
+    const activeUserId = user?.id || (typeof window !== "undefined" ? localStorage.getItem("doable_current_user_id") : null);
+
     return talents
       .filter((talent) => {
         // Exclude current logged in client/user from candidate talents (cannot hire yourself)
-        if (user?.id && (talent.userId === user.id || talent.id === user.id)) {
+        if (activeUserId && (talent.userId === activeUserId || talent.id === activeUserId)) {
+          return false;
+        }
+        if (user?.email && talent.name && user.user_metadata?.full_name && talent.name.toLowerCase() === String(user.user_metadata.full_name).toLowerCase()) {
           return false;
         }
 

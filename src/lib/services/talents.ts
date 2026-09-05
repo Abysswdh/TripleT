@@ -43,11 +43,33 @@ export async function getTalents(filters?: TalentFilterOptions): Promise<TalentR
   const supabase = createClient();
 
   let excludeUserId = filters?.excludeUserId;
+  let excludeEmail: string | undefined;
+
+  // 1. Check synchronously from localStorage if in browser
+  if (!excludeUserId && typeof window !== "undefined") {
+    excludeUserId = localStorage.getItem("doable_current_user_id") || undefined;
+  }
+
+  // 2. Check local session from Supabase Auth
+  if (!excludeUserId) {
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (sessionData?.session?.user?.id) {
+        excludeUserId = sessionData.session.user.id;
+        excludeEmail = sessionData.session.user.email;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  // 3. Check getUser from Supabase Auth
   if (!excludeUserId) {
     try {
       const { data: authData } = await supabase.auth.getUser();
       if (authData?.user?.id) {
         excludeUserId = authData.user.id;
+        excludeEmail = authData.user.email;
       }
     } catch {
       // ignore
@@ -79,25 +101,38 @@ export async function getTalents(filters?: TalentFilterOptions): Promise<TalentR
   // Filter only profiles whose user is actually a freelancer or has onboarded as freelancer, and deduplicate by user ID
   const seenUserIds = new Set<string>();
   const activeFreelancers = data.filter((item) => {
-    const user = item.user;
-    if (!user) return false;
+    const rawUser = item.user;
+    const user = (Array.isArray(rawUser) ? rawUser[0] : rawUser) || {};
+    if (!user || (!user.id && !item.user_id)) return false;
+
     if (user.role === "customer" && !user.freelancer_onboarded) {
       return false;
     }
+
     const uid = user.id || item.user_id;
     if (!uid || seenUserIds.has(uid)) {
       return false;
     }
-    // Never show current logged in user in talent search
-    if (excludeUserId && (uid === excludeUserId || item.user_id === excludeUserId || item.id === excludeUserId)) {
+
+    // Never show current logged in client/user in candidate talent search
+    if (
+      excludeUserId &&
+      (uid === excludeUserId || item.user_id === excludeUserId || item.id === excludeUserId)
+    ) {
       return false;
     }
+
+    if (excludeEmail && user.email && user.email.toLowerCase() === excludeEmail.toLowerCase()) {
+      return false;
+    }
+
     seenUserIds.add(uid);
     return true;
   });
 
   let results: TalentRecord[] = activeFreelancers.map((item) => {
-    const user = item.user || {};
+    const rawUser = item.user;
+    const user = (Array.isArray(rawUser) ? rawUser[0] : rawUser) || {};
     const rateNum = Number(item.hourly_rate) > 1000
       ? Number(item.hourly_rate)
       : Number(item.hourly_rate) > 0
