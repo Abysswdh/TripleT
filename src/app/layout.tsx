@@ -17,7 +17,7 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Doable! — Learn Skills, Land Gigs",
+  title: "Doable!",
   description:
     "Doable! is a freelance marketplace with gamified learning. Build skills through micro-courses, earn badges, and land projects from verified clients.",
   keywords: [
