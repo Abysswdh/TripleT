@@ -6,8 +6,61 @@ export interface TalentFilterOptions {
   category?: string;
   level?: string;
   rateTier?: string;
+  availability?: string;
   sortBy?: "rating" | "reviews" | "rate_asc" | "rate_desc" | "name";
   excludeUserId?: string;
+}
+
+export function parseTalentAvailability(raw?: string | null): {
+  id: "part_time" | "semi_full" | "full_time" | "flexible";
+  badge: string;
+  hours: string;
+  label: string;
+} {
+  if (!raw) {
+    return {
+      id: "semi_full",
+      badge: "Part-Time",
+      hours: "15–30 Jam / Mgg",
+      label: "Part-Time Aktif",
+    };
+  }
+
+  const val = String(raw).toLowerCase().trim();
+
+  if (val === "part_time" || val.includes("part_time") || val.includes("< 15") || val.includes("side hustle")) {
+    return {
+      id: "part_time",
+      badge: "Side Hustle",
+      hours: "< 15 Jam / Mgg",
+      label: "Side Hustle / Santai",
+    };
+  }
+
+  if (val === "full_time" || val.includes("full_time") || val.includes("> 30") || val.includes("full-time")) {
+    return {
+      id: "full_time",
+      badge: "Full-Time",
+      hours: "> 30 Jam / Mgg",
+      label: "Full-Time Freelancer",
+    };
+  }
+
+  if (val === "flexible" || val.includes("flex") || val.includes("malam")) {
+    return {
+      id: "flexible",
+      badge: "Fleksibel",
+      hours: "Fleksibel",
+      label: "Fleksibel / Malam",
+    };
+  }
+
+  return {
+    id: "semi_full",
+    badge: "Part-Time",
+    hours: "15–30 Jam / Mgg",
+    label: "Part-Time Aktif",
+  };
 }
 
 export interface TalentRecord {
@@ -22,6 +75,11 @@ export interface TalentRecord {
   hourlyRateNumeric: number;
   startingPrice?: string;
   startingPriceNumeric?: number;
+  weeklyAvailability?: "part_time" | "semi_full" | "full_time" | "flexible" | string;
+  availability?: string;
+  availabilityBadge?: string;
+  availabilityHours?: string;
+  availabilityLabel?: string;
   location: string;
   verified: boolean;
   badgeLevel: string;
@@ -134,18 +192,42 @@ export async function getTalents(filters?: TalentFilterOptions): Promise<TalentR
   let results: TalentRecord[] = activeFreelancers.map((item) => {
     const rawUser = item.user;
     const user = (Array.isArray(rawUser) ? rawUser[0] : rawUser) || {};
-    const rateNum = Number(item.hourly_rate) > 1000
-      ? Number(item.hourly_rate)
-      : Number(item.hourly_rate) > 0
-      ? Number(item.hourly_rate) * 50000
-      : 500000;
+
+    // Check if there's local settings cache for this user in browser
+    let cachedSettings: any = null;
+    if (typeof window !== "undefined") {
+      try {
+        const rawCache = localStorage.getItem(`triplet_freelancer_settings_${user.id || item.user_id}`);
+        if (rawCache) cachedSettings = JSON.parse(rawCache);
+      } catch {}
+    }
+
+    const rawStartingPrice = cachedSettings?.startingPrice || item.starting_price || (user as any)?.starting_price;
+    const rawHourlyRate = cachedSettings?.hourlyRate || item.hourly_rate || (user as any)?.hourly_rate;
+
+    let rateNum = 500000;
+    if (rawStartingPrice && typeof rawStartingPrice === "string" && !rawStartingPrice.includes("Jam") && !rawStartingPrice.includes("Minggu")) {
+      const parsed = Number(rawStartingPrice.replace(/\D/g, ""));
+      if (parsed > 0) rateNum = parsed;
+    } else if (typeof rawStartingPrice === "number" && rawStartingPrice > 0) {
+      rateNum = rawStartingPrice;
+    } else if (Number(rawHourlyRate) > 1000) {
+      rateNum = Number(rawHourlyRate);
+    } else if (Number(rawHourlyRate) > 0) {
+      rateNum = Number(rawHourlyRate) * 50000;
+    }
 
     let formattedPrice = `Mulai Rp ${rateNum.toLocaleString("id-ID")}`;
-    if (item.starting_price && typeof item.starting_price === "string" && !item.starting_price.includes("Jam") && !item.starting_price.includes("Minggu")) {
-      formattedPrice = item.starting_price.startsWith("Rp") || item.starting_price.startsWith("Mulai")
-        ? item.starting_price
-        : `Mulai Rp ${Number(item.starting_price.replace(/\D/g, "") || rateNum).toLocaleString("id-ID")}`;
+    if (rawStartingPrice && typeof rawStartingPrice === "string" && !rawStartingPrice.includes("Jam") && !rawStartingPrice.includes("Minggu")) {
+      formattedPrice = rawStartingPrice.startsWith("Mulai")
+        ? rawStartingPrice
+        : rawStartingPrice.startsWith("Rp")
+        ? `Mulai ${rawStartingPrice}`
+        : `Mulai Rp ${rateNum.toLocaleString("id-ID")}`;
     }
+
+    const rawAvail = cachedSettings?.weeklyAvailability || item.weekly_availability || item.availability || (user as any)?.weekly_availability || (user as any)?.availability;
+    const availInfo = parseTalentAvailability(rawAvail);
 
     return {
       id: user.id || item.id,
@@ -160,10 +242,19 @@ export async function getTalents(filters?: TalentFilterOptions): Promise<TalentR
       hourlyRateNumeric: rateNum,
       startingPrice: formattedPrice,
       startingPriceNumeric: rateNum,
+      weeklyAvailability: availInfo.id,
+      availability: availInfo.label,
+      availabilityBadge: availInfo.badge,
+      availabilityHours: availInfo.hours,
+      availabilityLabel: availInfo.label,
       location: user.location || "Indonesia",
       verified: Boolean(user.is_verified),
       badgeLevel: item.badge_level || (user.is_verified ? "Verified Pro" : "Talenta Muda"),
-      skills: item.skills && item.skills.length > 0 ? item.skills : ["UI/UX Design", "Web Development"],
+      skills: (cachedSettings?.skills && cachedSettings.skills.length > 0)
+        ? cachedSettings.skills
+        : (item.skills && item.skills.length > 0)
+        ? item.skills
+        : ["UI/UX Design", "Web Development"],
       bio: user.bio || item.headline || "Siap berkolaborasi dan mengerjakan proyek berkualitas tinggi.",
       responseTime: item.response_time || "< 1 jam",
       completedProjects: item.completed_projects || 0,
@@ -185,6 +276,10 @@ export async function getTalents(filters?: TalentFilterOptions): Promise<TalentR
         t.bio.toLowerCase().includes(q) ||
         t.skills.some((s) => s.toLowerCase().includes(q))
     );
+  }
+
+  if (filters?.availability && filters.availability !== "all" && filters.availability !== "Semua") {
+    results = results.filter((t) => t.weeklyAvailability === filters.availability);
   }
 
   if (filters?.rateTier && filters.rateTier !== "all" && filters.rateTier !== "Semua") {

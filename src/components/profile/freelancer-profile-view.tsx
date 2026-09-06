@@ -27,6 +27,7 @@ import {
   Layers,
   FolderGit2,
   Sparkles,
+  Clock,
 } from "lucide-react";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import { getClientProjects, type ProjectRecord } from "@/lib/services/projects";
@@ -1141,8 +1142,8 @@ export function FreelancerProfileView({
                     </p>
                   )}
 
-                  {/* Status Ketersediaan Kerja */}
-                  <div className="pt-2 flex items-center justify-center">
+                  {/* Status Ketersediaan Kerja & Kapasitas Mingguan */}
+                  <div className="pt-2 flex flex-wrap items-center justify-center gap-2">
                     <div
                       className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold border transition-all shadow-xs ${
                         profile.workStatus === "busy"
@@ -1174,6 +1175,14 @@ export function FreelancerProfileView({
                           : "Tersedia untuk Kerja"}
                       </span>
                     </div>
+
+                    {/* Kapasitas Jam Kerja Mingguan / Availability */}
+                    {profile.availability && (
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border border-primary/20 bg-primary/10 text-primary shadow-xs">
+                        <Clock className="h-3 w-3" />
+                        <span>{profile.availability}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 

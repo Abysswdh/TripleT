@@ -705,6 +705,31 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
               },
               { onConflict: "user_id" }
             );
+
+            if (typeof window !== "undefined") {
+              try {
+                localStorage.setItem(
+                  `triplet_freelancer_settings_${user.id}`,
+                  JSON.stringify({
+                    startingPrice: formattedStartingPrice,
+                    hourlyRate: numericStartingPrice,
+                    weeklyAvailability,
+                    availability: availLabel,
+                    skills: selectedSkills,
+                  })
+                );
+                window.dispatchEvent(
+                  new CustomEvent("doable-talent-updated", {
+                    detail: {
+                      userId: user.id,
+                      startingPrice: formattedStartingPrice,
+                      weeklyAvailability,
+                      availability: availLabel,
+                    },
+                  })
+                );
+              } catch {}
+            }
           }
 
           // 3. Client profile upsert

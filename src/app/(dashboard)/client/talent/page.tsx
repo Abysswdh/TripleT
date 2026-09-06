@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, Suspense } from "react";
 import { createPortal } from "react-dom";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Search, Star, ShieldCheck, CheckCircle2, SlidersHorizontal, Briefcase } from "lucide-react";
+import { Search, Star, ShieldCheck, CheckCircle2, SlidersHorizontal, Briefcase, Clock } from "lucide-react";
 import { getTalents, inviteTalentToProject, type TalentRecord } from "@/lib/services/talents";
 import { getClientProjects, type ProjectRecord } from "@/lib/services/projects";
 import { useTranslation } from "@/context/language-context";
@@ -27,6 +27,7 @@ function ClientTalentContent() {
   const [preferredCategories, setPreferredCategories] = useState<string[]>([]);
   const [selectedLevel, setSelectedLevel] = useState<string>("Semua Level");
   const [selectedRateTier, setSelectedRateTier] = useState<string>("Semua");
+  const [selectedAvailability, setSelectedAvailability] = useState<string>("Semua");
   const [sortBy, setSortBy] = useState<"rating" | "reviews" | "rate_low" | "rate_high" | "name">("rating");
 
   const [selectedTalent, setSelectedTalent] = useState<TalentRecord | null>(null);
@@ -47,6 +48,13 @@ function ClientTalentContent() {
       }
     };
     window.addEventListener("doable-preferences-updated", handlePref);
+
+    const handleTalentUpdated = () => {
+      getTalents({ excludeUserId: user?.id }).then((fresh) => {
+        if (fresh && fresh.length > 0) setTalents(fresh);
+      });
+    };
+    window.addEventListener("doable-talent-updated", handleTalentUpdated);
 
     async function loadData() {
       const [talentData, projData] = await Promise.all([
@@ -89,6 +97,7 @@ function ClientTalentContent() {
 
     return () => {
       window.removeEventListener("doable-preferences-updated", handlePref);
+      window.removeEventListener("doable-talent-updated", handleTalentUpdated);
     };
   }, [urlProjectId, user?.id]);
 
@@ -146,7 +155,12 @@ function ClientTalentContent() {
         else if (selectedRateTier === "500k - 2m" || selectedRateTier === "150k - 300k") matchesRate = rateNum >= 500000 && rateNum <= 2000000;
         else if (selectedRateTier === "> 2m" || selectedRateTier === "> 300k") matchesRate = rateNum > 2000000;
 
-        return matchesSearch && matchesCategory && matchesLevel && matchesRate;
+        // 5. Weekly Availability (Kapasitas Jam Kerja)
+        const matchesAvailability =
+          selectedAvailability === "Semua" ||
+          talent.weeklyAvailability === selectedAvailability;
+
+        return matchesSearch && matchesCategory && matchesLevel && matchesRate && matchesAvailability;
       })
       .sort((a, b) => {
         if (sortBy === "reviews") return b.reviewsCount - a.reviewsCount;
@@ -157,7 +171,7 @@ function ClientTalentContent() {
         const bScore = b.reviewsCount > 0 && b.rating !== "-" ? Number(b.rating) : 0;
         return bScore - aScore; // default highest rating
       });
-  }, [talents, searchQuery, selectedCategory, selectedLevel, selectedRateTier, sortBy, user?.id]);
+  }, [talents, searchQuery, selectedCategory, selectedLevel, selectedRateTier, selectedAvailability, sortBy, user?.id]);
 
   const handleSendInvite = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -226,6 +240,20 @@ function ClientTalentContent() {
               <option value="Verified Pro">{t("talent.verifiedPro", "Verified Pro")}</option>
               <option value="Top Rated">{t("talent.topRated", "Top Rated")}</option>
               <option value="Rising Star">{t("talent.risingStar", "Rising Star")}</option>
+            </select>
+
+            {/* Kapasitas Jam Kerja (Availability) Selector */}
+            <select
+              value={selectedAvailability}
+              onChange={(e) => setSelectedAvailability(e.target.value)}
+              aria-label="Filter ketersediaan jam kerja"
+              className="h-11 rounded-2xl border border-border bg-card px-3 text-xs font-medium text-foreground focus:border-primary focus:outline-none shadow-xs cursor-pointer"
+            >
+              <option value="Semua">Semua Kapasitas</option>
+              <option value="semi_full">Part-Time (15–30 Jam)</option>
+              <option value="full_time">Full-Time (&gt; 30 Jam)</option>
+              <option value="part_time">Side Hustle (&lt; 15 Jam)</option>
+              <option value="flexible">Fleksibel / Malam</option>
             </select>
 
             {/* Project Starting Price Range Selector */}
@@ -341,25 +369,37 @@ function ClientTalentContent() {
                   </span>
                 </div>
 
-                {/* Rating & Starting Price */}
-                <div className="flex items-center justify-between text-xs py-1 border-y border-border/40">
-                  {talent.reviewsCount > 0 && talent.rating !== "-" && Number(talent.rating) > 0 ? (
-                    <div className="flex items-center gap-1 text-amber-500 font-bold">
-                      <Star className="h-3.5 w-3.5 fill-amber-500" />
-                      <span>{typeof talent.rating === "number" ? talent.rating.toFixed(1) : talent.rating}</span>
-                      <span className="text-muted-foreground font-normal">({talent.reviewsCount})</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-1 text-muted-foreground font-medium">
-                      <Star className="h-3.5 w-3.5 text-muted-foreground/50" />
-                      <span>-</span>
-                      <span className="text-muted-foreground font-normal">({talent.reviewsCount || 0})</span>
-                    </div>
-                  )}
-                  <span className="font-extrabold text-foreground">
-                    {talent.hourlyRate?.startsWith("Rp") || talent.hourlyRate?.startsWith("Mulai")
+                {/* Rating, Availability & Starting Price */}
+                <div className="flex items-center justify-between text-xs py-1.5 border-y border-border/40 gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    {talent.reviewsCount > 0 && talent.rating !== "-" && Number(talent.rating) > 0 ? (
+                      <div className="flex items-center gap-1 text-amber-500 font-bold shrink-0">
+                        <Star className="h-3.5 w-3.5 fill-amber-500" />
+                        <span>{typeof talent.rating === "number" ? talent.rating.toFixed(1) : talent.rating}</span>
+                        <span className="text-muted-foreground font-normal">({talent.reviewsCount})</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1 text-muted-foreground font-medium shrink-0">
+                        <Star className="h-3.5 w-3.5 text-muted-foreground/50" />
+                        <span>-</span>
+                        <span className="text-muted-foreground font-normal">({talent.reviewsCount || 0})</span>
+                      </div>
+                    )}
+
+                    {/* Kapasitas Jam Kerja / Weekly Availability Pill (Synced with Settings) */}
+                    <span
+                      className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2.5 py-0.5 text-[10px] font-bold border border-primary/20 shrink-0 truncate max-w-[125px]"
+                      title={talent.availabilityHours ? `${talent.availabilityLabel} (${talent.availabilityHours})` : talent.availabilityLabel}
+                    >
+                      <Clock className="h-2.5 w-2.5 shrink-0" />
+                      <span className="truncate">{talent.availabilityBadge || "Part-Time"}</span>
+                    </span>
+                  </div>
+
+                  <span className="font-extrabold text-foreground shrink-0 text-right">
+                    {talent.hourlyRate?.startsWith("Mulai")
                       ? talent.hourlyRate
-                      : `Mulai ${formatMoney(talent.hourlyRateNumeric || 500000)}`}
+                      : `Mulai ${talent.hourlyRate?.startsWith("Rp") ? talent.hourlyRate : formatMoney(talent.hourlyRateNumeric || 500000)}`}
                   </span>
                 </div>
 
@@ -450,7 +490,14 @@ function ClientTalentContent() {
                         {selectedTalent.verified && <ShieldCheck className="h-4 w-4 text-primary" />}
                       </div>
                       <p className="text-xs text-muted-foreground">{selectedTalent.title}</p>
-                      <span className="text-xs font-bold text-primary">{selectedTalent.hourlyRate}</span>
+                      <div className="flex items-center gap-2 pt-0.5">
+                        <span className="text-xs font-bold text-primary">{selectedTalent.hourlyRate}</span>
+                        <span className="text-muted-foreground text-xs">•</span>
+                        <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[10px] font-bold border border-primary/20">
+                          <Clock className="h-2.5 w-2.5" />
+                          <span>{selectedTalent.availabilityBadge || "Part-Time"} ({selectedTalent.availabilityHours || "15–30 Jam/Mgg"})</span>
+                        </span>
+                      </div>
                     </div>
                   </div>
 

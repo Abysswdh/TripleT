@@ -44,6 +44,7 @@ interface FeaturedTalent {
   reviewsCount: number;
   completedProjects?: number;
   startingPrice: string;
+  availabilityBadge?: string;
   skills: string[];
   verified?: boolean;
 }
@@ -253,6 +254,7 @@ export function ClientDashboard() {
               reviewsCount: t.reviewsCount,
               completedProjects: t.completedProjects,
               startingPrice: t.hourlyRate,
+              availabilityBadge: t.availabilityBadge,
               skills: t.skills,
               verified: Boolean(t.verified),
             }))
@@ -880,22 +882,30 @@ export function ClientDashboard() {
                     </div>
 
                     {/* Rating & Stats Strip */}
-                    <div className="flex items-center justify-between text-xs py-1.5 border-y border-border/40">
-                      {tal.reviewsCount > 0 && tal.rating !== "-" && Number(tal.rating) > 0 ? (
-                        <div className="flex items-center gap-1">
-                          <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
-                          <span className="font-bold text-foreground">{typeof tal.rating === "number" ? tal.rating.toFixed(1) : tal.rating}</span>
-                          <span className="text-muted-foreground text-[11px]">({tal.reviewsCount})</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1 text-muted-foreground">
-                          <Star className="h-3.5 w-3.5 text-muted-foreground/50" />
-                          <span className="font-semibold text-foreground">-</span>
-                          <span className="text-muted-foreground text-[11px]">({tal.reviewsCount || 0})</span>
-                        </div>
-                      )}
-                      <span className="text-[11px] text-muted-foreground font-medium">
-                        {tal.completedProjects || 0}+ Selesai
+                    <div className="flex items-center justify-between text-xs py-1.5 border-y border-border/40 gap-1.5">
+                      <div className="flex items-center gap-1.5">
+                        {tal.reviewsCount > 0 && tal.rating !== "-" && Number(tal.rating) > 0 ? (
+                          <div className="flex items-center gap-1">
+                            <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
+                            <span className="font-bold text-foreground">{typeof tal.rating === "number" ? tal.rating.toFixed(1) : tal.rating}</span>
+                            <span className="text-muted-foreground text-[11px]">({tal.reviewsCount})</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1 text-muted-foreground">
+                            <Star className="h-3.5 w-3.5 text-muted-foreground/50" />
+                            <span className="font-semibold text-foreground">-</span>
+                            <span className="text-muted-foreground text-[11px]">({tal.reviewsCount || 0})</span>
+                          </div>
+                        )}
+                        {tal.availabilityBadge && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[10px] font-bold border border-primary/20">
+                            <Clock className="h-2.5 w-2.5" />
+                            <span>{tal.availabilityBadge}</span>
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[11px] font-bold text-foreground">
+                        {tal.startingPrice}
                       </span>
                     </div>
 
