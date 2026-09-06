@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
-import { formatLocalDateKey, logActivity } from "@/lib/services/activity";
+import { formatLocalDateKey } from "@/lib/services/activity";
 import { addNotification } from "@/lib/services/notifications";
 
 export interface ScheduledTaskItem {
@@ -502,7 +502,7 @@ export async function computeMRPPlan(params: {
           cachedInsightFound = true;
         }
       }
-    } catch (storageErr) {
+    } catch {
       // sessionStorage read fallback
     }
   }
@@ -538,11 +538,11 @@ export async function computeMRPPlan(params: {
                   timestamp: Date.now(),
                 })
               );
-            } catch (saveErr) {}
+            } catch {}
           }
         }
       }
-    } catch (apiErr) {
+    } catch {
       // Graceful fallback to heuristic text
     }
   }

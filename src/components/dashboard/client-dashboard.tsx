@@ -18,6 +18,7 @@ import {
   Building2,
   MapPin,
   Briefcase,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -977,7 +978,12 @@ export function ClientDashboard() {
           </div>
 
           {/* Peer Projects Grid / Empty State */}
-          {filteredMarketProjects.length === 0 ? (
+          {isMarketLoading ? (
+            <div className="rounded-2xl border border-border/80 bg-card/40 p-8 sm:p-10 text-center flex flex-col items-center justify-center space-y-3">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              <p className="text-xs text-muted-foreground">Memuat proyek di pasar...</p>
+            </div>
+          ) : filteredMarketProjects.length === 0 ? (
             marketProjects.length === 0 ? (
               /* Global Empty State: No projects exist in the database/marketplace yet */
               <div className="rounded-2xl border border-dashed border-border/80 bg-card/40 p-8 sm:p-10 text-center space-y-4">

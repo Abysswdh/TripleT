@@ -87,8 +87,8 @@ export function Navbar() {
   // Live avatar state synced from database and custom update events
   const DEFAULT_AVATAR = "/images/default-avatar.svg";
   const [dbAvatarUrl, setDbAvatarUrl] = useState<string | null>(DEFAULT_AVATAR);
-  const [freelancerOnboarded, setFreelancerOnboarded] = useState<boolean | null>(null);
-  const [clientOnboarded, setClientOnboarded] = useState<boolean | null>(null);
+  const [_freelancerOnboarded, setFreelancerOnboarded] = useState<boolean | null>(null);
+  const [_clientOnboarded, setClientOnboarded] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!user) {

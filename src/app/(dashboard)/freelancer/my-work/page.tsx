@@ -13,7 +13,6 @@ import {
   ArrowRight,
   Sparkles,
   ChevronRight,
-  AlertCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { getFreelancerContracts, submitMilestoneDeliverable, type ContractItem } from "@/lib/services/contracts";

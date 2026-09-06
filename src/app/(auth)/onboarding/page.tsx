@@ -178,44 +178,6 @@ function OnboardingContent() {
 
   return (
     <div className="w-full max-w-[1040px] mx-auto min-h-[100dvh] sm:min-h-0 sm:h-full sm:max-h-[640px] flex flex-col justify-start sm:justify-center py-0 sm:py-2">
-      {/* Dev Mode Fast Step-Switcher Toolbar (Only shown when not logged in with an actual user) */}
-      {isDev && !user && (
-        <div className="mb-2 mx-2 sm:mx-0 flex flex-wrap items-center justify-between gap-1.5 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs text-amber-900 dark:text-amber-200 animate-in fade-in duration-200 shrink-0">
-          <div className="flex items-center gap-2 font-semibold">
-            <span className="flex h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
-            <span className="text-[11px]">Dev Preview</span>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-1">
-            {[0, 1, 2, 3, 4, 5].map((num) => (
-              <button
-                key={num}
-                type="button"
-                onClick={() => setStep(num)}
-                className={`h-5 px-1.5 rounded-md text-[11px] font-bold transition-all ${
-                  step === num
-                    ? "bg-amber-600 text-white shadow-xs"
-                    : "bg-white/80 dark:bg-card border border-border/80 text-foreground hover:bg-amber-500/20"
-                }`}
-              >
-                {num === 0 ? "Intro (0)" : `Step ${num}`}
-              </button>
-            ))}
-
-            <button
-              type="button"
-              onClick={() =>
-                updateData({
-                  role: data.role === "freelancer" ? "customer" : "freelancer",
-                })
-              }
-              className="ml-1 h-5 px-2 rounded-md bg-primary text-white text-[11px] font-bold hover:bg-primary-600 transition-all shadow-xs"
-            >
-              Role: {data.role === "freelancer" ? "Freelancer" : "Client"}
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Step 0: 16:9 Video Intro with Lanjutkan button, otherwise Silk Split-Card Wizard */}
       {step === 0 ? (

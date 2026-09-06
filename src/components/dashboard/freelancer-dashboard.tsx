@@ -9,20 +9,17 @@ import {
   Clock,
   ChevronRight,
   ArrowUpRight,
-  Target,
   ShieldCheck,
   Compass,
   CheckCircle2,
   FileText,
   Award,
-  CircleDot,
   Send,
   CreditCard,
   ArrowRight,
   Sparkles,
   BookOpen,
   Check,
-  Flame,
 } from "lucide-react";
 import Link from "next/link";
 import Grainient from "@/components/ui/Grainient";
@@ -603,8 +600,6 @@ export function FreelancerDashboard() {
         return b.matchScore - a.matchScore;
       });
   }, [quests, selectedCategory, user, preferredCategories]);
-
-  const completedMissionsCount = dailyMissions.filter((m) => m.completed).length;
 
   return (
     <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8 animate-fade-in font-sans">

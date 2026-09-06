@@ -16,8 +16,6 @@ import {
   Zap,
   Check,
   ExternalLink,
-  Target,
-  X,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -41,7 +39,7 @@ export default function FreelancerCalendarPage() {
   const [currentMonthDate, setCurrentMonthDate] = useState<Date>(() => new Date());
   const [selectedDateKey, setSelectedDateKey] = useState<string>(todayKey);
   const [plannerData, setPlannerData] = useState<MRPPlannerResult | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [_loading, setLoading] = useState<boolean>(true);
   const [completedTaskIds, setCompletedTaskIds] = useState<Set<string>>(new Set());
 
   // Streak & Active Dates state
@@ -335,7 +333,6 @@ export default function FreelancerCalendarPage() {
 
               const isPast = cell.dateKey < todayKey;
               const isToday = cell.dateKey === todayKey;
-              const isFuture = cell.dateKey > todayKey;
               const hasStreakActivity = activeDates.includes(cell.dateKey);
               const hasWork = dayTasks.length > 0;
               const isAllDone =

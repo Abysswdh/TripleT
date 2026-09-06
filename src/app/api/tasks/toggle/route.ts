@@ -176,7 +176,7 @@ export async function POST(req: Request) {
     }
 
     // 3. Insert new task into project_tasks
-    let insertPayload: Record<string, any> = {
+    const insertPayload: Record<string, any> = {
       project_id: projectId,
       milestone_id: dbMilestoneId,
       name: name || "Tugas Timeline Gantt",

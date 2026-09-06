@@ -7,7 +7,6 @@ import { useParams, usePathname } from "next/navigation";
 import {
   ArrowLeft,
   ArrowRight,
-  Building2,
   Clock,
   ShieldCheck,
   CheckCircle2,

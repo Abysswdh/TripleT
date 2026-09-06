@@ -17,22 +17,36 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Doable!",
+  title: {
+    default: "Doable! — All About Freelancing",
+    template: "%s | Doable!",
+  },
   description:
-    "Doable! is a freelance marketplace with gamified learning. Build skills through micro-courses, earn badges, and land projects from verified clients.",
+    "Doable! adalah platform freelance marketplace & gamified learning terintegrasi. Bangun portofolio, ikuti kuis keahlian, dan kerjakan proyek aman bersama klien terverifikasi.",
   keywords: [
-    "freelance",
-    "marketplace",
+    "freelance marketplace",
+    "doable",
     "gamified learning",
-    "skill development",
+    "freelancer indonesia",
     "digital talent",
-    "micro-courses",
+    "rekening bersama",
+    "proyek web",
+    "desain ui ux",
   ],
+  authors: [{ name: "Doable! Team" }],
   icons: {
     icon: "/icon.svg",
     shortcut: "/icon.svg",
     apple: "/icon.svg",
-  }
+  },
+  openGraph: {
+    title: "Doable! — All About Freelancing",
+    description: "Platform freelance marketplace & gamified learning terintegrasi dengan proteksi Escrow Rekber.",
+    url: "https://triple-t-lime.vercel.app",
+    siteName: "Doable!",
+    locale: "id_ID",
+    type: "website",
+  },
 };
 
 export default function RootLayout({

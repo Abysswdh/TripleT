@@ -13,7 +13,6 @@ import {
   Zap,
   Clock,
   Check,
-  X,
   ExternalLink,
 } from "lucide-react";
 import { formatLocalDateKey, logActivity } from "@/lib/services/activity";
@@ -41,13 +40,13 @@ export function UnifiedSmartCalendarPlanner({
   onOpenSubmitMilestone,
   streakDays = 0,
   activeDates = [],
-  totalContributions = 0,
+  totalContributions: _totalContributions = 0,
 }: UnifiedSmartCalendarPlannerProps) {
   const { user } = useAuth();
   const todayKey = useMemo(() => formatLocalDateKey(new Date()), []);
   const [selectedDateKey, setSelectedDateKey] = useState<string>(todayKey);
   const [plannerData, setPlannerData] = useState<MRPPlannerResult | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [_loading, setLoading] = useState<boolean>(true);
 
   // Live streak state
   const [liveStreakDays, setLiveStreakDays] = useState<number>(streakDays);

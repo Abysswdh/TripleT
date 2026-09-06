@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
-import Link from "next/link";
 import {
   Wallet,
   ArrowDownLeft,
@@ -10,18 +9,13 @@ import {
   ShieldCheck,
   Building2,
   CheckCircle2,
-  Clock,
   Search,
   RefreshCw,
   Sparkles,
-  ExternalLink,
   ChevronRight,
-  Info,
   AlertCircle,
-  CreditCard,
   Lock,
   Receipt,
-  FileCheck,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -47,7 +41,6 @@ export default function FreelancerEarningsPage() {
   const { user } = useAuth();
   const [earnings, setEarnings] = useState<EarningsSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   // Modal State
@@ -91,7 +84,6 @@ export default function FreelancerEarningsPage() {
       console.error("Failed to load earnings:", err);
     } finally {
       setIsLoading(false);
-      setIsRefreshing(false);
     }
   };
 
@@ -133,11 +125,6 @@ export default function FreelancerEarningsPage() {
     }
     setPayoutSuccess(false);
     setIsPayoutModalOpen(true);
-  };
-
-  const handleRefresh = () => {
-    setIsRefreshing(true);
-    loadEarnings(false);
   };
 
   const numericPayout = useMemo(() => {

@@ -49,6 +49,14 @@ const fadeUpVariants = {
   }),
 };
 
+const NAV_LINKS = [
+  { href: "#our-story", id: "our-story", label: "Our Story" },
+  { href: "#realitas-data", id: "realitas-data", label: "Data & Realitas" },
+  { href: "#solusi-doable", id: "solusi-doable", label: "Solusi & Workspace" },
+  { href: "#dummy-projects", id: "dummy-projects", label: "Dummy Projects" },
+  { href: "#sdg-impact", id: "sdg-impact", label: "SDG Impact" },
+];
+
 export default function LandingPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
@@ -70,14 +78,7 @@ export default function LandingPage() {
   // Navigation & ScrollSpy State
   const [activeSection, setActiveSection] = useState<string>("our-story");
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
-
-  const navLinks = [
-    { href: "#our-story", id: "our-story", label: "Our Story" },
-    { href: "#realitas-data", id: "realitas-data", label: "Data & Realitas" },
-    { href: "#solusi-doable", id: "solusi-doable", label: "Solusi & Workspace" },
-    { href: "#dummy-projects", id: "dummy-projects", label: "Dummy Projects" },
-    { href: "#sdg-impact", id: "sdg-impact", label: "SDG Impact" },
-  ];
+  const navLinks = NAV_LINKS;
 
   useEffect(() => {
     const handleScroll = () => {
