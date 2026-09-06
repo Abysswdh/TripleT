@@ -34,6 +34,7 @@ import {
   type ScheduledTaskItem,
 } from "@/lib/services/mrp-planner";
 import { getFreelancerContracts } from "@/lib/services/contracts";
+import { AIProfileSuggestions } from "@/components/dashboard/ai-profile-suggestions";
 
 export default function FreelancerCalendarPage() {
   const { user } = useAuth();
@@ -222,7 +223,7 @@ export default function FreelancerCalendarPage() {
           </Link>
           <div className="flex items-center gap-3">
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground font-heading tracking-tight">
-              Kalender Kerja & Kapasitas MRP
+              Plan Anda & Kalender Kerja
             </h1>
             <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 border border-primary/20 px-2.5 py-0.5 text-xs font-bold text-primary">
               <Brain className="h-3.5 w-3.5" />
@@ -490,22 +491,19 @@ export default function FreelancerCalendarPage() {
           {/* Color Legend Bar */}
           <div className="pt-3 border-t border-border/40 flex flex-wrap items-center justify-between gap-3 text-xs">
             <span className="text-[11px] font-bold text-muted-foreground">Status:</span>
-            <div className="flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground/80 font-medium">
+            <div className="flex flex-wrap items-center gap-4 text-[11px] text-muted-foreground/80 font-medium">
               <span className="inline-flex items-center gap-1.5">
                 <span className="h-2 w-2 rounded-full bg-emerald-500" />
                 <span>Streak Aktif</span>
               </span>
-              <span className="text-muted-foreground/30">•</span>
               <span className="inline-flex items-center gap-1.5">
                 <span className="h-2 w-2 rounded-full bg-amber-500" />
                 <span>Ada Rencana Kerja</span>
               </span>
-              <span className="text-muted-foreground/30">•</span>
               <span className="inline-flex items-center gap-1.5">
                 <span className="h-2 w-2 rounded-full bg-rose-500" />
                 <span>Terlewat / Overdue</span>
               </span>
-              <span className="text-muted-foreground/30">•</span>
               <span className="inline-flex items-center gap-1.5">
                 <span className="h-2 w-2 rounded-full bg-primary" />
                 <span>Terpilih</span>
@@ -646,6 +644,9 @@ export default function FreelancerCalendarPage() {
               </div>
             )}
           </div>
+
+          {/* Full AI Profile & Career Suggestions */}
+          <AIProfileSuggestions userProfile={user} showAll={true} />
         </div>
       </div>
     </div>
