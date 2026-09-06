@@ -18,9 +18,14 @@ import {
   Check,
   ExternalLink,
   Target,
+  X,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { formatLocalDateKey, logActivity } from "@/lib/services/activity";
+import {
+  formatLocalDateKey,
+  fetchHeatmapData,
+  logActivity,
+} from "@/lib/services/activity";
 import {
   computeMRPPlan,
   setTaskCompletedInStorage,
@@ -39,10 +44,24 @@ export default function FreelancerCalendarPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [completedTaskIds, setCompletedTaskIds] = useState<Set<string>>(new Set());
 
+  // Streak & Active Dates state
+  const [activeDates, setActiveDates] = useState<string[]>([]);
+  const [streakDays, setStreakDays] = useState<number>(0);
+
   // Load completed tasks
   useEffect(() => {
     setCompletedTaskIds(new Set(getStoredCompletedTaskIds()));
   }, []);
+
+  // Fetch heatmap streak data
+  useEffect(() => {
+    if (user?.id) {
+      fetchHeatmapData(user.id).then((data) => {
+        setActiveDates(data.activeDates || []);
+        setStreakDays(data.streakDays || 0);
+      });
+    }
+  }, [user?.id]);
 
   // Fetch contracts & compute MRP plan
   useEffect(() => {
@@ -176,6 +195,10 @@ export default function FreelancerCalendarPage() {
     setTaskCompletedInStorage(task.id, nextDone);
 
     if (nextDone) {
+      if (!activeDates.includes(todayKey)) {
+        setActiveDates((prev) => [...prev, todayKey]);
+        setStreakDays((prev) => prev + 1);
+      }
       logActivity("daily_checkin", { xp: task.xpReward || 50, taskId: task.id, title: task.title });
       if (typeof window !== "undefined") {
         window.dispatchEvent(
@@ -201,35 +224,48 @@ export default function FreelancerCalendarPage() {
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground font-heading tracking-tight">
               Kalender Kerja & Kapasitas MRP
             </h1>
-            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 border border-primary/20 px-3 py-0.5 text-xs font-bold text-primary">
+            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 border border-primary/20 px-2.5 py-0.5 text-xs font-bold text-primary">
               <Brain className="h-3.5 w-3.5" />
-              AI Workload Leveling
+              AI Leveling
             </span>
           </div>
           <p className="text-xs sm:text-sm text-muted-foreground">
-            Perencanaan beban kerja terdistribusi cerdas agar terhindar dari overwork dan deadline terlambat.
+            Perencanaan beban kerja harian dan pelacak konsistensi streak talenta.
           </p>
         </div>
 
-        {/* Capacity Indicator Pill */}
-        {plannerData && (
-          <div className="flex items-center gap-3 bg-card border border-border/80 rounded-2xl p-3 shadow-xs">
-            <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold">
-              <Clock className="h-5 w-5" />
-            </div>
+        {/* Capacity & Streak Indicator Pills */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Streak Counter Badge */}
+          <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 rounded-2xl px-4 py-2.5 shadow-xs">
+            <Flame className="h-5 w-5 text-amber-500 fill-amber-500 animate-pulse" />
             <div>
-              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                Kapasitas Harian
+              <div className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+                Streak Harian
               </div>
-              <div className="text-sm font-bold text-foreground">
-                {plannerData.dailyCapacityHours} Jam / Hari
-              </div>
-              <div className="text-[11px] text-primary font-semibold">
-                Tersedia: {plannerData.weeklyAvailability === "part_time" ? "Side-Hustle" : plannerData.weeklyAvailability === "full_time" ? "Full-Time" : "Part-Time Aktif"}
+              <div className="text-sm font-black text-amber-700 dark:text-amber-300">
+                {streakDays} Hari Beruntun
               </div>
             </div>
           </div>
-        )}
+
+          {/* Capacity Pill */}
+          {plannerData && (
+            <div className="flex items-center gap-3 bg-card border border-border/80 rounded-2xl p-2.5 px-3.5 shadow-xs">
+              <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold">
+                <Clock className="h-4 w-4" />
+              </div>
+              <div>
+                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                  Kapasitas MRP
+                </div>
+                <div className="text-sm font-bold text-foreground">
+                  {plannerData.dailyCapacityHours} Jam / Hari
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Main Grid: 8 Columns Calendar + 4 Columns Selected Day Sidebar */}
@@ -277,51 +313,136 @@ export default function FreelancerCalendarPage() {
 
           {/* Weekday Headers */}
           <div className="grid grid-cols-7 gap-2 text-center text-xs font-bold text-muted-foreground py-1">
-            <span>Minggu</span>
-            <span>Senin</span>
-            <span>Selasa</span>
-            <span>Rabu</span>
-            <span>Kamis</span>
-            <span>Jumat</span>
-            <span>Sabtu</span>
+            <span>Min</span>
+            <span>Sen</span>
+            <span>Sel</span>
+            <span>Rab</span>
+            <span>Kam</span>
+            <span>Jum</span>
+            <span>Sab</span>
           </div>
 
           {/* Calendar Day Cells */}
+          {/* COLOR RULES:
+              - Hijau: Streak aktif (past with activity / today with activity)
+              - Golden/Amber dashed: Hari ini belum streak
+              - Golden/Amber solid: Hari mendatang ada rencana kerja
+              - Merah: Streak terlewat (past without activity) / overdue task
+              - Netral: Bersih tanpa beban
+              - Biru: Hari terpilih (outline ring)
+          */}
           <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
             {calendarGrid.map((cell, idx) => {
               const dayTasks = plannerData?.days[cell.dateKey]?.tasks || [];
               const hasOverdue = plannerData?.days[cell.dateKey]?.hasOverdue || false;
               const isSelected = cell.dateKey === selectedDateKey;
 
+              const isPast = cell.dateKey < todayKey;
+              const isToday = cell.dateKey === todayKey;
+              const isFuture = cell.dateKey > todayKey;
+              const hasStreakActivity = activeDates.includes(cell.dateKey);
+              const hasWork = dayTasks.length > 0;
+              const isAllDone =
+                hasWork &&
+                dayTasks.every(
+                  (t) => completedTaskIds.has(t.id) || t.status === "completed"
+                );
+
+              let cellStyle = "";
+              let numBadgeStyle = "text-foreground font-semibold";
+              let statusPill: React.ReactNode = null;
+
+              if (isToday) {
+                if (hasStreakActivity) {
+                  // Hari ini streak aktif: HIJAU
+                  cellStyle =
+                    "border-2 border-emerald-500 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200 ring-2 ring-emerald-500/30 shadow-xs";
+                  numBadgeStyle = "bg-emerald-600 text-white font-black shadow-xs";
+                  statusPill = (
+                    <span className="inline-flex items-center gap-0.5 text-[8px] font-black text-emerald-600 dark:text-emerald-300">
+                      <Flame className="h-2.5 w-2.5 fill-emerald-600" /> Streak
+                    </span>
+                  );
+                } else {
+                  // Hari ini belum streak: GOLDEN / AMBER DASHED
+                  cellStyle =
+                    "border-2 border-dashed border-amber-500/90 bg-amber-500/10 text-amber-800 dark:text-amber-200 ring-2 ring-amber-500/20 shadow-xs";
+                  numBadgeStyle = "bg-amber-500 text-white font-black shadow-xs";
+                  statusPill = (
+                    <span className="inline-flex items-center gap-1 text-[8px] font-extrabold text-amber-600 dark:text-amber-400">
+                      <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" /> Belum
+                    </span>
+                  );
+                }
+              } else if (isPast) {
+                if (hasStreakActivity) {
+                  // Past day with activity: HIJAU
+                  cellStyle =
+                    "border border-emerald-500/50 bg-emerald-500/5 hover:border-emerald-500/80 text-emerald-800 dark:text-emerald-300";
+                  numBadgeStyle = "text-emerald-600 dark:text-emerald-400 font-bold";
+                  statusPill = (
+                    <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400 stroke-[3]" />
+                  );
+                } else {
+                  // Past day without activity: MERAH (Missed)
+                  cellStyle =
+                    "border border-rose-500/30 bg-rose-500/5 hover:border-rose-500/60 text-rose-600 dark:text-rose-400";
+                  numBadgeStyle = "text-rose-500 font-semibold";
+                  statusPill = (
+                    <span className="text-[8px] font-bold text-rose-500">Missed</span>
+                  );
+                }
+              } else {
+                // Future days
+                if (hasWork) {
+                  // Ada rencana kerja: GOLDEN SOLID BORDER
+                  cellStyle =
+                    "border-2 border-amber-500/60 bg-amber-500/5 hover:border-amber-500/90 text-amber-800 dark:text-amber-300 shadow-xs";
+                  numBadgeStyle = "text-amber-700 dark:text-amber-200 font-extrabold";
+                  statusPill = (
+                    <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400">
+                      {dayTasks.length} tugas
+                    </span>
+                  );
+                } else {
+                  // Clean neutral
+                  cellStyle =
+                    "border border-border/50 bg-card hover:border-border text-muted-foreground/60";
+                  numBadgeStyle = "text-muted-foreground font-medium";
+                  statusPill = null;
+                }
+              }
+
+              // Dim non-current month
+              if (!cell.isCurrentMonth) {
+                cellStyle = "opacity-35 bg-muted/10 border-border/30";
+              }
+
+              // Selected focus ring (Streak Biru)
+              if (isSelected) {
+                cellStyle += " ring-2 ring-primary border-primary shadow-md";
+              }
+
               return (
                 <div
                   key={`${cell.dateKey}-${idx}`}
                   onClick={() => setSelectedDateKey(cell.dateKey)}
-                  className={`min-h-[85px] sm:min-h-[105px] p-2 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between select-none relative ${
-                    !cell.isCurrentMonth
-                      ? "opacity-35 bg-muted/10 border-border/30"
-                      : isSelected
-                      ? "border-primary bg-primary/5 ring-2 ring-primary/30 shadow-md"
-                      : "bg-card border-border/60 hover:border-primary/50 hover:bg-muted/20"
-                  } ${cell.isToday ? "border-primary/70" : ""}`}
+                  className={`min-h-[85px] sm:min-h-[105px] p-2 rounded-2xl transition-all cursor-pointer flex flex-col justify-between select-none relative ${cellStyle}`}
                 >
                   {/* Top Day Header */}
                   <div className="flex items-center justify-between">
                     <span
-                      className={`text-xs font-bold rounded-md h-6 w-6 flex items-center justify-center ${
-                        cell.isToday
-                          ? "bg-primary text-white font-extrabold shadow-xs"
-                          : isSelected
-                          ? "text-primary font-bold"
-                          : "text-foreground"
-                      }`}
+                      className={`text-xs rounded-md h-6 w-6 flex items-center justify-center ${numBadgeStyle}`}
                     >
                       {cell.dayNum}
                     </span>
 
-                    {hasOverdue && (
-                      <span className="h-2 w-2 rounded-full bg-rose-500 animate-ping" />
-                    )}
+                    <div className="flex items-center gap-1">
+                      {hasOverdue && (
+                        <span className="h-2 w-2 rounded-full bg-rose-500 animate-ping" />
+                      )}
+                      {statusPill}
+                    </div>
                   </div>
 
                   {/* Tasks Snippets */}
@@ -353,11 +474,46 @@ export default function FreelancerCalendarPage() {
 
                   {/* Bottom Day Status */}
                   <div className="text-right text-[9px] text-muted-foreground font-semibold">
-                    {dayTasks.length > 0 ? `${dayTasks.length} tugas` : ""}
+                    {dayTasks.length > 0 && isAllDone ? (
+                      <span className="text-emerald-600 font-bold flex items-center justify-end gap-0.5">
+                        <Check className="h-2.5 w-2.5" /> Selesai
+                      </span>
+                    ) : (
+                      ""
+                    )}
                   </div>
                 </div>
               );
             })}
+          </div>
+
+          {/* Color Legend Bar */}
+          <div className="pt-3 border-t border-border/40 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <span className="font-bold text-foreground">Panduan Warna Kalender:</span>
+            <div className="flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground font-medium">
+              <span className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-500/30" />
+                <span className="text-emerald-700 dark:text-emerald-300 font-bold">
+                  Hijau = Streak Aktif
+                </span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full bg-amber-500 ring-2 ring-amber-500/30" />
+                <span className="text-amber-700 dark:text-amber-300 font-bold">
+                  Golden = Belum Streak / Ada Rencana Kerja
+                </span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-rose-500/30" />
+                <span className="text-rose-600 dark:text-rose-400 font-bold">
+                  Merah = Streak Terlewat / Overdue
+                </span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-primary/30" />
+                <span className="text-primary font-bold">Biru = Terpilih</span>
+              </span>
+            </div>
           </div>
         </div>
 
@@ -407,6 +563,14 @@ export default function FreelancerCalendarPage() {
                 <p className="text-[11px] text-muted-foreground">
                   Hari ini bebas dari jadwal penyerahan dan target proyek.
                 </p>
+                <div className="pt-2 flex items-center justify-center gap-3 text-xs">
+                  <Link href="/freelancer/skills" className="font-bold text-primary hover:underline">
+                    Ikuti Kuis (+XP) →
+                  </Link>
+                  <Link href="/freelancer/explore" className="font-bold text-primary hover:underline">
+                    Cari Proyek →
+                  </Link>
+                </div>
               </div>
             ) : (
               <div className="space-y-3">
@@ -419,7 +583,7 @@ export default function FreelancerCalendarPage() {
                       key={task.id}
                       className={`p-3.5 rounded-2xl border transition-all flex items-start gap-3 ${
                         isUrgent
-                          ? "bg-rose-500/10 border-rose-500/40 text-rose-900 dark:text-rose-200"
+                          ? "bg-rose-500/10 border-rose-500/40 text-rose-900 dark:text-rose-200 shadow-xs"
                           : isDone
                           ? "bg-emerald-500/5 border-emerald-500/20 opacity-70"
                           : "bg-muted/20 border-border/60"
@@ -444,7 +608,7 @@ export default function FreelancerCalendarPage() {
                           <span
                             className={`text-[10px] font-bold px-1.5 py-0.2 rounded-md ${
                               isUrgent
-                                ? "bg-rose-500/20 text-rose-600 dark:text-rose-400"
+                                ? "bg-rose-500/20 text-rose-600 dark:text-rose-400 font-extrabold"
                                 : "bg-primary/10 text-primary"
                             }`}
                           >
