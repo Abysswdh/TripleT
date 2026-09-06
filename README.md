@@ -1,7 +1,8 @@
 <div align="center">
   
-  <img src="public/images/logo_with_text.svg" alt="Doable!" width="280" />
-  ### All-in-one freelance ecosystem yang menyatukan marketplace, project management, dan learning platform dalam satu tempat.
+  <img src="public/images/logo_with_both_text.svg" alt="Doable!" width="280" />
+
+  <h3>All-in-one freelance ecosystem yang menyatukan marketplace, project management, dan learning platform dalam satu tempat.</h3>
   
   [![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-Visit_Site-success?style=for-the-badge)](https://triple-t-lime.vercel.app/)
   [![GitHub](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github)](https://github.com/Abysswdh/TripleT)
