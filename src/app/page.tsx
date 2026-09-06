@@ -1917,17 +1917,17 @@ export default function LandingPage() {
       <footer className="border-t border-slate-200 bg-slate-50 py-12 px-6 lg:px-12 text-slate-700">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
           {/* Left Brand & Mission Copy */}
-          <div className="max-w-md space-y-3">
+          <div className="max-w-lg space-y-3">
             <Image
               src={logoWithBothText}
               alt="Doable! - All About Freelancing"
-              height={48}
-              width={Math.round(48 * (1557 / 557))}
-              style={{ height: "48px", width: "auto" }}
+              height={64}
+              width={Math.round(64 * (1557 / 557))}
+              style={{ height: "64px", width: "auto" }}
               className="object-contain block select-none"
             />
             <p className="text-xs text-slate-500 leading-relaxed font-normal">
-              &copy; {new Date().getFullYear()} Doable! Indonesia. Bridging skills &amp; opportunities through integrated digital workspace.
+              &copy; {new Date().getFullYear()} Doable! Indonesia. Platform kerja lepas terintegrasi yang menghubungkan talenta terverifikasi dan bisnis melalui kolaborasi cerdas, proteksi kontrak, dan peluang tanpa batas.
             </p>
             {/* SDG Alignment Endorsement */}
             <div className="flex items-center gap-2.5 pt-1">
