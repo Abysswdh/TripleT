@@ -376,30 +376,6 @@ export default function LandingPage() {
 
         {/* Hero Content (z-20) */}
         <div className="relative z-20 mx-auto max-w-5xl">
-          {/* Hero Brand Badge with Logo */}
-          <motion.div
-            initial={{ opacity: 0, y: -16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-white/95 backdrop-blur-md border border-blue-200/90 shadow-md shadow-blue-500/10 mb-8 hover:border-blue-400 hover:shadow-blue-500/20 transition-all group"
-          >
-            <Image
-              src={logoWoText}
-              alt="Doable! Logo Mark"
-              width={22}
-              height={22}
-              className="h-5 w-5 object-contain group-hover:rotate-12 transition-transform duration-300"
-            />
-            <span className="text-xs sm:text-sm font-extrabold text-slate-800 tracking-wide flex items-center gap-2">
-              DOABLE!
-              <span className="text-slate-300">•</span>
-              <span className="text-blue-600 font-semibold">All About Freelancing</span>
-            </span>
-            <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5">
-              Integrated Workspace
-            </span>
-          </motion.div>
-
           {/* H1 Heading - Wider Container */}
           <h1 className="text-3xl sm:text-5xl lg:text-[54px] font-extrabold leading-tight sm:leading-[1.35] lg:leading-[1.45] tracking-tight text-[#111827] max-w-4xl lg:max-w-5xl mx-auto">
             Misi Kami: Menjembatani Kesenjangan Antara Keterampilan &amp; Kesempatan.
@@ -1188,11 +1164,7 @@ export default function LandingPage() {
                   </div>
                 </div>
 
-                <div className="mt-6 pt-5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                  <span className="flex items-center gap-1.5 font-semibold text-slate-700">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                    Menjembatani Kualifikasi secara Praktis
-                  </span>
+                <div className="mt-6 pt-5 border-t border-slate-100 flex items-center justify-end text-xs text-slate-500">
                   <a href="#solusi-doable" className="font-bold text-blue-600 hover:underline">
                     Pelajari Fitur →
                   </a>
@@ -1215,10 +1187,6 @@ export default function LandingPage() {
           custom={0}
           className="text-center max-w-3xl mx-auto mb-14"
         >
-          <div className="inline-flex items-center gap-2 mb-3 bg-blue-50 border border-blue-200/60 px-3.5 py-1.5 rounded-full text-xs font-bold text-blue-700">
-            <Image src={logoWoText} alt="Doable!" width={16} height={16} className="h-4 w-4 object-contain" />
-            <span>Doable! Digital Workspace Ecosystem</span>
-          </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
             Doable!: Gabungan Fiverr &amp; Notion dalam Satu Digital Space
           </h2>
@@ -1666,12 +1634,6 @@ export default function LandingPage() {
             className="lg:col-span-7"
           >
             <div className="rounded-3xl border border-slate-200 bg-white p-7 sm:p-8 shadow-xl">
-              <div className="flex items-center justify-end pb-4 border-b border-slate-100 mb-6">
-                <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">
-                  100% Free Portfolio Builder
-                </span>
-              </div>
-
               {/* Brief Selector Tabs */}
               <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-6">
                 {dummyBriefs.map((brief, idx) => (
