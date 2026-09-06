@@ -94,6 +94,25 @@ Yang membedakan Doable! dari platform freelance lainnya adalah integrasi menyelu
 
 **[👉 Kunjungi Doable!](https://triple-t-lime.vercel.app/)**
 
+### Screenshot Aplikasi
+
+<div align="center">
+  <img src="public/images/screenshots/landing.png" alt="Landing Page" width="800"/>
+  <p><em>Landing Page - Halaman utama yang memperkenalkan Doable! dengan animasi interaktif dan overview fitur platform</em></p>
+  
+  <img src="public/images/screenshots/onboarding.png" alt="Onboarding" width="800"/>
+  <p><em>Onboarding - Proses guided setup dengan video welcome dan pemilihan role (klien/freelancer)</em></p>
+  
+  <img src="public/images/screenshots/dashboard.png" alt="Dashboard" width="800"/>
+  <p><em>Dashboard - Panel utama pengguna dengan overview proyek, statistik, dan akses cepat ke seluruh fitur</em></p>
+  
+  <img src="public/images/screenshots/marketplace.png" alt="Marketplace" width="800"/>
+  <p><em>Marketplace - Jelajahi dan temukan proyek atau talenta freelancer dengan filter kategori dan pencarian</em></p>
+  
+  <img src="public/images/screenshots/project-management.png" alt="Project Management" width="800"/>
+  <p><em>Project Management - Workspace kolaboratif dengan Gantt chart, task tracking, dan timeline management</em></p>
+</div>
+
 ### 📹 Video Demo
 
 **[📂 Tonton Video Demo di Google Drive](https://drive.google.com/drive/folders/1oowRB0q6nBLAREbKosVVWGHzm4nH1Q7j?usp=sharing)**
