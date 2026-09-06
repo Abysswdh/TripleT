@@ -411,23 +411,18 @@ export default function LandingPage() {
           custom={0}
           className="text-center max-w-3xl mx-auto mb-16"
         >
-          <div className="flex flex-col items-center justify-center gap-3">
-            <span className="text-xs font-bold uppercase tracking-widest text-blue-600 bg-blue-50 border border-blue-200/60 px-3.5 py-1.5 rounded-full">
-              Platform Overview
-            </span>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 flex flex-col sm:flex-row items-center justify-center gap-3">
-              <span>Kenalan dengan</span>
-              <Image
-                src={logoWithBothText}
-                alt="Doable! All About Freelancing"
-                height={72}
-                width={Math.round(72 * (1557 / 557))}
-                style={{ height: "72px", width: "auto" }}
-                className="h-14 sm:h-16 md:h-20 w-auto object-contain drop-shadow-sm"
-                priority
-              />
-            </h2>
-          </div>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <span>Kenalan dengan</span>
+            <Image
+              src={logoWithBothText}
+              alt="Doable! All About Freelancing"
+              height={72}
+              width={Math.round(72 * (1557 / 557))}
+              style={{ height: "72px", width: "auto" }}
+              className="h-14 sm:h-16 md:h-20 w-auto object-contain drop-shadow-sm"
+              priority
+            />
+          </h2>
           <p className="mt-4 text-slate-600 leading-relaxed text-sm sm:text-base">
             Platform digital terintegrasi yang mempertemukan freelancer berbakat dengan klien yang membutuhkan, dilengkapi workspace kolaboratif dan sistem portofolio tervalidasi.
           </p>
