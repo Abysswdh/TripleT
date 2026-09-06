@@ -8,7 +8,6 @@ import {
   ChevronRight,
   Sparkles,
   Flame,
-  Brain,
   AlertTriangle,
   CheckCircle2,
   Clock,
@@ -225,10 +224,6 @@ export default function FreelancerCalendarPage() {
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground font-heading tracking-tight">
               Plan Anda & Kalender Kerja
             </h1>
-            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 border border-primary/20 px-2.5 py-0.5 text-xs font-bold text-primary">
-              <Brain className="h-3.5 w-3.5" />
-              AI Leveling
-            </span>
           </div>
           <p className="text-xs sm:text-sm text-muted-foreground">
             Perencanaan beban kerja harian dan pelacak konsistensi streak talenta.
