@@ -276,7 +276,6 @@ export function Navbar() {
 
   const freelancerLinks: NavLink[] = [
     { href: "/freelancer/dashboard", label: t("nav.overview", "Overview"), icon: LayoutDashboard },
-    { href: "/freelancer/calendar", label: t("nav.calendar", "Kalender Kerja"), icon: Calendar },
     { href: "/freelancer/explore", label: t("nav.exploreQuests", "Explore Projects"), icon: Compass },
     { href: "/freelancer/my-work", label: t("nav.myWork", "My Work"), icon: Briefcase },
     { href: "/freelancer/skills", label: t("nav.skills", "Skills"), icon: Award },
@@ -478,6 +477,16 @@ export function Navbar() {
                           <LayoutDashboard className="h-3.5 w-3.5" />
                           {t("nav.dashboard", "Dashboard")}
                         </Link>
+                        {role === "freelancer" && (
+                          <Link
+                            href="/freelancer/calendar"
+                            onClick={() => setUserDropdownOpen(false)}
+                            className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                          >
+                            <Calendar className="h-3.5 w-3.5" />
+                            {t("nav.calendar", "Kalender Kerja")}
+                          </Link>
+                        )}
                         <Link
                           href={role === "freelancer" ? "/freelancer/profile" : "/client/profile"}
                           onClick={() => setUserDropdownOpen(false)}
@@ -533,6 +542,14 @@ export function Navbar() {
                         >
                           <LayoutDashboard className="h-3.5 w-3.5" />
                           {t("nav.overview", "Dashboard")}
+                        </Link>
+                        <Link
+                          href="/freelancer/calendar"
+                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                          onClick={() => setUserDropdownOpen(false)}
+                        >
+                          <Calendar className="h-3.5 w-3.5" />
+                          {t("nav.calendar", "Kalender Kerja")}
                         </Link>
                         <Link
                           href="/freelancer/profile"
