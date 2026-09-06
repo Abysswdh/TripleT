@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { callGemini } from "@/lib/services/gemini-client";
 
 export async function POST(req: Request) {
   try {
@@ -13,11 +14,7 @@ export async function POST(req: Request) {
       headline = "",
     } = body;
 
-    const geminiApiKey = process.env.GEMINI_API_KEY;
-
-    if (geminiApiKey) {
-      try {
-        const prompt = `Anda adalah "AI Career & Profile Strategist" di platform talenta freelance Doable (Indonesia).
+    const prompt = `Anda adalah "AI Career & Profile Strategist" di platform talenta freelance Doable (Indonesia).
 Tugas Anda: Berikan 1 tips personalisasi singkat (maksimal 2 kalimat) agar profil talenta ini terlihat kredibel di mata klien UMKM & korporat.
 
 Profil Talenta:
@@ -36,33 +33,24 @@ Instruksi:
   "aiTip": "1-2 kalimat tips strategis"
 }`;
 
-        const res = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: {
-                responseMimeType: "application/json",
-                temperature: 0.4,
-              },
-            }),
-          }
-        );
+    const geminiRes = await callGemini({
+      prompt,
+      responseMimeType: "application/json",
+      temperature: 0.4,
+    });
 
-        if (res.ok) {
-          const geminiData = await res.json();
-          const rawText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (rawText) {
-            const parsed = JSON.parse(rawText);
-            return NextResponse.json({
-              aiTip: parsed.aiTip,
-            });
-          }
+    if (geminiRes.success && geminiRes.text) {
+      try {
+        const parsed = JSON.parse(geminiRes.text);
+        if (parsed.aiTip) {
+          return NextResponse.json({
+            aiTip: parsed.aiTip,
+            modelUsed: geminiRes.modelUsed,
+            fromCache: geminiRes.fromCache,
+          });
         }
-      } catch (geminiErr) {
-        console.warn("Gemini Profile Suggestions fallback:", geminiErr);
+      } catch (parseErr) {
+        console.warn("[Profile Suggestions] Error parsing Gemini JSON:", parseErr);
       }
     }
 

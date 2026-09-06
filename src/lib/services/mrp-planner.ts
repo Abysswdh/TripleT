@@ -485,10 +485,30 @@ export async function computeMRPPlan(params: {
     aiInsight = `Kapasitas harian Anda (${dailyCapacityHours} jam/hari) dialokasikan dengan baik untuk ${daysMap[todayKey].tasks.length} fokus kerja hari ini.`;
   }
 
-  // Try fetching enhanced Gemini AI suggestion
-  if (params.forceRefreshAI || typeof window !== "undefined") {
+  // Try fetching enhanced Gemini AI suggestion (with Smart Client-Side Caching)
+  const todayTasks = daysMap[todayKey].tasks;
+  const clientCacheKey = `doable_mrp_ai_${todayKey}_${todayTasks.length}_${overdueCount}_${activeContracts.length}`;
+  const CLIENT_CACHE_TTL = 30 * 60 * 1000; // 30 minutes TTL
+
+  let cachedInsightFound = false;
+  if (!params.forceRefreshAI && typeof window !== "undefined") {
     try {
-      const todayTasks = daysMap[todayKey].tasks;
+      const rawStored = sessionStorage.getItem(clientCacheKey);
+      if (rawStored) {
+        const parsed = JSON.parse(rawStored);
+        if (parsed?.insight && parsed?.timestamp && Date.now() - parsed.timestamp < CLIENT_CACHE_TTL) {
+          aiInsight = parsed.insight;
+          if (parsed.tone) aiTone = parsed.tone;
+          cachedInsightFound = true;
+        }
+      }
+    } catch (storageErr) {
+      // sessionStorage read fallback
+    }
+  }
+
+  if (!cachedInsightFound && (params.forceRefreshAI || typeof window !== "undefined")) {
+    try {
       const res = await fetch("/api/ai/strategic-planner", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -506,6 +526,20 @@ export async function computeMRPPlan(params: {
         if (json.insight) {
           aiInsight = json.insight;
           if (json.tone) aiTone = json.tone;
+
+          // Save to client cache
+          if (typeof window !== "undefined") {
+            try {
+              sessionStorage.setItem(
+                clientCacheKey,
+                JSON.stringify({
+                  insight: json.insight,
+                  tone: json.tone,
+                  timestamp: Date.now(),
+                })
+              );
+            } catch (saveErr) {}
+          }
         }
       }
     } catch (apiErr) {

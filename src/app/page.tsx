@@ -179,7 +179,7 @@ export default function LandingPage() {
       level: "Beginner Friendly",
       xp: "+150 XP Portofolio",
       description: "Brief simulasi untuk kedai kopi lokal. Buat logo minimalis, skema warna earthy, dan mockup kemasan cup.",
-      skills: ["Adobe Illustrator", "Logo Design", "Mockup Presentation"],
+      skills: ["Desain Vektor", "Logo Design", "Mockup Presentation"],
       status: "Tersedia untuk Dikerjakan",
     },
     {
@@ -189,17 +189,17 @@ export default function LandingPage() {
       level: "Intermediate Brief",
       xp: "+250 XP Portofolio",
       description: "Desain 5 layar utama aplikasi belanja sayur lokal: Beranda, Detail Produk, Keranjang, Checkout, dan Tracking.",
-      skills: ["Figma", "Mobile UI", "Prototyping"],
+      skills: ["UI/UX Design", "Mobile UI", "Prototyping"],
       status: "Tersedia untuk Dikerjakan",
     },
     {
       id: "d0000000-0000-0000-0000-000000000003",
-      title: "Video Reel Promosi Instagram Produk Skincare",
+      title: "Video Reel Promosi Media Sosial Produk Skincare",
       category: "Content & Video",
       level: "Beginner Friendly",
       xp: "+180 XP Portofolio",
       description: "Sunting video 30 detik untuk kampanye media sosial menggunakan aset stok & musik bebas hak cipta.",
-      skills: ["CapCut / Premiere", "Short-Form Video", "Storyboarding"],
+      skills: ["Video Editing", "Short-Form Video", "Storyboarding"],
       status: "Tersedia untuk Dikerjakan",
     },
   ];
@@ -553,7 +553,7 @@ export default function LandingPage() {
                 </div>
                 <div className="flex items-center gap-2.5">
                   <CheckCircle2 className="h-4 w-4 text-blue-600 shrink-0" />
-                  <span className="text-xs font-semibold text-slate-700">GitHub-style Green Streak Gamification</span>
+                  <span className="text-xs font-semibold text-slate-700">Work Activity &amp; Streak Gamification</span>
                 </div>
                 <div className="flex items-center gap-2.5">
                   <CheckCircle2 className="h-4 w-4 text-blue-600 shrink-0" />
@@ -1174,7 +1174,7 @@ export default function LandingPage() {
       </section>
 
       {/* ========================================================================= */}
-      {/* 5. SOLUSI DOABLE!: FUSI FIVERR X NOTION (#solusi-doable) */}
+      {/* 5. SOLUSI DOABLE!: MARKETPLACE & WORKSPACE TERPADU (#solusi-doable) */}
       {/* ========================================================================= */}
       <section id="solusi-doable" className="py-24 px-6 lg:px-12 max-w-7xl mx-auto scroll-mt-20">
         <motion.div
@@ -1186,7 +1186,7 @@ export default function LandingPage() {
           className="text-center max-w-3xl mx-auto mb-14"
         >
           <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
-            Doable!: Gabungan Fiverr &amp; Notion dalam Satu Digital Space
+            Doable!: Ekosistem Marketplace &amp; Workspace dalam Satu Digital Space
           </h2>
           <p className="mt-4 text-slate-600 leading-relaxed text-sm sm:text-base">
             Klien dan freelancer tidak sekadar bertransaksi lalu berpisah, melainkan bekerja bersama dalam satu ruang kerja digital yang terintegrasi dari hari pertama.
@@ -1335,7 +1335,7 @@ export default function LandingPage() {
                     </li>
                     <li className="flex items-center gap-2.5 font-semibold">
                       <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                      Visualisasi konsistensi kerja via GitHub-style Green Box Streak
+                      Visualisasi konsistensi kerja via Activity Heatmap &amp; Streak Harian
                     </li>
                   </ul>
                 </div>
@@ -1412,7 +1412,7 @@ export default function LandingPage() {
               Workspace Otomatis &amp; Gamifikasi Streak
             </h2>
             <p className="mt-4 text-slate-600 leading-relaxed text-sm sm:text-base">
-              Tanpa komunikasi yang tercecer di WhatsApp atau file hilang di jalan. Semua task, timeline, dan percakapan dalam satu tempat yang aman.
+              Tanpa komunikasi yang tercecer di aplikasi pesan atau file hilang di jalan. Semua task, timeline, dan percakapan dalam satu tempat yang aman.
             </p>
           </motion.div>
 

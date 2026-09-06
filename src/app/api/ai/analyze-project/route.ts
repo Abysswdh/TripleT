@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { callGemini } from "@/lib/services/gemini-client";
 import {
   analyzeProjectLocally,
   validateAIResponse,
@@ -20,12 +21,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const geminiApiKey = process.env.GEMINI_API_KEY;
-
-    // 1. If Gemini API Key is configured in Vercel environment variables:
-    if (geminiApiKey) {
-      try {
-        const prompt = `Anda adalah AI analisis proyek freelance profesional untuk platform Doable! Indonesia.
+    const prompt = `Anda adalah AI analisis proyek freelance profesional untuk platform Doable! Indonesia.
 Analisis judul dan kebutuhan pekerjaan berikut secara akurat dan tentukan klasifikasinya:
 
 Judul: "${title}"
@@ -44,30 +40,20 @@ Klasifikasikan ke format JSON (hanya kembalikan JSON murni tanpa markdown):
   "reasoning": "Alasan singkat klasifikasi"
 }`;
 
-        const geminiRes = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: { responseMimeType: "application/json" },
-            }),
-          }
-        );
+    const geminiRes = await callGemini({
+      prompt,
+      responseMimeType: "application/json",
+      temperature: 0.2,
+    });
 
-        if (geminiRes.ok) {
-          const data = await geminiRes.json();
-          const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (rawText) {
-            const parsed = JSON.parse(rawText);
-            if (validateAIResponse(parsed)) {
-              return NextResponse.json(parsed);
-            }
-          }
+    if (geminiRes.success && geminiRes.text) {
+      try {
+        const parsed = JSON.parse(geminiRes.text);
+        if (validateAIResponse(parsed)) {
+          return NextResponse.json(parsed);
         }
-      } catch (geminiErr) {
-        console.warn("Gemini API call error, falling back to enhanced NLP engine:", geminiErr);
+      } catch (parseErr) {
+        console.warn("[Analyze Project] Error parsing Gemini JSON:", parseErr);
       }
     }
 

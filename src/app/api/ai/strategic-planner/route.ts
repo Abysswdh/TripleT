@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { callGemini } from "@/lib/services/gemini-client";
 
 export async function POST(req: Request) {
   try {
@@ -12,11 +13,7 @@ export async function POST(req: Request) {
       todayTaskTitles = [],
     } = body;
 
-    const geminiApiKey = process.env.GEMINI_API_KEY;
-
-    if (geminiApiKey) {
-      try {
-        const prompt = `Anda adalah "Doable Strategic Workload Coach" (AI Planner platform freelance Indonesia).
+    const prompt = `Anda adalah "Doable Strategic Workload Coach" (AI Planner platform freelance Indonesia).
 Tugas Anda: Berikan 1-2 kalimat saran taktis yang ringkas, cerdas, dan memotivasi untuk talenta freelance berdasarkan beban kerja hari ini.
 
 Data Talenta Hari Ini:
@@ -38,34 +35,25 @@ Kembalikan format JSON murni:
   "tone": "urgent" | "balanced" | "relaxed"
 }`;
 
-        const res = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: {
-                responseMimeType: "application/json",
-                temperature: 0.3,
-              },
-            }),
-          }
-        );
+    const geminiRes = await callGemini({
+      prompt,
+      responseMimeType: "application/json",
+      temperature: 0.3,
+    });
 
-        if (res.ok) {
-          const geminiData = await res.json();
-          const rawText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (rawText) {
-            const parsed = JSON.parse(rawText);
-            return NextResponse.json({
-              insight: parsed.insight,
-              tone: parsed.tone || (overdueCount > 0 ? "urgent" : "balanced"),
-            });
-          }
+    if (geminiRes.success && geminiRes.text) {
+      try {
+        const parsed = JSON.parse(geminiRes.text);
+        if (parsed.insight) {
+          return NextResponse.json({
+            insight: parsed.insight,
+            tone: parsed.tone || (overdueCount > 0 ? "urgent" : "balanced"),
+            modelUsed: geminiRes.modelUsed,
+            fromCache: geminiRes.fromCache,
+          });
         }
-      } catch (geminiError) {
-        console.warn("Gemini API call failed, using deterministic coach:", geminiError);
+      } catch (parseErr) {
+        console.warn("[Strategic Planner] Error parsing Gemini JSON:", parseErr);
       }
     }
 

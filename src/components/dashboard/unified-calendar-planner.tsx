@@ -65,6 +65,12 @@ export function UnifiedSmartCalendarPlanner({
     setLiveActiveDates(activeDates);
   }, [streakDays, activeDates]);
 
+  // Memoize contracts fingerprint to prevent unnecessary loadPlan triggers on parent re-renders
+  const contractsFingerprint = useMemo(
+    () => (activeContracts || []).map((c) => `${c.id || ""}_${c.status || ""}_${c.progress || 0}`).join(";"),
+    [activeContracts]
+  );
+
   // Load MRP Plan
   useEffect(() => {
     let isMounted = true;
@@ -92,7 +98,7 @@ export function UnifiedSmartCalendarPlanner({
     return () => {
       isMounted = false;
     };
-  }, [user?.id, activeContracts, userProfile]);
+  }, [user?.id, contractsFingerprint, userProfile?.availability]);
 
   // Days list for the interactive calendar strip (7 days: Kemarin (-1) to +5 ahead)
   const calendarDays = useMemo(() => {
