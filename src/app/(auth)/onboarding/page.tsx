@@ -217,13 +217,11 @@ function OnboardingContent() {
         </div>
       )}
 
-      {/* Step 0: Cinematic Brand Intro Video, otherwise Split-Card Wizard */}
+      {/* Step 0: 16:9 Video Intro with Lanjutkan button, otherwise Silk Split-Card Wizard */}
       {step === 0 ? (
-        <div className="overflow-hidden min-h-[100dvh] sm:min-h-0 sm:h-[600px] sm:max-h-[90vh] rounded-none sm:rounded-3xl border-0 sm:border border-slate-200/90 bg-black shadow-2xl shadow-slate-300/40 flex flex-1 sm:flex-initial">
-          <StepIntro onStart={() => setStep(1)} />
-        </div>
+        <StepIntro onStart={() => setStep(1)} />
       ) : (
-        /* Split-Card: Responsive & Scrollable container */
+        /* Split-Card: Responsive & Scrollable container with React Bits Silk */
         <div className="overflow-hidden min-h-[100dvh] sm:min-h-0 sm:h-[600px] sm:max-h-[90vh] rounded-none sm:rounded-3xl border-0 sm:border border-slate-200/90 bg-white shadow-2xl shadow-slate-300/40 flex flex-col lg:flex-row flex-1 sm:flex-initial">
           {/* Left Side: React Bits Silk Canvas Banner */}
           <div className="relative w-full lg:w-[360px] lg:min-w-[360px] h-auto lg:h-full overflow-hidden bg-[#0C0838] flex flex-col justify-between p-4 sm:p-6 lg:p-7 text-white select-none shrink-0">
