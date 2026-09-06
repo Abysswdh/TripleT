@@ -116,7 +116,7 @@ Yang membedakan Doable! dari platform freelance lainnya adalah integrasi menyelu
 
 ### 📹 Video Demo
 
-**[📂 Tonton Video Demo di Google Drive](https://drive.google.com/drive/folders/1oowRB0q6nBLAREbKosVVWGHzm4nH1Q7j?usp=sharing)**
+**[📂 Tonton Video Demo di Google Drive](https://drive.google.com/file/d/1lu5VsBjiBmdp1yKzrezYXgagRDgCy4yK/view?usp=sharing)**
 
 ---
 
@@ -327,6 +327,6 @@ Proyek ini dilisensikan di bawah [MIT License](LICENSE). Lihat file LICENSE untu
 
   **Made with ❤️ by TripleT for ITECHNO CUP 2026**
 
-  [🚀 Live Demo](https://triple-t-lime.vercel.app/) · [📂 Video Demo](https://drive.google.com/drive/folders/1oowRB0q6nBLAREbKosVVWGHzm4nH1Q7j?usp=sharing) · [📦 Repository](https://github.com/Abysswdh/TripleT)
+  [🚀 Live Demo](https://triple-t-lime.vercel.app/) · [📂 Video Demo](https://drive.google.com/file/d/1lu5VsBjiBmdp1yKzrezYXgagRDgCy4yK/view?usp=sharing) · [📦 Repository](https://github.com/Abysswdh/TripleT)
 
 </div>
