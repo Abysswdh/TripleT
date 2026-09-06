@@ -46,6 +46,7 @@ import {
   ChevronRight,
   Palette,
   TrendingUp,
+  Clock,
 } from "lucide-react";
 
 const CATEGORY_ICON_MAP: Record<string, React.ElementType> = {
@@ -63,6 +64,46 @@ interface SettingsViewProps {
   initialTab?: SettingsTab;
   defaultRole?: DashboardRole;
 }
+
+export type WeeklyAvailability = "part_time" | "semi_full" | "full_time" | "flexible";
+
+export const WEEKLY_AVAILABILITY_OPTIONS = [
+  {
+    id: "part_time" as const,
+    label: "Side Hustle / Santai",
+    hours: "< 15 Jam / Minggu",
+    badge: "< 15 Jam",
+    desc: "Mengerjakan proyek fleksibel & akhir pekan",
+  },
+  {
+    id: "semi_full" as const,
+    label: "Part-Time Aktif",
+    hours: "15 – 30 Jam / Minggu",
+    badge: "15–30 Jam",
+    desc: "Siap kolaborasi proyek rutin & berkala",
+  },
+  {
+    id: "full_time" as const,
+    label: "Full-Time Freelancer",
+    hours: "> 30 Jam / Minggu",
+    badge: "> 30 Jam",
+    desc: "Dedikasi penuh waktu & respons cepat",
+  },
+  {
+    id: "flexible" as const,
+    label: "Fleksibel / Malam",
+    hours: "Sesuai Kebutuhan",
+    badge: "Fleksibel",
+    desc: "Tersedia di luar jam kantor utama",
+  },
+] as const;
+
+export const STARTING_PRICE_PRESETS = [
+  { price: 300000, label: "Rp 300 Rb", sub: "Tugas Ringan / Edit" },
+  { price: 500000, label: "Rp 500 Rb", sub: "Desain Sederhana" },
+  { price: 1000000, label: "Rp 1 Juta", sub: "Proyek Standar" },
+  { price: 2500000, label: "Rp 2.5 Jt+", sub: "Proyek Kompleks" },
+] as const;
 
 const AVAILABLE_SKILLS = [
   "React",
@@ -237,6 +278,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
   const [startingPrice, setStartingPrice] = useState("500000");
   const [experienceLevel, setExperienceLevel] = useState("intermediate");
   const [availability, setAvailability] = useState("available");
+  const [weeklyAvailability, setWeeklyAvailability] = useState<WeeklyAvailability>("semi_full");
   const [selectedSkills, setSelectedSkills] = useState<string[]>([
     "React",
     "Next.js",
@@ -376,7 +418,30 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
             else if (el.includes("expert") || el.includes("lead") || el.includes("ahli") || el.includes("senior")) setExperienceLevel("expert");
             else setExperienceLevel("intermediate");
           }
-          if (flProfile.availability) setAvailability(flProfile.availability);
+          if (flProfile.weekly_availability) {
+            const wa = String(flProfile.weekly_availability).toLowerCase().trim();
+            if (wa === "part_time" || wa === "semi_full" || wa === "full_time" || wa === "flexible") {
+              setWeeklyAvailability(wa as WeeklyAvailability);
+            }
+          } else if (flProfile.availability) {
+            const rawAvail = String(flProfile.availability).toLowerCase();
+            if (rawAvail.includes("< 15") || rawAvail.includes("part_time") || rawAvail.includes("side hustle")) {
+              setWeeklyAvailability("part_time");
+            } else if (rawAvail.includes("> 30") || rawAvail.includes("full_time") || rawAvail.includes("full-time")) {
+              setWeeklyAvailability("full_time");
+            } else if (rawAvail.includes("flex") || rawAvail.includes("malam")) {
+              setWeeklyAvailability("flexible");
+            } else {
+              setWeeklyAvailability("semi_full");
+            }
+          }
+
+          if (flProfile.availability_status && ["available", "open", "busy"].includes(flProfile.availability_status)) {
+            setAvailability(flProfile.availability_status);
+          } else if (flProfile.availability && ["available", "open", "busy"].includes(flProfile.availability)) {
+            setAvailability(flProfile.availability);
+          }
+
           if (flProfile.github_url) setGithubUrl(flProfile.github_url);
           if (flProfile.linkedin_url) setLinkedinUrl(flProfile.linkedin_url);
           if (flProfile.portfolio_url) setPortfolioUrl(flProfile.portfolio_url);
@@ -443,6 +508,15 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
       } else if (meta.hourly_rate && (!startingPrice || startingPrice === "500000")) {
         const hr = Number(meta.hourly_rate);
         setStartingPrice(String(hr < 1000 ? hr * 50000 : hr));
+      }
+      if (meta.weekly_availability) {
+        const mwa = String(meta.weekly_availability).toLowerCase().trim();
+        if (mwa === "part_time" || mwa === "semi_full" || mwa === "full_time" || mwa === "flexible") {
+          setWeeklyAvailability(mwa as WeeklyAvailability);
+        }
+      }
+      if (meta.availability_status && ["available", "open", "busy"].includes(meta.availability_status)) {
+        setAvailability(meta.availability_status);
       }
       if (meta.preferred_language && (meta.preferred_language === "id" || meta.preferred_language === "en")) {
         setLocale(meta.preferred_language as Locale);
@@ -549,12 +623,23 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
       const numericStartingPrice = parseInt(startingPrice, 10) || 500000;
       const formattedStartingPrice = `Rp ${numericStartingPrice.toLocaleString("id-ID")}`;
 
+      const availLabel =
+        weeklyAvailability === "full_time"
+          ? "> 30 Jam / Minggu (Full-Time)"
+          : weeklyAvailability === "part_time"
+          ? "< 15 Jam / Minggu (Side Hustle)"
+          : weeklyAvailability === "flexible"
+          ? "Fleksibel (Malam & Weekend)"
+          : "15 – 30 Jam / Minggu (Part-Time)";
+
       if (currentRole === "freelancer") {
         updateData.hourly_rate = numericStartingPrice;
         updateData.starting_price = formattedStartingPrice;
         updateData.skills = selectedSkills;
         updateData.experience_level = experienceLevel;
-        updateData.availability = availability;
+        updateData.weekly_availability = weeklyAvailability;
+        updateData.availability = availLabel;
+        updateData.availability_status = availability;
         updateData.github_url = githubUrl;
         updateData.linkedin_url = linkedinUrl;
         updateData.portfolio_url = portfolioUrl;
@@ -609,11 +694,14 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                 hourly_rate: numericStartingPrice,
                 starting_price: formattedStartingPrice,
                 skills: selectedSkills,
-                availability: availability,
+                experience_level: experienceLevel,
+                weekly_availability: weeklyAvailability,
+                availability: availLabel,
                 github_url: githubUrl,
                 linkedin_url: linkedinUrl,
                 portfolio_url: portfolioUrl,
                 cover_image: sanitizedBannerForSave,
+                updated_at: new Date().toISOString(),
               },
               { onConflict: "user_id" }
             );
@@ -1213,31 +1301,138 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    {/* Starting Project Rate */}
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                        <Banknote className="h-3.5 w-3.5 text-muted-foreground" />
-                        {t("settings.work.startingPrice", "Tarif Mulai per Proyek (IDR)")}
-                      </label>
-                      <div className="relative">
-                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground">Rp</span>
-                        <input
-                          type="number"
-                          min="50000"
-                          step="50000"
-                          value={startingPrice}
-                          onChange={(e) => setStartingPrice(e.target.value)}
-                          placeholder="500000"
-                          className="h-10 w-full rounded-xl border border-border bg-background pl-10 pr-20 text-xs font-bold text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                        />
-                        <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground">/ proyek</span>
+                  {/* SECTION 1: Kapasitas Jam Kerja Mingguan (Weekly Hour Work Capacity) */}
+                  <div className="space-y-3 rounded-2xl border border-primary/20 bg-primary/[0.03] p-5 shadow-xs">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-primary shrink-0" />
+                        <h3 className="text-sm font-bold text-foreground">
+                          {t("settings.work.weeklyCapacityTitle", "Kapasitas & Jam Kerja Mingguan")}
+                        </h3>
                       </div>
-                      <p className="text-[10px] text-muted-foreground">
-                        Mulai dari {formatMoney(parseInt(startingPrice || "0", 10), "IDR")} per pengerjaan proyek
-                      </p>
+                      <span className="self-start sm:self-auto text-[11px] font-bold text-primary px-3 py-1 rounded-full bg-primary/10 border border-primary/20">
+                        {WEEKLY_AVAILABILITY_OPTIONS.find((o) => o.id === weeklyAvailability)?.hours || "15 – 30 Jam / Minggu"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      {t("settings.work.weeklyCapacityDesc", "Sesuaikan jam kerja mingguan yang Anda sanggupi (pilihan saat onboarding). Kapasitas ini menentukan ketersediaan Anda di pencarian talenta klien.")}
+                    </p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
+                      {WEEKLY_AVAILABILITY_OPTIONS.map((opt) => {
+                        const isSelected = weeklyAvailability === opt.id;
+                        return (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            onClick={() => setWeeklyAvailability(opt.id)}
+                            className={`rounded-2xl border p-3.5 text-left transition-all relative group cursor-pointer ${
+                              isSelected
+                                ? "border-primary bg-primary/10 ring-2 ring-primary shadow-sm"
+                                : "border-border/70 bg-card hover:border-primary/50 hover:bg-muted/40"
+                            }`}
+                          >
+                            {isSelected && (
+                              <span className="absolute top-3 right-3 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white text-[10px] font-bold">
+                                ✓
+                              </span>
+                            )}
+                            <p className="text-xs font-bold text-foreground pr-6">{opt.label}</p>
+                            <p className="text-xs font-extrabold text-primary mt-1">{opt.hours}</p>
+                            <p className="text-[10px] text-muted-foreground mt-1 leading-relaxed">{opt.desc}</p>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* SECTION 2: Ekspektasi Tarif Mulai & Estimasi Potensi (Rates & Earnings Potential) */}
+                  <div className="space-y-4 rounded-2xl border border-border/70 bg-card p-5 shadow-xs">
+                    <div className="flex items-center gap-2">
+                      <Banknote className="h-4 w-4 text-emerald-500" />
+                      <h3 className="text-sm font-bold text-foreground">
+                        {t("settings.work.startingPriceTitle", "Ekspektasi Tarif Mulai per Proyek")}
+                      </h3>
+                    </div>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      {t("settings.work.startingPriceDesc", "Tentukan patokan biaya minimum saat klien merekrut Anda. Anda dapat memilih preset cepat atau memasukkan nominal kustom.")}
+                    </p>
+
+                    {/* Preset Buttons */}
+                    <div className="space-y-1.5">
+                      <span className="text-[11px] font-semibold text-muted-foreground">Pilihan Cepat:</span>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                        {STARTING_PRICE_PRESETS.map((item) => {
+                          const isSelected = parseInt(startingPrice || "0", 10) === item.price;
+                          return (
+                            <button
+                              key={item.price}
+                              type="button"
+                              onClick={() => setStartingPrice(String(item.price))}
+                              className={`rounded-xl border p-2.5 text-left transition-all cursor-pointer ${
+                                isSelected
+                                  ? "border-primary bg-primary/10 ring-2 ring-primary shadow-xs"
+                                  : "border-border/70 bg-card hover:border-primary/40 hover:bg-muted/30"
+                              }`}
+                            >
+                              <p className="text-xs font-bold text-foreground">{item.label}</p>
+                              <p className="text-[10px] text-muted-foreground mt-0.5">{item.sub}</p>
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
 
+                    {/* Custom Input & Monthly Projection */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-foreground">
+                          {t("settings.work.customRateLabel", "Nominal Tarif Minimum (IDR)")}
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground">Rp</span>
+                          <input
+                            type="number"
+                            min="50000"
+                            step="50000"
+                            value={startingPrice}
+                            onChange={(e) => setStartingPrice(e.target.value)}
+                            placeholder="500000"
+                            className="h-10 w-full rounded-xl border border-border bg-background pl-10 pr-20 text-xs font-bold text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                          />
+                          <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground">/ proyek</span>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">
+                          Mulai dari {formatMoney(parseInt(startingPrice || "0", 10), "IDR")} per pengerjaan proyek standar
+                        </p>
+                      </div>
+
+                      {/* Monthly Revenue Projection Box */}
+                      <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.04] p-3 flex flex-col justify-between">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-semibold text-emerald-700 dark:text-emerald-300 flex items-center gap-1">
+                            <Sparkles className="h-3.5 w-3.5" />
+                            Potensi Estimasi Penghasilan
+                          </span>
+                          <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                            {WEEKLY_AVAILABILITY_OPTIONS.find((o) => o.id === weeklyAvailability)?.badge}
+                          </span>
+                        </div>
+                        <div className="mt-1">
+                          <p className="text-base font-extrabold text-foreground">
+                            {formatMoney((parseInt(startingPrice || "0", 10) || 500000) * (weeklyAvailability === "full_time" ? 4 : weeklyAvailability === "semi_full" ? 3 : weeklyAvailability === "part_time" ? 1 : 2), "IDR")}
+                            <span className="text-xs font-normal text-muted-foreground"> / bulan</span>
+                          </p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5">
+                            Estimasi ~{weeklyAvailability === "full_time" ? "4–6" : weeklyAvailability === "semi_full" ? "2–4" : weeklyAvailability === "part_time" ? "1–2" : "2–3"} proyek per bulan sesuai alokasi waktu kerja Anda
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* SECTION 3: Tingkat Pengalaman & Status Ketersediaan */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     {/* Experience Level */}
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
@@ -1255,14 +1450,14 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                       </select>
                     </div>
 
-                    {/* Availability */}
-                    <div className="space-y-1.5 sm:col-span-2">
+                    {/* Availability Status */}
+                    <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-foreground">
-                        {t("settings.work.availability", "Status Ketersediaan")}
+                        {t("settings.work.availability", "Status Penerimaan Proyek")}
                       </label>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="grid grid-cols-3 gap-2">
                         <label
-                          className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                          className={`flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer transition-all ${
                             availability === "available"
                               ? "border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
                               : "border-border bg-muted/30 text-muted-foreground hover:bg-muted/60"
@@ -1276,15 +1471,12 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                             onChange={() => setAvailability("available")}
                             className="sr-only"
                           />
-                          <div className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                          <div className="text-xs">
-                            <p className="font-bold">{t("settings.work.availableStatus", "Tersedia untuk Kerja")}</p>
-                            <p className="text-[10px] opacity-80">{t("settings.work.availableStatusDesc", "Siap menerima proyek baru")}</p>
-                          </div>
+                          <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                          <div className="text-[11px] font-bold truncate">Tersedia</div>
                         </label>
 
                         <label
-                          className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                          className={`flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer transition-all ${
                             availability === "open"
                               ? "border-amber-500 bg-amber-500/10 text-amber-700 dark:text-amber-300"
                               : "border-border bg-muted/30 text-muted-foreground hover:bg-muted/60"
@@ -1298,15 +1490,12 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                             onChange={() => setAvailability("open")}
                             className="sr-only"
                           />
-                          <div className="h-2.5 w-2.5 rounded-full bg-amber-500" />
-                          <div className="text-xs">
-                            <p className="font-bold">{t("settings.work.openStatus", "Terbuka untuk Tawaran")}</p>
-                            <p className="text-[10px] opacity-80">{t("settings.work.openStatusDesc", "Selektif untuk proyek yang cocok")}</p>
-                          </div>
+                          <div className="h-2 w-2 rounded-full bg-amber-500 shrink-0" />
+                          <div className="text-[11px] font-bold truncate">Terbuka</div>
                         </label>
 
                         <label
-                          className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                          className={`flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer transition-all ${
                             availability === "busy"
                               ? "border-rose-500 bg-rose-500/10 text-rose-700 dark:text-rose-300"
                               : "border-border bg-muted/30 text-muted-foreground hover:bg-muted/60"
@@ -1320,13 +1509,40 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                             onChange={() => setAvailability("busy")}
                             className="sr-only"
                           />
-                          <div className="h-2.5 w-2.5 rounded-full bg-rose-500" />
-                          <div className="text-xs">
-                            <p className="font-bold">{t("settings.work.busyStatus", "Sedang Penuh")}</p>
-                            <p className="text-[10px] opacity-80">{t("settings.work.busyStatusDesc", "Tidak menerima proyek baru saat ini")}</p>
-                          </div>
+                          <div className="h-2 w-2 rounded-full bg-rose-500 shrink-0" />
+                          <div className="text-[11px] font-bold truncate">Penuh</div>
                         </label>
                       </div>
+                    </div>
+                  </div>
+
+                  {/* SECTION 4: Live Badge Preview Strip */}
+                  <div className="rounded-xl border border-dashed border-border/80 bg-muted/20 p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <span className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1.5">
+                      <Sparkles className="h-3.5 w-3.5 text-primary" />
+                      Tampilan Badge pada Profil Publik:
+                    </span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="inline-flex items-center gap-1 rounded-lg bg-primary/10 border border-primary/20 px-2.5 py-0.5 text-[11px] font-bold text-primary">
+                        <Clock className="h-3 w-3" />
+                        {WEEKLY_AVAILABILITY_OPTIONS.find((o) => o.id === weeklyAvailability)?.hours}
+                      </span>
+                      <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-300">
+                        <Banknote className="h-3 w-3" />
+                        Mulai {formatMoney(parseInt(startingPrice || "0", 10), "IDR")}
+                      </span>
+                      <span className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-0.5 text-[11px] font-bold ${
+                        availability === "available"
+                          ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600"
+                          : availability === "open"
+                          ? "bg-amber-500/10 border-amber-500/20 text-amber-600"
+                          : "bg-rose-500/10 border-rose-500/20 text-rose-600"
+                      }`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${
+                          availability === "available" ? "bg-emerald-500" : availability === "open" ? "bg-amber-500" : "bg-rose-500"
+                        }`} />
+                        {availability === "available" ? "Tersedia" : availability === "open" ? "Terbuka" : "Penuh"}
+                      </span>
                     </div>
                   </div>
 

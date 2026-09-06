@@ -897,7 +897,7 @@ export function FreelancerProfileView({
             availability: formatAvailabilityHours(
               typeof fp.starting_price === "string" && fp.starting_price.includes("Jam")
                 ? fp.starting_price
-                : (fp.availability as string) || (isOwner ? meta.weekly_availability : null)
+                : (fp.weekly_availability as string) || (fp.availability as string) || (isOwner ? (meta.weekly_availability as string) : null)
             ),
             aboutMe: rawAboutMe,
             streakWeeks: Number(fp.streak_weeks) || 1,
@@ -917,9 +917,16 @@ export function FreelancerProfileView({
     const handleReviewSubmitted = () => {
       fetchFromSupabase();
     };
+    const handleProfileUpdated = () => {
+      fetchFromSupabase();
+    };
     window.addEventListener("review-submitted", handleReviewSubmitted);
+    window.addEventListener("profile-updated", handleProfileUpdated);
+    window.addEventListener("doable-availability-updated", handleProfileUpdated);
     return () => {
       window.removeEventListener("review-submitted", handleReviewSubmitted);
+      window.removeEventListener("profile-updated", handleProfileUpdated);
+      window.removeEventListener("doable-availability-updated", handleProfileUpdated);
     };
   }, [talentId, isOwner, user?.id]);
 
