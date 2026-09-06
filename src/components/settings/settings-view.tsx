@@ -99,10 +99,10 @@ export const WEEKLY_AVAILABILITY_OPTIONS = [
 ] as const;
 
 export const STARTING_PRICE_PRESETS = [
-  { price: 300000, label: "Rp 300 Rb", sub: "Tugas Ringan / Edit" },
-  { price: 500000, label: "Rp 500 Rb", sub: "Desain Sederhana" },
-  { price: 1000000, label: "Rp 1 Juta", sub: "Proyek Standar" },
-  { price: 2500000, label: "Rp 2.5 Jt+", sub: "Proyek Kompleks" },
+  { price: 300000, label: "Rp 300 Rb", tierBadge: "🌱 Beginner", rangeText: "Pasar: 150rb – 400rb", sub: "Tugas Ringan / Edit" },
+  { price: 500000, label: "Rp 500 Rb", tierBadge: "⚡ Starter–Menengah", rangeText: "Pasar: 400rb – 750rb", sub: "Desain Sederhana" },
+  { price: 1000000, label: "Rp 1 Juta", tierBadge: "🚀 Intermediate", rangeText: "Pasar: 750rb – 1.8jt", sub: "Proyek Standar" },
+  { price: 2500000, label: "Rp 2.5 Jt+", tierBadge: "👑 Expert / Pro", rangeText: "Pasar: 2jt – 5jt+", sub: "Proyek Kompleks" },
 ] as const;
 
 const AVAILABLE_SKILLS = [
@@ -1488,8 +1488,14 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                                   : "border-border/70 bg-card hover:border-primary/40 hover:bg-muted/30"
                               }`}
                             >
-                              <p className="text-xs font-bold text-foreground">{item.label}</p>
-                              <p className="text-[10px] text-muted-foreground mt-0.5">{item.sub}</p>
+                              <div className="flex items-center justify-between gap-1">
+                                <p className="text-xs font-bold text-foreground">{item.label}</p>
+                                <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded-md bg-muted text-muted-foreground">
+                                  {item.tierBadge}
+                                </span>
+                              </div>
+                              <p className="text-[10px] text-primary font-medium mt-0.5">{item.rangeText}</p>
+                              <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{item.sub}</p>
                             </button>
                           );
                         })}
