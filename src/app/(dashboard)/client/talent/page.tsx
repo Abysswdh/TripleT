@@ -418,7 +418,7 @@ function ClientTalentContent() {
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200 overflow-y-auto">
             {/* Backdrop with dark blur covering entire screen */}
             <div
-              className="fixed inset-0 bg-black/60 backdrop-blur-md transition-opacity"
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
               onClick={() => setSelectedTalent(null)}
             />
             <div className="relative z-10 w-full max-w-lg rounded-3xl border border-border/80 bg-card p-6 md:p-8 shadow-2xl space-y-5 max-h-[90vh] overflow-hidden">
