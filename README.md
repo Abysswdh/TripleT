@@ -256,57 +256,36 @@ TripleT/
 
 ---
 
-## ⚙️ Instalasi & Setup
+## ⚙️ Cara Mengakses
 
-### Prerequisites
+### Live Demo (Rekomendasi)
 
-Pastikan Anda telah menginstall:
-- **Node.js** v18.x atau lebih tinggi
-- **npm** (bundled with Node.js)
-- **Git**
-- Akun **Supabase** (untuk database & auth)
+Cara tercepat untuk mencoba Doable! adalah melalui live demo yang sudah di-deploy dan siap digunakan:
 
-### Langkah Instalasi
+🔗 **[https://triple-t-lime.vercel.app/](https://triple-t-lime.vercel.app/)**
 
-#### 1️⃣ Clone Repository
+Cukup buka link di atas, buat akun baru, dan mulai eksplorasi seluruh fitur yang tersedia.
+
+### Local Development (Untuk Tim Developer)
+
+Proyek ini menggunakan Supabase sebagai backend, dengan database schema, tabel, Row Level Security (RLS) policies, dan data yang sudah dikonfigurasi di instance Supabase tim. Karena itu, menjalankan proyek secara lokal memerlukan kredensial environment dari tim developer.
 
 ```bash
+# Clone repository
 git clone https://github.com/Abysswdh/TripleT.git
 cd TripleT
-```
 
-#### 2️⃣ Install Dependencies
-
-```bash
+# Install dependencies
 npm install
-```
 
-#### 3️⃣ Setup Environment Variables
+# Buat file .env.local dengan kredensial dari tim
+# (Hubungi tim developer untuk mendapatkan file ini)
 
-Buat file `.env.local` di root directory:
-
-```env
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-```
-
-> **💡 Tip:** Dapatkan kredensial Supabase dari [Supabase Dashboard](https://app.supabase.com/) → Project Settings → API.
-
-#### 4️⃣ Run Development Server
-
-```bash
+# Jalankan development server
 npm run dev
 ```
 
-Aplikasi akan berjalan di `http://localhost:3000`
-
-#### 5️⃣ Build untuk Production
-
-```bash
-npm run build
-npm run start
-```
+> **⚠️ Catatan:** Tanpa file `.env.local` yang berisi kredensial Supabase milik tim, aplikasi tidak akan bisa terhubung ke database dan fitur-fitur seperti autentikasi, marketplace, dan project management tidak akan berfungsi. Untuk mencoba aplikasi, silakan gunakan **[Live Demo](https://triple-t-lime.vercel.app/)** di atas.
 
 ---
 
