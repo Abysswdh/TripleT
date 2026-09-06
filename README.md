@@ -266,26 +266,34 @@ Cara tercepat untuk mencoba Doable! adalah melalui live demo yang sudah di-deplo
 
 Cukup buka link di atas, buat akun baru, dan mulai eksplorasi seluruh fitur yang tersedia.
 
-### Local Development (Untuk Tim Developer)
+### Local Development
 
-Proyek ini menggunakan Supabase sebagai backend, dengan database schema, tabel, Row Level Security (RLS) policies, dan data yang sudah dikonfigurasi di instance Supabase tim. Karena itu, menjalankan proyek secara lokal memerlukan kredensial environment dari tim developer.
+Untuk menjalankan proyek secara lokal (misalnya untuk keperluan penilaian juri), ikuti langkah berikut:
+
+#### 1️⃣ Clone & Install
 
 ```bash
-# Clone repository
 git clone https://github.com/Abysswdh/TripleT.git
 cd TripleT
-
-# Install dependencies
 npm install
+```
 
-# Buat file .env.local dengan kredensial dari tim
-# (Hubungi tim developer untuk mendapatkan file ini)
+#### 2️⃣ Setup Environment Variables
 
-# Jalankan development server
+Buat file `.env.local` di root directory dengan isi berikut:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://vglfiuflqokjqosquici.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_qrdjReSVyv1IZ7CN1dKMEQ_hBbDB25A
+```
+
+#### 3️⃣ Jalankan
+
+```bash
 npm run dev
 ```
 
-> **⚠️ Catatan:** Tanpa file `.env.local` yang berisi kredensial Supabase milik tim, aplikasi tidak akan bisa terhubung ke database dan fitur-fitur seperti autentikasi, marketplace, dan project management tidak akan berfungsi. Untuk mencoba aplikasi, silakan gunakan **[Live Demo](https://triple-t-lime.vercel.app/)** di atas.
+Aplikasi akan berjalan di `http://localhost:3000`
 
 ---
 
