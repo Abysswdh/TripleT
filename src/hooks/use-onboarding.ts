@@ -65,7 +65,7 @@ export function useOnboarding() {
   const roleParam = searchParams?.get("role") as RoleType | null;
   const isRoleSwitchMode = roleParam === "freelancer";
 
-  const [step, setStep] = useState(() => (roleParam ? 1 : 0));
+  const [step, setStep] = useState(0);
   const [data, setData] = useState<OnboardingData>(() => ({
     ...initialData,
     role: roleParam === "freelancer" ? "freelancer" : "customer",
