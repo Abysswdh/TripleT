@@ -475,26 +475,34 @@ export function FreelancerProfileView({
     role: "Digital Specialist",
     location: "Indonesia",
     organization: "Member Terdaftar TripleT",
-    level: "Verified Pro",
-    category: "Full-Stack Web & Next.js",
+    level: "Talenta Muda",
+    category: "Web & Tech",
     projectsCount: 0,
     rating: "-",
     reviewsCount: 0,
     earnings: "Rp 0",
     workStatus: "available",
     startingPrice: "Rp 500.000",
-    experienceLevel: "intermediate",
+    experienceLevel: "starter",
     githubUrl: "",
     linkedinUrl: "",
     portfolioUrl: "",
-    aboutMe: ["Freelancer spesialis terdaftar di platform TripleT. Berpengalaman mengerjakan proyek pengembangan teknologi dan desain modern."],
+    aboutMe: ["Freelancer spesialis terdaftar di platform TripleT. Mulai bangun reputasi dan selesaikan kuis untuk verifikasi keahlian."],
     streakWeeks: 1,
-    verifiedSkills: ["UI/UX Design", "Web Development"],
-    otherSkills: ["Git", "REST API"],
+    verifiedSkills: [],
+    otherSkills: [],
     recentProjects: [],
+    isVerified: false,
   };
 
   const baseProfile = TALENT_PROFILES[talentId] || (talentId === "tal-1" ? DEFAULT_PROFILE : neutralPlaceholder);
+
+  const localSkills = (meta.skills && Array.isArray(meta.skills) && meta.skills.length > 0) ? meta.skills : [];
+  const localVerifiedSkills = (meta.verified_skills && Array.isArray(meta.verified_skills) && meta.verified_skills.length > 0) ? meta.verified_skills : [];
+  const isLocalVerified = Boolean(
+    (meta.is_verified || user?.user_metadata?.is_verified) &&
+    (localVerifiedSkills.length > 0 || localSkills.length > 0)
+  );
 
   const localProfile: TalentProfile = isOwner && user
     ? {
@@ -502,10 +510,10 @@ export function FreelancerProfileView({
         name: meta.full_name || meta.name || (user.email ? user.email.split("@")[0] : "Freelancer"),
         avatar: cleanAvatar(meta.avatar_url),
         coverImage: cleanBanner(meta.banner_url || meta.cover_image),
-        role: meta.headline || (meta.skills && meta.skills[0] ? `${meta.skills[0]} Specialist` : "Digital Specialist"),
+        role: meta.headline || (localSkills[0] ? `${localSkills[0]} Specialist` : "Digital Specialist"),
         location: meta.location || "Indonesia",
         organization: "Member Terdaftar TripleT",
-        level: (meta.is_verified || user.user_metadata?.is_verified) ? "Verified Pro" : "Talenta Muda",
+        level: isLocalVerified ? "Verified Pro" : "Talenta Muda",
         category: "Web & Tech",
         projectsCount: 0,
         rating: meta.rating && Number(meta.reviews_count) > 0 ? Number(meta.rating) : "-",
@@ -519,13 +527,13 @@ export function FreelancerProfileView({
         portfolioUrl: sanitizeUrl(meta.portfolio_url),
         availability: formatAvailabilityHours(meta.weekly_availability),
         aboutMe: meta.bio ? [meta.bio] : [
-          "Freelancer spesialis terdaftar di platform TripleT. Berpengalaman mengerjakan proyek pengembangan teknologi dan desain modern."
+          "Freelancer spesialis terdaftar di platform TripleT. Mulai bangun reputasi dan selesaikan kuis untuk verifikasi keahlian."
         ],
         streakWeeks: 1,
-        verifiedSkills: Array.isArray(meta.skills) && meta.skills.length > 0 ? meta.skills : [],
-        otherSkills: [],
+        verifiedSkills: localVerifiedSkills,
+        otherSkills: localSkills.filter((s: string) => !localVerifiedSkills.includes(s)),
         recentProjects: [],
-        isVerified: Boolean(meta.is_verified || user.user_metadata?.is_verified),
+        isVerified: isLocalVerified,
       }
     : baseProfile;
 
@@ -769,9 +777,12 @@ export function FreelancerProfileView({
 
           const displayVerifiedSkills = Array.isArray(fp.verified_skills) && fp.verified_skills.length > 0
             ? (fp.verified_skills as string[])
-            : allSkills;
+            : [];
 
           const displayOtherSkills = allSkills.filter((s) => !displayVerifiedSkills.includes(s));
+          const hasAnySkills = allSkills.length > 0 || displayVerifiedSkills.length > 0;
+          const isUserAccountVerified = Boolean(u?.is_verified || (isOwner && (meta.is_verified || user?.user_metadata?.is_verified)));
+          const isTalentVerified = Boolean(isUserAccountVerified && hasAnySkills);
 
           const totalEarningsNum = Math.max(Number(fp.total_earnings) || 0, liveEarningsSum);
           const formattedEarnings = totalEarningsNum > 0
@@ -887,8 +898,8 @@ export function FreelancerProfileView({
             role: displayRole,
             location: displayLocation,
             organization: (fp.organization as string) || "Member Terdaftar TripleT",
-            level: (fp.badge_level as string) || "Verified Pro",
-            category: (fp.category as string) || "Full-Stack Web & Next.js",
+            level: (fp.badge_level as string) || (isTalentVerified ? "Verified Pro" : "Talenta Muda"),
+            category: (fp.category as string) || "Web & Tech",
             projectsCount: finalCompletedProjects,
             rating: finalRating,
             reviewsCount: finalReviewsCount,
@@ -909,7 +920,7 @@ export function FreelancerProfileView({
             verifiedSkills: displayVerifiedSkills,
             otherSkills: displayOtherSkills,
             recentProjects: allRecentProjects.length > 0 ? allRecentProjects : (isOwner ? [] : baseProfile.recentProjects),
-            isVerified: Boolean(u?.is_verified || (isOwner && (meta.is_verified || user?.user_metadata?.is_verified))),
+            isVerified: isTalentVerified,
           });
         }
       } catch (err) {

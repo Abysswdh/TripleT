@@ -248,13 +248,25 @@ export async function getTalents(filters?: TalentFilterOptions): Promise<TalentR
       availabilityHours: availInfo.hours,
       availabilityLabel: availInfo.label,
       location: user.location || "Indonesia",
-      verified: Boolean(user.is_verified),
-      badgeLevel: item.badge_level || (user.is_verified ? "Verified Pro" : "Talenta Muda"),
-      skills: (cachedSettings?.skills && cachedSettings.skills.length > 0)
+      verified: Boolean(
+        user.is_verified &&
+        ((Array.isArray(item.verified_skills) && item.verified_skills.length > 0) ||
+         (Array.isArray(item.skills) && item.skills.length > 0) ||
+         (Array.isArray(cachedSettings?.skills) && cachedSettings.skills.length > 0))
+      ),
+      badgeLevel: item.badge_level || (
+        (user.is_verified &&
+         ((Array.isArray(item.verified_skills) && item.verified_skills.length > 0) ||
+          (Array.isArray(item.skills) && item.skills.length > 0) ||
+          (Array.isArray(cachedSettings?.skills) && cachedSettings.skills.length > 0)))
+          ? "Verified Pro"
+          : "Talenta Muda"
+      ),
+      skills: (cachedSettings?.skills && Array.isArray(cachedSettings.skills) && cachedSettings.skills.length > 0)
         ? cachedSettings.skills
-        : (item.skills && item.skills.length > 0)
+        : (item.skills && Array.isArray(item.skills) && item.skills.length > 0)
         ? item.skills
-        : ["UI/UX Design", "Web Development"],
+        : [],
       bio: user.bio || item.headline || "Siap berkolaborasi dan mengerjakan proyek berkualitas tinggi.",
       responseTime: item.response_time || "< 1 jam",
       completedProjects: item.completed_projects || 0,
