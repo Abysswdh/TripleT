@@ -98,8 +98,8 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(new URL(getRoleDashboard(), request.url));
   }
 
-  // Protected routes: redirect to login if not authenticated
-  const protectedPaths = ["/dashboard", "/onboarding", "/client", "/freelancer"];
+  // Protected routes: redirect to login if not authenticated (/onboarding handles unauthenticated visitors gracefully on step 1)
+  const protectedPaths = ["/dashboard", "/client", "/freelancer"];
   const isProtected = protectedPaths.some((path) =>
     request.nextUrl.pathname.startsWith(path)
   );
