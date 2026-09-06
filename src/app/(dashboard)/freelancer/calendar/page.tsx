@@ -488,30 +488,27 @@ export default function FreelancerCalendarPage() {
           </div>
 
           {/* Color Legend Bar */}
-          <div className="pt-3 border-t border-border/40 flex flex-wrap items-center justify-between gap-2 text-xs">
-            <span className="font-bold text-foreground">Panduan Warna Kalender:</span>
-            <div className="flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground font-medium">
-              <span className="flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-500/30" />
-                <span className="text-emerald-700 dark:text-emerald-300 font-bold">
-                  Hijau = Streak Aktif
-                </span>
+          <div className="pt-3 border-t border-border/40 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <span className="text-[11px] font-bold text-muted-foreground">Status:</span>
+            <div className="flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground/80 font-medium">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                <span>Streak Aktif</span>
               </span>
-              <span className="flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-full bg-amber-500 ring-2 ring-amber-500/30" />
-                <span className="text-amber-700 dark:text-amber-300 font-bold">
-                  Golden = Belum Streak / Ada Rencana Kerja
-                </span>
+              <span className="text-muted-foreground/30">•</span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-amber-500" />
+                <span>Ada Rencana Kerja</span>
               </span>
-              <span className="flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-rose-500/30" />
-                <span className="text-rose-600 dark:text-rose-400 font-bold">
-                  Merah = Streak Terlewat / Overdue
-                </span>
+              <span className="text-muted-foreground/30">•</span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-rose-500" />
+                <span>Terlewat / Overdue</span>
               </span>
-              <span className="flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-primary/30" />
-                <span className="text-primary font-bold">Biru = Terpilih</span>
+              <span className="text-muted-foreground/30">•</span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-primary" />
+                <span>Terpilih</span>
               </span>
             </div>
           </div>

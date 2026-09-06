@@ -595,26 +595,27 @@ export function UnifiedSmartCalendarPlanner({
         })}
       </div>
 
-      {/* Mini Color Legend for Freelancer Confidence */}
-      <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5 text-[10px] text-muted-foreground border-t border-border/30">
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" />
-            <span className="text-emerald-700 dark:text-emerald-300 font-semibold">Hijau = Streak Aktif</span>
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full bg-amber-500" />
-            <span className="text-amber-700 dark:text-amber-300 font-semibold">Golden = Belum Streak / Ada Kerja</span>
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full bg-rose-500" />
-            <span className="text-rose-600 dark:text-rose-400 font-semibold">Merah = Terlewat / Overdue</span>
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full bg-primary" />
-            <span className="text-primary font-semibold">Biru = Terpilih</span>
-          </span>
-        </div>
+      {/* Sleek Mini Status Legend (Single Line, Ultra Clean) */}
+      <div className="flex items-center justify-center gap-2.5 sm:gap-4 pt-1 text-[10px] text-muted-foreground/80 select-none border-t border-border/20">
+        <span className="inline-flex items-center gap-1.5 font-medium">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+          <span>Streak Aktif</span>
+        </span>
+        <span className="text-muted-foreground/30">•</span>
+        <span className="inline-flex items-center gap-1.5 font-medium">
+          <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+          <span>Ada Kerja</span>
+        </span>
+        <span className="text-muted-foreground/30">•</span>
+        <span className="inline-flex items-center gap-1.5 font-medium">
+          <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
+          <span>Terlewat</span>
+        </span>
+        <span className="text-muted-foreground/30">•</span>
+        <span className="inline-flex items-center gap-1.5 font-medium">
+          <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+          <span>Terpilih</span>
+        </span>
       </div>
 
       {/* 4. AI Workload Strategist Insight Card */}
