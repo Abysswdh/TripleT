@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   Compass,
@@ -13,6 +13,8 @@ import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
 import { getOpenProjects } from "@/lib/services/projects";
 import { getUserSubmittedProjectIds } from "@/lib/services/proposals";
+import { matchCategory, DEFAULT_CLIENT_CATEGORIES } from "@/lib/constants/categories";
+import { createClient } from "@/lib/supabase/client";
 
 interface Quest {
   id: string;
@@ -32,12 +34,11 @@ interface Quest {
   isDummy?: boolean;
 }
 
-const CATEGORIES = ["Semua", "Simulasi Portofolio", "Web Development", "Backend & API Engineering", "UI/UX & Product Design", "AI & Machine Learning", "Mobile App Development"];
-
 function FreelancerExploreQuestsContent() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const [quests, setQuests] = useState<Quest[]>([]);
+  const [preferredCategories, setPreferredCategories] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Semua");
   const [loading, setLoading] = useState(true);
@@ -61,6 +62,49 @@ function FreelancerExploreQuestsContent() {
     };
     window.addEventListener("doable-search-sync", handleSync);
     return () => window.removeEventListener("doable-search-sync", handleSync);
+  }, []);
+
+  // Load preferred categories
+  useEffect(() => {
+    async function loadPrefs() {
+      try {
+        const supabase = createClient();
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        if (!authUser) return;
+
+        let prefCats: string[] = [];
+        if (Array.isArray(authUser.user_metadata?.preferred_categories) && authUser.user_metadata.preferred_categories.length > 0) {
+          prefCats = [...authUser.user_metadata.preferred_categories];
+        } else if (Array.isArray(authUser.user_metadata?.project_categories) && authUser.user_metadata.project_categories.length > 0) {
+          prefCats = [...authUser.user_metadata.project_categories];
+        }
+
+        const { data: profile } = await supabase
+          .from("freelancer_profiles")
+          .select("category")
+          .eq("user_id", authUser.id)
+          .maybeSingle();
+
+        if (profile?.category && !prefCats.includes(profile.category)) {
+          prefCats.unshift(profile.category);
+        }
+
+        if (prefCats.length === 0 && typeof window !== "undefined") {
+          const raw = localStorage.getItem("doable_preferred_categories");
+          if (raw) {
+            try {
+              const parsed = JSON.parse(raw);
+              if (Array.isArray(parsed)) prefCats = parsed;
+            } catch {}
+          }
+        }
+
+        setPreferredCategories(prefCats);
+      } catch (err) {
+        console.warn("Notice loading preferences in explore:", err);
+      }
+    }
+    loadPrefs();
   }, []);
 
   // Fetch proposals submitted by the current user
@@ -117,22 +161,59 @@ function FreelancerExploreQuestsContent() {
     loadProjects();
   }, [user?.id]);
 
-  const filteredQuests = quests.filter((quest) => {
-    // Sembunyikan proyek milik sendiri dari mode freelancer (kecuali dummy project)
-    if (user && quest.ownerId && quest.ownerId === user.id && !quest.isDummy) {
-      return false;
+  // Dynamic Category Tabs starting with user's preferred categories
+  const exploreCategoryTabs = useMemo(() => {
+    const tabs: string[] = ["Semua"];
+    if (preferredCategories.length > 0) {
+      preferredCategories.forEach((c) => {
+        if (!tabs.includes(c)) tabs.push(c);
+      });
     }
+    if (!tabs.includes("Simulasi Portofolio")) {
+      tabs.push("Simulasi Portofolio");
+    }
+    DEFAULT_CLIENT_CATEGORIES.forEach((c) => {
+      if (!tabs.includes(c)) tabs.push(c);
+    });
+    return tabs;
+  }, [preferredCategories]);
 
-    const matchesSearch =
-      quest.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      quest.skills.some((s) => s.toLowerCase().includes(searchQuery.toLowerCase()));
-    const matchesCategory =
-      selectedCategory === "Semua" ||
-      (selectedCategory === "Simulasi Portofolio"
-        ? quest.isDummy
-        : quest.category.toLowerCase().includes(selectedCategory.toLowerCase()));
-    return matchesSearch && matchesCategory;
-  });
+  const filteredQuests = useMemo(() => {
+    return quests
+      .filter((quest) => {
+        // Sembunyikan proyek milik sendiri dari mode freelancer (kecuali dummy project)
+        if (user && quest.ownerId && quest.ownerId === user.id && !quest.isDummy) {
+          return false;
+        }
+
+        const matchesSearch =
+          quest.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          quest.skills.some((s) => s.toLowerCase().includes(searchQuery.toLowerCase()));
+
+        const matchesCategory =
+          selectedCategory === "Semua" ||
+          (selectedCategory === "Simulasi Portofolio"
+            ? quest.isDummy
+            : matchCategory(quest.category, selectedCategory));
+
+        return matchesSearch && matchesCategory;
+      })
+      .map((quest) => {
+        const isPrefMatch = preferredCategories.some((pref) => matchCategory(quest.category, pref));
+        return {
+          ...quest,
+          isPrefMatch,
+          matchScore: isPrefMatch ? 98 : quest.matchScore,
+        };
+      })
+      .sort((a, b) => {
+        if (selectedCategory === "Semua" && preferredCategories.length > 0) {
+          if (a.isPrefMatch && !b.isPrefMatch) return -1;
+          if (!a.isPrefMatch && b.isPrefMatch) return 1;
+        }
+        return b.matchScore - a.matchScore;
+      });
+  }, [quests, searchQuery, selectedCategory, user, preferredCategories]);
 
   return (
     <div className="animate-fade-in space-y-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-20">
@@ -174,18 +255,24 @@ function FreelancerExploreQuestsContent() {
 
         {/* Category Chips */}
         <div className="flex flex-wrap items-center gap-2">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`rounded-xl px-3.5 py-2 text-xs font-semibold transition-all ${selectedCategory === cat
-                  ? "bg-primary text-white shadow-sm shadow-primary/30"
-                  : "border border-border/70 bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
+          {exploreCategoryTabs.map((cat) => {
+            const isPref = preferredCategories.includes(cat);
+            const isActive = selectedCategory === cat;
+            return (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`rounded-xl px-3.5 py-2 text-xs font-semibold transition-all inline-flex items-center gap-1 cursor-pointer ${
+                  isActive
+                    ? "bg-primary text-white shadow-sm shadow-primary/30"
+                    : "border border-border/70 bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
                 }`}
-            >
-              {cat}
-            </button>
-          ))}
+              >
+                {isPref && cat !== "Semua" && <Sparkles className="h-3 w-3 text-amber-400" />}
+                <span>{cat}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -221,6 +308,12 @@ function FreelancerExploreQuestsContent() {
                     ) : (
                       <span className="rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">
                         {quest.category}
+                      </span>
+                    )}
+                    {(quest as any).isPrefMatch && (
+                      <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-300">
+                        <Sparkles className="h-2.5 w-2.5 text-amber-400" />
+                        <span>Sesuai Preferensi</span>
                       </span>
                     )}
                     {submittedProjectIds.has(quest.id) && (

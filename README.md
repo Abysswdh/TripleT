@@ -1,7 +1,7 @@
 <div align="center">
   
-  # [NAMA PROYEK] 
-  ### [Tagline Singkat dan Menarik]
+  # Doable! 
+  ### All about freelancer
   
   [![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-Visit_Site-success?style=for-the-badge)](https://[URL_DEMO])
   [![GitHub](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github)](https://[URL_REPO])
@@ -9,7 +9,7 @@
   
   **Submission for ITECHNO CUP 2026 - Web Development**
   
-  **By [Nama Tim]**
+  **By TripleT**
   
 </div>
 
@@ -35,11 +35,9 @@
 
 | Nama | Peran | GitHub |
 |------|-------|--------|
-| **[Nama Lengkap 1]** | Project Lead & Full Stack Developer | [GitHub](https://github.com/[username1]) |
-| **[Nama Lengkap 2]** | Frontend Developer | [GitHub](https://github.com/[username2]) |
-| **[Nama Lengkap 3]** | Backend Developer | [GitHub](https://github.com/[username3]) |
-| **[Nama Lengkap 4]** | UI/UX Designer | [GitHub](https://github.com/[username4]) |
-| **[Nama Lengkap 4]** | UI/UX Designer | [@username4](https://github.com/[username4]) |
+| **Putra Abyasa Wedha** | Project Lead & Full Stack Developer | [GitHub](https://github.com/Abysswdh) |
+| **I Wayan Gede Arika Sanjaya** | Fullstack Developer | [GitHub](https://github.com/arwxsh) |
+| **I Putu Bryan Ello Winata** | Frontend Developer | [GitHub](https://github.com/Ello-bit) |
 
 ---
 
@@ -47,11 +45,14 @@
 
 ### Latar Belakang
 
-[Jelaskan konteks permasalahan yang ingin diselesaikan. Gunakan data atau fakta untuk memperkuat argumen. Contoh: "Berdasarkan survei X, 70% pengguna mengalami kesulitan dalam..."]
+Pernahkah kamu berpikir bahwa di era digital yang serba terhubung ini, jutaan anak muda Indonesia justru masih kesulitan mendapatkan pekerjaan yang layak? Menurut Badan Pusat Statistik (BPS), tingkat pengangguran terbuka Indonesia pada Februari 2026 mencapai 4,68%, setara dengan 7,24 juta orang yang menganggur. Angka tersebut lebih tinggi dibanding negara ASEAN lain menurut proyeksi IMF 2026, seperti Vietnam (2,1%), Thailand (1%), Singapura (2%), dan Malaysia (3%). Permasalahan ini juga semakin serius bagi generasi muda, dimana kelompok usia 15-24 tahun memiliki tingkat pengangguran tertinggi di 16,36%, yang berarti kira-kira 1 dari 6 anak muda dalam angkatan kerja belum memperoleh pekerjaan. Di sisi lain, 57,80% penduduk bekerja Indonesia masih berada di sektor informal pada 2025, sehingga banyak orang memang bekerja, tetapi belum tentu memiliki pekerjaan yang stabil, terlindungi, dan memberi jalur karier yang jelas.
+
+Kondisi tersebut bukan hanya terjadi karena keterbatasan lowongan, tetapi juga karena ada jarak antara kesiapan kandidat dan kebutuhan perusahaan. Menurut riset Populix dan KitaLulus yang dikutip ANTARA, 63% pencari kerja terkendala persyaratan pengalaman kerja, sementara 46% perusahaan kesulitan menemukan kandidat yang sesuai. Artinya, banyak anak muda belum memiliki pengalaman praktis, portofolio, atau bukti keterampilan yang dapat ditunjukkan ketika melamar kerja; akibatnya, mereka lebih berisiko bertahan pada pekerjaan low-level atau informal daripada masuk ke peran yang lebih sesuai dengan kemampuan mereka.
+
 
 ### Solusi yang Ditawarkan
 
-[Jelaskan bagaimana aplikasi ini menyelesaikan masalah tersebut dengan pendekatan yang unik atau inovatif]
+Doable! adalah platform web-app yang menggabungkan marketplace freelance dengan project management workspace komprehensif, sebuah fusi antara Fiverr dan Notion. Di sini, klien dan freelancer tidak sekadar bertemu dan berpisah, tetapi bekerja bersama dalam satu ruang digital yang terintegrasi. Klien bisa memposting proyek dengan mudah, cukup isi judul, deskripsi singkat, kategori, dan deadline, tanpa perlu pusing menyusun struktur proyek dari nol. Sementara itu, freelancer pemula hingga expert bisa menemukan proyek yang sesuai dengan keterampilan mereka, membangun portofolio dari setiap pekerjaan yang diselesaikan, dan mendapatkan pengalaman nyata yang selama ini menjadi syarat utama dunia kerja.
 
 ### Tujuan Proyek
 

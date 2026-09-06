@@ -24,14 +24,23 @@ import { fetchHeatmapData, fetchUserXPBreakdown } from "@/lib/services/activity"
 import { useAuth } from "@/hooks/use-auth";
 import { createClient } from "@/lib/supabase/client";
 import Grainient from "@/components/ui/Grainient";
+import { matchCategory } from "@/lib/constants/categories";
 
-const CATEGORIES = ["Semua", "Frontend", "Backend", "UI/UX", "Frontend 3D", "Database"];
+const CATEGORIES = [
+  "Semua",
+  "Desain & Branding",
+  "Web & IT Engineering",
+  "Foto & Video Kreatif",
+  "Penulisan & Admin",
+  "Marketing & Promosi",
+];
 
 export default function FreelancerSkillsPage() {
   const { user } = useAuth();
   const [quizzes] = useState<SkillQuizDefinition[]>(SKILL_QUIZZES);
   const [completedResults, setCompletedResults] = useState<Record<string, QuizAttemptResult>>({});
   const [userProfileSkills, setUserProfileSkills] = useState<string[]>([]);
+  const [preferredCategories, setPreferredCategories] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("Semua");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -91,19 +100,42 @@ export default function FreelancerSkillsPage() {
     };
   }, []);
 
-  // Fetch logged-in freelancer's onboarding skills from Supabase
+  // Fetch logged-in freelancer's onboarding categories & skills from Supabase and localStorage
   useEffect(() => {
-    async function fetchUserSkills() {
+    async function fetchUserSkillsAndCategories() {
       try {
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
+        let prefCats: string[] = [];
+        if (Array.isArray(user.user_metadata?.preferred_categories) && user.user_metadata.preferred_categories.length > 0) {
+          prefCats = [...user.user_metadata.preferred_categories];
+        } else if (Array.isArray(user.user_metadata?.project_categories) && user.user_metadata.project_categories.length > 0) {
+          prefCats = [...user.user_metadata.project_categories];
+        }
+
         const { data: profile } = await supabase
           .from("freelancer_profiles")
-          .select("skills")
+          .select("skills, category")
           .eq("user_id", user.id)
           .maybeSingle();
+
+        if (profile?.category && !prefCats.includes(profile.category)) {
+          prefCats.unshift(profile.category);
+        }
+
+        if (prefCats.length === 0 && typeof window !== "undefined") {
+          const raw = localStorage.getItem("doable_preferred_categories");
+          if (raw) {
+            try {
+              const parsed = JSON.parse(raw);
+              if (Array.isArray(parsed)) prefCats = parsed;
+            } catch {}
+          }
+        }
+
+        setPreferredCategories(prefCats);
 
         if (profile?.skills && Array.isArray(profile.skills)) {
           setUserProfileSkills(profile.skills);
@@ -115,7 +147,7 @@ export default function FreelancerSkillsPage() {
       }
     }
 
-    fetchUserSkills();
+    fetchUserSkillsAndCategories();
   }, []);
 
   // Compute live stats
@@ -184,28 +216,41 @@ export default function FreelancerSkillsPage() {
     }
   }, [currentLevel]);
 
-  // Compute category counts
+  // Compute category counts using unified categories
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = { Semua: quizzes.length };
-    quizzes.forEach((q) => {
-      counts[q.category] = (counts[q.category] || 0) + 1;
+    CATEGORIES.forEach((cat) => {
+      if (cat !== "Semua") {
+        counts[cat] = quizzes.filter((q) => matchCategory(q.category, cat)).length;
+      }
     });
     return counts;
   }, [quizzes]);
 
-  // Filter quizzes
+  // Filter quizzes and prioritize user's preferred category
   const filteredQuizzes = useMemo(() => {
-    return quizzes.filter((q) => {
-      const matchCat =
-        selectedCategory === "Semua" || q.category.toLowerCase() === selectedCategory.toLowerCase();
-      const matchQuery =
-        searchQuery.trim() === "" ||
-        q.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        q.badgeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        q.description.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchCat && matchQuery;
-    });
-  }, [quizzes, selectedCategory, searchQuery]);
+    return quizzes
+      .filter((q) => {
+        const matchCat =
+          selectedCategory === "Semua" ||
+          matchCategory(q.category, selectedCategory);
+        const matchQuery =
+          searchQuery.trim() === "" ||
+          q.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          q.badgeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          q.description.toLowerCase().includes(searchQuery.toLowerCase());
+        return matchCat && matchQuery;
+      })
+      .sort((a, b) => {
+        if (selectedCategory === "Semua" && preferredCategories.length > 0) {
+          const aPref = preferredCategories.some((pref) => matchCategory(a.category, pref));
+          const bPref = preferredCategories.some((pref) => matchCategory(b.category, pref));
+          if (aPref && !bPref) return -1;
+          if (!aPref && bPref) return 1;
+        }
+        return 0;
+      });
+  }, [quizzes, selectedCategory, searchQuery, preferredCategories]);
 
   return (
     <div className="animate-fade-in max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-20 space-y-8">
@@ -493,12 +538,19 @@ export default function FreelancerSkillsPage() {
                               {quiz.categoryLabel}
                             </span>
 
+                            {preferredCategories.some((pref) => matchCategory(quiz.category, pref)) && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600/90 backdrop-blur-md px-2.5 py-0.5 text-[10px] font-bold text-white shadow-sm border border-emerald-400/30">
+                                <Sparkles className="h-3 w-3 text-amber-300" />
+                                Sesuai Spesialisasi
+                              </span>
+                            )}
+
                             {userProfileSkills.some(
                               (s) =>
                                 quiz.name.toLowerCase().includes(s.toLowerCase()) ||
                                 quiz.badgeName.toLowerCase().includes(s.toLowerCase()) ||
                                 quiz.category.toLowerCase().includes(s.toLowerCase())
-                            ) && (
+                            ) && !preferredCategories.some((pref) => matchCategory(quiz.category, pref)) && (
                               <span className="inline-flex items-center gap-1 rounded-full bg-blue-600/90 backdrop-blur-md px-2.5 py-0.5 text-[10px] font-bold text-white shadow-sm border border-blue-400/30">
                                 <Sparkles className="h-3 w-3" />
                                 Pilihan Onboarding

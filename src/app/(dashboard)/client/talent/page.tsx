@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, Suspense } from "react";
 import { createPortal } from "react-dom";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Search, Star, ShieldCheck, CheckCircle2, SlidersHorizontal, Briefcase, Clock } from "lucide-react";
+import { Search, Star, ShieldCheck, CheckCircle2, SlidersHorizontal, Briefcase, Clock, Sparkles } from "lucide-react";
 import { getTalents, inviteTalentToProject, type TalentRecord } from "@/lib/services/talents";
 import { getClientProjects, type ProjectRecord } from "@/lib/services/projects";
 import { useTranslation } from "@/context/language-context";
@@ -102,10 +102,13 @@ function ClientTalentContent() {
   }, [urlProjectId, user?.id]);
 
   const categoryTabs = useMemo(() => {
+    const list = ["Semua Kategori", "Desain & Branding", "Web & IT Engineering"];
     if (preferredCategories.length > 0) {
-      return ["Semua Kategori", ...preferredCategories];
+      preferredCategories.forEach((c) => {
+        if (!list.includes(c)) list.push(c);
+      });
     }
-    return ["Semua Kategori", ...DEFAULT_CLIENT_CATEGORIES];
+    return list;
   }, [preferredCategories]);
 
   const activeProject = useMemo(() => {
@@ -163,6 +166,16 @@ function ClientTalentContent() {
         return matchesSearch && matchesCategory && matchesLevel && matchesRate && matchesAvailability;
       })
       .sort((a, b) => {
+        if (selectedCategory === "Semua Kategori" && preferredCategories.length > 0) {
+          const aPref = preferredCategories.some(
+            (p) => matchCategory(a.category, p) || a.skills.some((s) => matchCategory(s, p))
+          );
+          const bPref = preferredCategories.some(
+            (p) => matchCategory(b.category, p) || b.skills.some((s) => matchCategory(s, p))
+          );
+          if (aPref && !bPref) return -1;
+          if (!aPref && bPref) return 1;
+        }
         if (sortBy === "reviews") return b.reviewsCount - a.reviewsCount;
         if (sortBy === "rate_low") return (a.hourlyRateNumeric || 0) - (b.hourlyRateNumeric || 0);
         if (sortBy === "rate_high") return (b.hourlyRateNumeric || 0) - (a.hourlyRateNumeric || 0);
@@ -171,7 +184,7 @@ function ClientTalentContent() {
         const bScore = b.reviewsCount > 0 && b.rating !== "-" ? Number(b.rating) : 0;
         return bScore - aScore; // default highest rating
       });
-  }, [talents, searchQuery, selectedCategory, selectedLevel, selectedRateTier, selectedAvailability, sortBy, user?.id]);
+  }, [talents, searchQuery, selectedCategory, selectedLevel, selectedRateTier, selectedAvailability, sortBy, user?.id, preferredCategories]);
 
   const handleSendInvite = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -289,17 +302,19 @@ function ClientTalentContent() {
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
           {categoryTabs.map((cat) => {
             const isActive = selectedCategory === cat;
+            const isPref = preferredCategories.includes(cat);
             return (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`whitespace-nowrap rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all ${
+                className={`whitespace-nowrap rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all inline-flex items-center gap-1 cursor-pointer ${
                   isActive
                     ? "bg-primary text-primary-foreground shadow-xs scale-102"
                     : "border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`}
               >
-                {cat === "Semua Kategori" ? t("talent.allCategories", "Semua Kategori") : cat}
+                {isPref && cat !== "Semua Kategori" && <Sparkles className="h-3 w-3 text-amber-400" />}
+                <span>{cat === "Semua Kategori" ? t("talent.allCategories", "Semua Kategori") : cat}</span>
               </button>
             );
           })}
@@ -356,17 +371,25 @@ function ClientTalentContent() {
                     </div>
                   </div>
 
-                  <span
-                    className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold shrink-0 ${
-                      talent.badgeLevel === "Verified Pro"
-                        ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
-                        : talent.badgeLevel === "Top Rated"
-                        ? "bg-amber-500/10 text-amber-600 border border-amber-500/20"
-                        : "bg-blue-500/10 text-blue-600 border border-blue-500/20"
-                    }`}
-                  >
-                    {talent.badgeLevel}
-                  </span>
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    <span
+                      className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                        talent.badgeLevel === "Verified Pro"
+                          ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
+                          : talent.badgeLevel === "Top Rated"
+                          ? "bg-amber-500/10 text-amber-600 border border-amber-500/20"
+                          : "bg-blue-500/10 text-blue-600 border border-blue-500/20"
+                      }`}
+                    >
+                      {talent.badgeLevel}
+                    </span>
+                    {preferredCategories.some((p) => matchCategory(talent.category, p) || talent.skills.some((s) => matchCategory(s, p))) && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[9px] font-bold text-emerald-700 dark:text-emerald-300">
+                        <Sparkles className="h-2.5 w-2.5 text-amber-400" />
+                        <span>Sesuai Kebutuhan</span>
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Rating, Availability & Starting Price */}

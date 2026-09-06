@@ -314,7 +314,18 @@ export function CreateProjectModal({
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    if (isOpen && !initialData?.category) {
+      try {
+        const raw = localStorage.getItem("doable_preferred_categories");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setCategory(parsed[0]);
+          }
+        }
+      } catch {}
+    }
+  }, [isOpen, initialData?.category]);
 
   // AI Semantic Auto-Tuner with 500ms (1/2 second) Debounce
   const executeAiAutoTuning = async (rawTitle: string) => {

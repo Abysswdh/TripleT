@@ -57,8 +57,8 @@ const FREELANCER_STEP_INFO: Record<number, { title: string; desc: string }> = {
     desc: "Tentukan status edukasi atau karirmu serta tingkat pengalaman komersial yang kamu miliki.",
   },
   3: {
-    title: "Keahlian & Skill Utama",
-    desc: "Pilih keahlian teknis dan keterampilan unggulan yang kamu kuasai untuk ditawarkan ke klien.",
+    title: "Bidang Minat & Keahlian Utama",
+    desc: "Pilih hingga 3 bidang spesialisasi dan tentukan keterampilan unggulanmu untuk ditawarkan ke klien.",
   },
   4: {
     title: "Kapasitas Waktu & Bio",

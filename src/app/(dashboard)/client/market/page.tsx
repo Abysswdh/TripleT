@@ -14,7 +14,8 @@ import {
   Plus,
   Eye,
   Copy,
-  Check
+  Check,
+  Sparkles
 } from "lucide-react";
 import Link from "next/link";
 import { getOpenProjects } from "@/lib/services/projects";
@@ -192,10 +193,13 @@ function ProjectMarketContent() {
   }, []);
 
   const categoryTabs = useMemo(() => {
+    const list = ["Semua Kategori", "Desain & Branding", "Web & IT Engineering"];
     if (preferredCategories.length > 0) {
-      return ["Semua Kategori", ...preferredCategories];
+      preferredCategories.forEach((c) => {
+        if (!list.includes(c)) list.push(c);
+      });
     }
-    return ["Semua Kategori", ...DEFAULT_CLIENT_CATEGORIES];
+    return list;
   }, [preferredCategories]);
 
   // Filtered & Sorted Projects
@@ -226,12 +230,18 @@ function ProjectMarketContent() {
 
       return matchesSearch && matchesCategory && matchesStatus && matchesBudget;
     }).sort((a, b) => {
+      if (selectedCategory === "Semua Kategori" && preferredCategories.length > 0) {
+        const aPref = preferredCategories.some((p) => matchCategory(a.category, p));
+        const bPref = preferredCategories.some((p) => matchCategory(b.category, p));
+        if (aPref && !bPref) return -1;
+        if (!aPref && bPref) return 1;
+      }
       if (sortBy === "budget_high") return b.rawBudget - a.rawBudget;
       if (sortBy === "proposals") return b.proposalsCount - a.proposalsCount;
       if (sortBy === "name") return a.title.localeCompare(b.title);
       return 0; // default newest
     });
-  }, [marketProjects, searchQuery, selectedCategory, selectedStatus, selectedBudgetTier, sortBy]);
+  }, [marketProjects, searchQuery, selectedCategory, selectedStatus, selectedBudgetTier, sortBy, preferredCategories]);
 
   const handleCopyLink = (projId: string) => {
     if (typeof navigator !== "undefined") {
@@ -322,17 +332,19 @@ function ProjectMarketContent() {
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
           {categoryTabs.map((cat) => {
             const isActive = selectedCategory === cat;
+            const isPref = preferredCategories.includes(cat);
             return (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`whitespace-nowrap rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all ${
+                className={`whitespace-nowrap rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all inline-flex items-center gap-1 cursor-pointer ${
                   isActive
                     ? "bg-primary text-primary-foreground shadow-xs scale-102"
                     : "border border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`}
               >
-                {cat}
+                {isPref && cat !== "Semua Kategori" && <Sparkles className="h-3 w-3 text-amber-400" />}
+                <span>{cat}</span>
               </button>
             );
           })}
@@ -403,7 +415,15 @@ function ProjectMarketContent() {
 
                 {/* Category & Title */}
                 <div>
-                  <span className="text-[11px] font-semibold text-primary">{proj.category}</span>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[11px] font-semibold text-primary">{proj.category}</span>
+                    {preferredCategories.some((pref) => matchCategory(proj.category, pref)) && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[9px] font-bold text-emerald-700 dark:text-emerald-300">
+                        <Sparkles className="h-2.5 w-2.5 text-amber-400" />
+                        <span>Sesuai Kebutuhan</span>
+                      </span>
+                    )}
+                  </div>
                   <h3 className="mt-0.5 text-base font-bold text-foreground leading-snug line-clamp-2 group-hover:text-primary transition-colors">
                     {proj.title}
                   </h3>

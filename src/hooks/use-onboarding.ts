@@ -188,12 +188,17 @@ export function useOnboarding() {
   const toggleCategory = useCallback((category: string) => {
     setData((prev) => {
       const exists = prev.projectCategories.includes(category);
+      if (!exists && prev.projectCategories.length >= 3) {
+        // Enforce maximum 3 preferred categories
+        return prev;
+      }
       const nextCategories = exists
         ? prev.projectCategories.filter((c) => c !== category)
         : [...prev.projectCategories, category];
       const next = { ...prev, projectCategories: nextCategories };
       try {
-        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        const storageKey = next.role === "freelancer" ? "doable_onboarding_freelancer" : "doable_onboarding_client";
+        sessionStorage.setItem(storageKey, JSON.stringify(next));
       } catch {}
       return next;
     });
@@ -337,7 +342,7 @@ export function useOnboarding() {
             starting_price: `Rp ${(data.startingPrice || 500000).toLocaleString("id-ID")}`,
             availability: availLabel,
             experience_level: data.experienceLevel,
-            category: data.projectCategories[0] || "Web & Fullstack",
+            category: data.projectCategories[0] || "Desain & Branding",
             badge_level: "Verified Pro",
             organization: eduText,
             cover_image: userBanner,
@@ -410,6 +415,9 @@ export function useOnboarding() {
           client_onboarded: newClientOnboarded,
           client_type: data.hiringType,
           project_categories: data.projectCategories,
+          preferred_categories: data.projectCategories,
+          category: data.projectCategories[0] || (data.role === "freelancer" ? "Desain & Branding" : undefined),
+          skills: data.skills,
           budget_preference: data.budgetPreference,
           experience_level: data.experienceLevel,
           weekly_availability: data.weeklyAvailability,
@@ -424,6 +432,7 @@ export function useOnboarding() {
       if (typeof window !== "undefined") {
         const targetActiveRole = data.role === "customer" ? "customer" : "freelancer";
         localStorage.setItem("triplet_active_dashboard_role", targetActiveRole);
+        localStorage.setItem("doable_preferred_categories", JSON.stringify(data.projectCategories));
         document.cookie = `triplet_active_dashboard_role=${targetActiveRole}; path=/; max-age=31536000; SameSite=Lax`;
         if (newFreelancerOnboarded) localStorage.setItem("triplet_freelancer_onboarded", "true");
         if (newClientOnboarded) localStorage.setItem("triplet_client_onboarded", "true");

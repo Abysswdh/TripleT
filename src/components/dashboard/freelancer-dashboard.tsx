@@ -38,6 +38,8 @@ import { formatRelativeTime } from "@/lib/utils";
 import { UnifiedSmartCalendarPlanner } from "@/components/dashboard/unified-calendar-planner";
 import { AIProfileSuggestions } from "@/components/dashboard/ai-profile-suggestions";
 import { AlertTriangle } from "lucide-react";
+import { matchCategory, DEFAULT_CLIENT_CATEGORIES } from "@/lib/constants/categories";
+import { createClient } from "@/lib/supabase/client";
 
 interface QuestOpportunity {
   id: string;
@@ -98,11 +100,10 @@ function generateEmptyHeatmap(): HeatmapData["weeks"] {
   );
 }
 
-const CATEGORIES = ["Semua", "Desain Grafis", "Simulasi Portofolio", "Frontend", "Backend", "UI/UX"];
-
 export function FreelancerDashboard() {
   const { user } = useAuth();
   const { formatMoney } = useCurrency();
+  const [preferredCategories, setPreferredCategories] = useState<string[]>([]);
 
   // Timeline & Missions State
   const [timelineItems, setTimelineItems] = useState<TimelineActionItem[]>(initialTimelineItems);
@@ -265,6 +266,59 @@ export function FreelancerDashboard() {
     loadLiveQuests();
   }, []);
 
+  // Load Freelancer preferred categories
+  useEffect(() => {
+    async function loadFreelancerPreferences() {
+      try {
+        const supabase = createClient();
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        if (!authUser) return;
+
+        let prefCats: string[] = [];
+        if (Array.isArray(authUser.user_metadata?.preferred_categories) && authUser.user_metadata.preferred_categories.length > 0) {
+          prefCats = [...authUser.user_metadata.preferred_categories];
+        } else if (Array.isArray(authUser.user_metadata?.project_categories) && authUser.user_metadata.project_categories.length > 0) {
+          prefCats = [...authUser.user_metadata.project_categories];
+        }
+
+        const { data: profile } = await supabase
+          .from("freelancer_profiles")
+          .select("category")
+          .eq("user_id", authUser.id)
+          .maybeSingle();
+
+        if (profile?.category && !prefCats.includes(profile.category)) {
+          prefCats.unshift(profile.category);
+        }
+
+        if (prefCats.length === 0 && typeof window !== "undefined") {
+          const raw = localStorage.getItem("doable_preferred_categories");
+          if (raw) {
+            try {
+              const parsed = JSON.parse(raw);
+              if (Array.isArray(parsed)) prefCats = parsed;
+            } catch {}
+          }
+        }
+
+        setPreferredCategories(prefCats);
+      } catch (err) {
+        console.warn("Could not load freelancer preferences:", err);
+      }
+    }
+
+    loadFreelancerPreferences();
+
+    const handlePref = (e: Event) => {
+      const customEvent = e as CustomEvent<{ categories?: string[] }>;
+      if (customEvent.detail?.categories && Array.isArray(customEvent.detail.categories)) {
+        setPreferredCategories(customEvent.detail.categories);
+      }
+    };
+    window.addEventListener("doable-preferences-updated", handlePref);
+    return () => window.removeEventListener("doable-preferences-updated", handlePref);
+  }, []);
+
   // Gamification Profile State (3-Pillar XP Accumulation: Quiz + Work + Learning)
   const freelancerName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Freelancer";
 
@@ -371,8 +425,15 @@ export function FreelancerDashboard() {
   }, [quizResults]);
 
   const nextQuizToTake = useMemo(() => {
-    return SKILL_QUIZZES.find((q) => !quizResults[q.id]?.passed) || SKILL_QUIZZES[0];
-  }, [quizResults]);
+    const unpassed = SKILL_QUIZZES.filter((q) => !quizResults[q.id]?.passed);
+    if (preferredCategories.length > 0) {
+      const prefQuiz = unpassed.find((q) =>
+        preferredCategories.some((pref) => matchCategory(q.category, pref))
+      );
+      if (prefQuiz) return prefQuiz;
+    }
+    return unpassed[0] || SKILL_QUIZZES[0];
+  }, [quizResults, preferredCategories]);
 
   const verifiedSkillsCount = passedQuizzes.length;
   const totalSkillsCount = SKILL_QUIZZES.length;
@@ -497,22 +558,52 @@ export function FreelancerDashboard() {
     }
   };
 
-  // Filtered Quests (sembunyikan proyek milik sendiri dari mode freelancer)
-  const filteredQuests = useMemo(() => {
-    return quests.filter((quest) => {
-      if (user && quest.ownerId && quest.ownerId === user.id && !quest.isSimulated) {
-        return false;
-      }
-
-      const matchesCategory =
-        selectedCategory === "Semua" ||
-        (selectedCategory === "Simulasi Portofolio"
-          ? quest.isSimulated
-          : quest.category === selectedCategory || (quest.isSimulated && selectedCategory === "Simulasi Portofolio"));
-
-      return matchesCategory;
+  // Dynamic Category Tabs starting with user's preferred categories
+  const dashboardCategoryTabs = useMemo(() => {
+    const tabs: string[] = ["Semua"];
+    if (preferredCategories.length > 0) {
+      preferredCategories.forEach((c) => {
+        if (!tabs.includes(c)) tabs.push(c);
+      });
+    }
+    if (!tabs.includes("Simulasi Portofolio")) {
+      tabs.push("Simulasi Portofolio");
+    }
+    DEFAULT_CLIENT_CATEGORIES.forEach((c) => {
+      if (!tabs.includes(c)) tabs.push(c);
     });
-  }, [quests, selectedCategory, user]);
+    return tabs;
+  }, [preferredCategories]);
+
+  // Filter Quests and prioritize matching category quests
+  const filteredQuests = useMemo(() => {
+    return quests
+      .filter((quest) => {
+        if (user && quest.ownerId && quest.ownerId === user.id && !quest.isSimulated) {
+          return false;
+        }
+
+        if (selectedCategory === "Semua") return true;
+        if (selectedCategory === "Simulasi Portofolio") return Boolean(quest.isSimulated);
+
+        return matchCategory(quest.category, selectedCategory);
+      })
+      .map((quest) => {
+        const isPrefMatch = preferredCategories.some((pref) => matchCategory(quest.category, pref));
+        return {
+          ...quest,
+          isPrefMatch,
+          matchScore: isPrefMatch ? Math.min(99, Math.max(95, quest.matchScore + 4)) : quest.matchScore,
+        };
+      })
+      .sort((a, b) => {
+        if (selectedCategory === "Semua" && preferredCategories.length > 0) {
+          if (a.isPrefMatch && !b.isPrefMatch) return -1;
+          if (!a.isPrefMatch && b.isPrefMatch) return 1;
+        }
+        return b.matchScore - a.matchScore;
+      });
+  }, [quests, selectedCategory, user, preferredCategories]);
 
   const completedMissionsCount = dailyMissions.filter((m) => m.completed).length;
 
@@ -908,18 +999,24 @@ export function FreelancerDashboard() {
 
             {/* Category Filter Pills */}
             <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-              {CATEGORIES.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-all ${selectedCategory === cat
-                      ? "bg-primary text-white shadow-xs"
-                      : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+              {dashboardCategoryTabs.map((cat) => {
+                const isPref = preferredCategories.includes(cat);
+                const isActive = selectedCategory === cat;
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-all inline-flex items-center gap-1 cursor-pointer ${
+                      isActive
+                        ? "bg-primary text-white shadow-xs"
+                        : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
                     }`}
-                >
-                  {cat}
-                </button>
-              ))}
+                  >
+                    {isPref && cat !== "Semua" && <Sparkles className="h-3 w-3 text-amber-400" />}
+                    <span>{cat}</span>
+                  </button>
+                );
+              })}
             </div>
 
             {/* Quests List Cards */}
@@ -949,6 +1046,12 @@ export function FreelancerDashboard() {
                           {quest.isSimulated && (
                             <span className="rounded-md bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 text-[10px] font-bold">
                               Simulasi Portofolio
+                            </span>
+                          )}
+                          {quest.isPrefMatch && (
+                            <span className="rounded-md bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/25 px-2 py-0.5 text-[10px] font-bold inline-flex items-center gap-1">
+                              <Sparkles className="h-2.5 w-2.5 text-amber-400" />
+                              Sesuai Preferensimu
                             </span>
                           )}
                         </div>

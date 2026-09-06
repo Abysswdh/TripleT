@@ -21,7 +21,7 @@ export interface LearningResource {
 export interface SkillQuizDefinition {
   id: string;
   name: string;
-  category: "Frontend" | "Backend" | "UI/UX" | "Frontend 3D" | "Fullstack" | "Database";
+  category: string;
   categoryLabel: string;
   questionsCount: number;
   timeLimitSeconds: number; // in seconds
@@ -53,8 +53,8 @@ export const SKILL_QUIZZES: SkillQuizDefinition[] = [
   {
     id: "q-nextjs",
     name: "Next.js 14 App Router & Server Actions",
-    category: "Frontend",
-    categoryLabel: "Frontend Engineering",
+    category: "Web & IT Engineering",
+    categoryLabel: "Web & IT Engineering",
     questionsCount: 5,
     timeLimitSeconds: 300, // 5 minutes
     timeLimitDisplay: "5 Menit",
@@ -137,8 +137,8 @@ export const SKILL_QUIZZES: SkillQuizDefinition[] = [
   {
     id: "q-fastapi",
     name: "Python FastAPI & Async Architecture",
-    category: "Backend",
-    categoryLabel: "Backend & Systems",
+    category: "Web & IT Engineering",
+    categoryLabel: "Web & IT Engineering",
     questionsCount: 5,
     timeLimitSeconds: 300,
     timeLimitDisplay: "5 Menit",
@@ -221,8 +221,8 @@ export const SKILL_QUIZZES: SkillQuizDefinition[] = [
   {
     id: "q-figma",
     name: "Figma Advanced Auto-layout & Design Tokens",
-    category: "UI/UX",
-    categoryLabel: "UI/UX & Design Systems",
+    category: "Desain & Branding",
+    categoryLabel: "Desain & Branding",
     questionsCount: 5,
     timeLimitSeconds: 300,
     timeLimitDisplay: "5 Menit",
@@ -304,8 +304,8 @@ export const SKILL_QUIZZES: SkillQuizDefinition[] = [
   {
     id: "q-threejs",
     name: "Three.js & WebGL Interactive Shaders",
-    category: "Frontend 3D",
-    categoryLabel: "Interactive 3D Web",
+    category: "Web & IT Engineering",
+    categoryLabel: "Web & IT Engineering",
     questionsCount: 5,
     timeLimitSeconds: 300,
     timeLimitDisplay: "5 Menit",
@@ -387,8 +387,8 @@ export const SKILL_QUIZZES: SkillQuizDefinition[] = [
   {
     id: "q-supabase-rls",
     name: "PostgreSQL & Supabase Row Level Security",
-    category: "Database",
-    categoryLabel: "Database & Security",
+    category: "Web & IT Engineering",
+    categoryLabel: "Web & IT Engineering",
     questionsCount: 5,
     timeLimitSeconds: 300,
     timeLimitDisplay: "5 Menit",
@@ -465,6 +465,331 @@ export const SKILL_QUIZZES: SkillQuizDefinition[] = [
         ],
         correctIndex: 1,
         explanation: "Index GIN (Generalized Inverted Index) dikombinasikan dengan tipe data `tsvector` / `to_tsvector()` adalah standar industri PostgreSQL untuk Full-Text Search berkemampuan tinggi."
+      }
+    ]
+  },
+  {
+    id: "q-brand-design",
+    name: "Prinsip Desain Brand Identity & Logo UMKM",
+    category: "Desain & Branding",
+    categoryLabel: "Desain & Branding",
+    questionsCount: 5,
+    timeLimitSeconds: 300,
+    timeLimitDisplay: "5 Menit",
+    xpReward: 350,
+    badgeName: "Brand Identity Specialist",
+    coverImage: "https://images.unsplash.com/photo-1626785774573-4b799315345d?w=800&auto=format&fit=crop&q=80",
+    description: "Evaluasi pemahaman hierarki visual, psikologi warna brand, tipografi komersial, dan format file deliverable logo (SVG, EPS, PNG).",
+    passingScore: 80,
+    learningResources: [
+      { title: "The Futur — Logo Design Process", url: "https://thefutur.com/", source: "The Futur", type: "guide" },
+      { title: "Principles of Visual Hierarchy — Interaction Design Foundation", url: "https://www.interaction-design.org/literature/article/visual-hierarchy", source: "IxDF", type: "guide" },
+      { title: "Canva Design School — Brand Identity Basics", url: "https://www.canva.com/designschool/", source: "Canva", type: "course" },
+      { title: "Adobe Color Wheel & Color Theory", url: "https://color.adobe.com/", source: "Adobe", type: "guide" },
+    ],
+    questions: [
+      {
+        id: "q-brand-1",
+        question: "Format file manakah yang WAJIB diserahkan kepada klien agar logo dapat dicetak dalam ukuran billboard raksasa tanpa pecah?",
+        options: [
+          "Raster JPEG resolusi 72 DPI",
+          "Vector Master File (SVG, EPS, atau AI)",
+          "File tangkapan layar PNG dari WhatsApp",
+          "Dokumen Microsoft Word .docx"
+        ],
+        correctIndex: 1,
+        explanation: "Format vektor (SVG, EPS, AI) tersusun dari formula matematis titik dan garis, sehingga dapat diperbesar hingga skala tak terbatas (termasuk billboard dan sablon) tanpa degradasi ketajaman."
+      },
+      {
+        id: "q-brand-2",
+        question: "Apa fungsi dari aturan 'Clear Space' atau 'Safe Zone' dalam panduan penggunaan logo (Brand Guidelines)?",
+        options: [
+          "Membatasi area kosong di sekitar logo agar tidak tertimpa teks atau elemen lain sehingga keterbacaan tetap terjaga",
+          "Menghapus background putih secara otomatis",
+          "Membuat logo tampak transparan di layar gelap",
+          "Mengunci warna logo agar tidak bisa diganti di Photoshop"
+        ],
+        correctIndex: 0,
+        explanation: "Clear Space adalah batas margin isolasi di sekeliling logo untuk mencegah elemen grafis, teks, atau batas tepi media merusak fokus visual dan keutuhan bentuk logo."
+      },
+      {
+        id: "q-brand-3",
+        question: "Dalam psikologi warna brand kuliner cepat saji (F&B), kombinasi warna apa yang paling umum digunakan untuk memicu selera makan dan energi?",
+        options: [
+          "Abu-abu muda dan biru navy",
+          "Merah, kuning, dan oranye hangat",
+          "Hitam pekat dan ungu gelap",
+          "Cokelat tanah dan hijau lumut"
+        ],
+        correctIndex: 1,
+        explanation: "Kombinasi warna hangat seperti merah dan kuning secara psikologis terbukti menstimulasi nafsu makan, detak metabolisme, dan kesan ramah serta energik."
+      },
+      {
+        id: "q-brand-4",
+        question: "Apa perbedaan mendasar antara 'Moodboard' dan 'Brand Guidelines (Brand Book)'?",
+        options: [
+          "Moodboard adalah eksplorasi visual inspiratif di awal proyek, sedangkan Brand Guidelines adalah aturan baku penerapan identitas setelah desain disepakati",
+          "Moodboard hanya untuk video, Brand Guidelines hanya untuk website",
+          "Moodboard dibuat oleh klien, Brand Guidelines dibuat oleh percetakan",
+          "Keduanya adalah istilah yang sama persis tanpa perbedaan"
+        ],
+        correctIndex: 0,
+        explanation: "Moodboard digunakan di fase konseptual untuk menyamakan visi rasa (vibe, palette, tipografi). Brand Guidelines adalah dokumen pedoman standar resmi yang mengatur warna hex, font, dan larangan penggunaan logo."
+      },
+      {
+        id: "q-brand-5",
+        question: "Berapa jumlah variasi font (typeface) maksimal yang disarankan dalam satu sistem identitas visual brand UMKM agar konsisten dan tidak berantakan?",
+        options: [
+          "1 hingga 2 font keluarga harmonis (misal: 1 font display/heading dan 1 font body yang mudah dibaca)",
+          "Minimal 5 sampai 7 font berbeda dalam setiap poster",
+          "Setiap paragraf harus menggunakan font berbeda",
+          "Wajib selalu memakai font Comic Sans"
+        ],
+        correctIndex: 0,
+        explanation: "Prinsip tipografi profesional menyarankan maksimal 2 jenis typeface (satu untuk heading/display dan satu untuk body text) agar pesan tetap kohesif dan mudah dikenali audiens."
+      }
+    ]
+  },
+  {
+    id: "q-video-creative",
+    name: "Creative Short-Form Video & Storyboarding",
+    category: "Foto & Video Kreatif",
+    categoryLabel: "Foto & Video Kreatif",
+    questionsCount: 5,
+    timeLimitSeconds: 300,
+    timeLimitDisplay: "5 Menit",
+    xpReward: 350,
+    badgeName: "Creative Video Editor",
+    coverImage: "https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=800&auto=format&fit=crop&q=80",
+    description: "Uji keahlian pacing hook 3 detik pertama, storyboarding video vertikal 9:16 (Reels/TikTok), sound design, dan color correction.",
+    passingScore: 80,
+    learningResources: [
+      { title: "CapCut Creator Masterclass", url: "https://www.capcut.com/resource", source: "CapCut Hub", type: "guide" },
+      { title: "Premiere Pro Video Editing Fundamentals", url: "https://helpx.adobe.com/premiere-pro/tutorials.html", source: "Adobe", type: "docs" },
+      { title: "Short-form Video Retention Tactics — YouTube Creator Academy", url: "https://creatoracademy.youtube.com/", source: "YouTube Academy", type: "course" },
+    ],
+    questions: [
+      {
+        id: "q-vid-1",
+        question: "Berapa detik 'golden window' atau hook visual pertama yang menentukan apakah pengguna media sosial akan melanjutkan menonton atau melakukan swipe-away?",
+        options: [
+          "10 hingga 15 detik",
+          "1 hingga 3 detik pertama",
+          "Setelah menit pertama",
+          "Menit ke-3 pada bagian penutup"
+        ],
+        correctIndex: 1,
+        explanation: "Algoritma video pendek (TikTok, Instagram Reels, YouTube Shorts) sangat dipengaruhi oleh retensi 3 detik pertama. Jika penonton tidak terpikat di 1-3 detik awal, watch-time akan anjlok drastis."
+      },
+      {
+        id: "q-vid-2",
+        question: "Aspek rasio dan orientasi kanvas standar apakah yang digunakan untuk video konten Instagram Reels dan TikTok?",
+        options: [
+          "16:9 Landscape Horizontal",
+          "9:16 Vertikal Penuh (1080 x 1920 piksel)",
+          "4:3 Format Televisi Klasik",
+          "1:2 Panorama Ultrawide"
+        ],
+        correctIndex: 1,
+        explanation: "Format 9:16 vertikal (resolusi standar 1080 x 1920) mengisi seluruh layar smartphone tanpa letterboxing hitam di atas dan bawah."
+      },
+      {
+        id: "q-vid-3",
+        question: "Apa yang dimaksud dengan teknik audio edit 'J-Cut' dalam transisi video?",
+        options: [
+          "Audio dari adegan berikutnya sudah mulai terdengar sebelum gambar adegan sebelumnya berganti",
+          "Memotong semua audio menjadi hening total",
+          "Menghapus suara vokal dan menyisakan musik latar",
+          "Mempercepat rekaman video 2x lipat"
+        ],
+        correctIndex: 0,
+        explanation: "J-Cut terjadi ketika audio adegan berikutnya mendahului visualnya (membentuk huruf J pada timeline NLE), menciptakan transisi yang sangat halus dan natural bagi telinga penonton."
+      },
+      {
+        id: "q-vid-4",
+        question: "Mengapa penting memperhatikan 'UI Safe Zone' saat menempatkan caption atau teks pada video TikTok / Reels?",
+        options: [
+          "Agar teks tidak tertutup oleh tombol Like, Share, Komentar, dan username akun di sisi kanan dan bawah layar",
+          "Agar video bisa diputar di bioskop",
+          "Agar ukuran file video mengecil otomatis",
+          "Karena aplikasi akan otomatis menolak upload video yang ada teksnya"
+        ],
+        correctIndex: 0,
+        explanation: "Media sosial memiliki interface navigasi overlay (tombol like, caption profil, deskripsi). Elemen teks penting harus ditempatkan di dalam area safe zone tengah agar tidak tertimpa ikon antarmuka."
+      },
+      {
+        id: "q-vid-5",
+        question: "Codec dan container video manakah yang paling direkomendasikan untuk ekspor video media sosial dengan rasio kualitas tajam dan ukuran hemat?",
+        options: [
+          "Uncompressed AVI (ukuran gigabytes)",
+          "H.264 / AAC dalam kontainer MP4",
+          "Apple ProRes 4444 XQ mentah",
+          "Format animasi GIF 256 warna"
+        ],
+        correctIndex: 1,
+        explanation: "H.264 MP4 adalah standar emas kompatibilitas web dan media sosial di seluruh dunia karena didukung penuh oleh semua browser dan perangkat mobile tanpa kompresi artefak berlebih."
+      }
+    ]
+  },
+  {
+    id: "q-copywriting-seo",
+    name: "SEO Content Writing & Copywriting Konversi",
+    category: "Penulisan & Admin",
+    categoryLabel: "Penulisan & Admin",
+    questionsCount: 5,
+    timeLimitSeconds: 300,
+    timeLimitDisplay: "5 Menit",
+    xpReward: 350,
+    badgeName: "Certified SEO Copywriter",
+    coverImage: "https://images.unsplash.com/photo-1455390582262-044cdead277a?w=800&auto=format&fit=crop&q=80",
+    description: "Evaluasi teknik penulisan persuasif formula AIDA/PAS, optimasi On-Page SEO (Keyword density, Meta Description, Headings), dan Call-To-Action (CTA).",
+    passingScore: 80,
+    learningResources: [
+      { title: "Google Search Central — SEO Starter Guide", url: "https://developers.google.com/search/docs/fundamentals/seo-starter-guide", source: "Google Docs", type: "guide" },
+      { title: "HubSpot Inbound Marketing & Copywriting", url: "https://academy.hubspot.com/", source: "HubSpot", type: "course" },
+      { title: "Copyhackers Conversion Copywriting Essentials", url: "https://copyhackers.com/", source: "Copyhackers", type: "guide" },
+    ],
+    questions: [
+      {
+        id: "q-copy-1",
+        question: "Dalam formula copywriting PAS yang terkenal untuk promosi produk UMKM, apakah kepanjangan dari singkatan PAS?",
+        options: [
+          "Payment, Account, Security",
+          "Problem (Masalah), Agitate (Gelisahkan), Solution (Solusi Produk)",
+          "Price, Action, Standard",
+          "Promotion, Advertising, Sponsorship"
+        ],
+        correctIndex: 1,
+        explanation: "Formula PAS mengidentifikasi Problem audiens, memperdalam dampak emosional masalah tersebut (Agitate), lalu menghadirkan produk/layanan sebagai Solusi (Solution) penyelamat."
+      },
+      {
+        id: "q-copy-2",
+        question: "Bagaimanakah hierarki tag Heading HTML yang benar untuk sebuah artikel blog SEO berkualitas tinggi?",
+        options: [
+          "Menggunakan beberapa H1 di setiap paragraf acak",
+          "Hanya 1 buah tag H1 sebagai judul utama, diikuti subtopik H2, dan turunan poin teknis H3",
+          "Langsung mulai dari H4 tanpa judul",
+          "Semua teks harus menggunakan tag H6"
+        ],
+        correctIndex: 1,
+        explanation: "Struktur semantik Google mewajibkan 1 tag H1 per halaman untuk tema pokok, dan menggunakan H2 serta H3 untuk membentuk outline logika konten yang mudah dirayapi bot mesin pencari."
+      },
+      {
+        id: "q-copy-3",
+        question: "Berapa panjang karakter ideal untuk Meta Description di hasil pencarian Google (SERP) agar tidak terpotong elipsis (...)?",
+        options: [
+          "Sekitar 500 hingga 800 kata",
+          "Sekitar 120 hingga 155 karakter",
+          "Hanya 5 karakter",
+          "Bebas tanpa batas karakter"
+        ],
+        correctIndex: 1,
+        explanation: "Google membatasi tampilan ringkasan meta description di hasil pencarian pada rentang 120-155 karakter pada tampilan desktop dan mobile."
+      },
+      {
+        id: "q-copy-4",
+        question: "Manakah contoh kalimat Call-To-Action (CTA) yang memiliki daya persuasi tinggi dan kejelasan manfaat paling konkret?",
+        options: [
+          "Klik Disini",
+          "Informasi Lebih Lanjut",
+          "Klaim Diskon 20% & Konsultasi Gratis Sekarang",
+          "Selesai"
+        ],
+        correctIndex: 2,
+        explanation: "CTA berdaya konversi tinggi menggunakan kata kerja aktif, menekankan nilai manfaat instan bagi pembeli (diskon + konsultasi gratis), dan menciptakan urgensi (sekarang)."
+      },
+      {
+        id: "q-copy-5",
+        question: "Apa perbedaan antara Search Intent 'Informational' dan 'Transactional' pada riset kata kunci Google?",
+        options: [
+          "Informational bertujuan mencari jawaban/panduan (misal: 'cara membuat logo'), sedangkan Transactional berniat langsung membeli/memesan (misal: 'jasa pembuatan logo umkm terdekat')",
+          "Informational selalu berbayar, Transactional gratis",
+          "Informational hanya untuk bahasa inggris",
+          "Keduanya tidak memiliki dampak pada peringkat artikel"
+        ],
+        correctIndex: 0,
+        explanation: "Memahami niat pencarian (Search Intent) memastikan Anda menyajikan artikel edukatif untuk kueri informasional dan halaman penawaran/landing page untuk kueri transaksional."
+      }
+    ]
+  },
+  {
+    id: "q-digital-marketing",
+    name: "Strategi Digital Marketing & Manajemen Media Sosial",
+    category: "Marketing & Promosi",
+    categoryLabel: "Marketing & Promosi",
+    questionsCount: 5,
+    timeLimitSeconds: 300,
+    timeLimitDisplay: "5 Menit",
+    xpReward: 350,
+    badgeName: "Digital Marketing Strategist",
+    coverImage: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&auto=format&fit=crop&q=80",
+    description: "Uji pemahaman funnel pemasaran digital (TOFU, MOFU, BOFU), metrik analitik (CTR, ROAS, Engagement Rate), dan riset audiens UMKM.",
+    passingScore: 80,
+    learningResources: [
+      { title: "Meta Blueprint — Facebook & Instagram Ads Certification", url: "https://www.facebook.com/business/learn", source: "Meta Blueprint", type: "course" },
+      { title: "Google Digital Garage — Fundamentals of Digital Marketing", url: "https://grow.google/", source: "Google", type: "course" },
+      { title: "Social Media Examiner — Marketing Trends", url: "https://www.socialmediaexaminer.com/", source: "SME", type: "guide" },
+    ],
+    questions: [
+      {
+        id: "q-mkt-1",
+        question: "Dalam funnel pemasaran digital, konten jenis apakah yang paling tepat untuk tahap Top of Funnel (TOFU)?",
+        options: [
+          "Katalog harga langsung suruh transfer sekarang juga",
+          "Konten edukasi, hiburan, atau tips bermanfaat untuk membangun brand awareness tanpa memaksa membeli",
+          "Surat penagihan piutang",
+          "Form pendaftaran garansi produk"
+        ],
+        correctIndex: 1,
+        explanation: "Tahap TOFU berfokus menjaring audiens dingin (cold audience) yang belum mengenal brand melalui konten nilai tambah seperti tips, solusi masalah umum, dan inspirasi."
+      },
+      {
+        id: "q-mkt-2",
+        question: "Jika sebuah kampanye iklan berbayar mengeluarkan biaya iklan Rp 1.000.000 dan menghasilkan omset penjualan sebesar Rp 4.000.000, berapakah nilai ROAS (Return on Ad Spend)?",
+        options: [
+          "0.25x",
+          "4.0x (400%)",
+          "1.0x (Impas)",
+          "10.0x"
+        ],
+        correctIndex: 1,
+        explanation: "ROAS dihitung dari Total Pendapatan Penjualan dibagi Biaya Iklan (Rp 4.000.000 / Rp 1.000.000 = 4.0x atau 400%)."
+      },
+      {
+        id: "q-mkt-3",
+        question: "Apa arti dari metrik CTR (Click-Through Rate) dalam evaluasi performa iklan digital?",
+        options: [
+          "Persentase orang yang mengklik tautan iklan dari total jumlah orang yang melihat tayangan iklan tersebut",
+          "Biaya listrik komputer saat memasang iklan",
+          "Jumlah follower baru yang langsung berhenti mengikuti",
+          "Kecepatan loading halaman checkout"
+        ],
+        correctIndex: 0,
+        explanation: "CTR = (Jumlah Klik / Jumlah Impresi) x 100%. CTR tinggi menandakan visual dan copywriting iklan relevan dan menarik bagi target audiens."
+      },
+      {
+        id: "q-mkt-4",
+        question: "Apa manfaat dari menggunakan 'Lookalike Audience' di Meta Ads Manager?",
+        options: [
+          "Menemukan orang-orang baru di media sosial yang memiliki profil minat, demografi, dan kebiasaan serupa dengan pelanggan terbaik Anda",
+          "Memblokir akun kompetitor secara otomatis",
+          "Menghapus iklan negatif dari kolom komentar",
+          "Menggandakan saldo rekening bank Anda"
+        ],
+        correctIndex: 0,
+        explanation: "Lookalike Audience memanfaatkan algoritma AI machine learning Meta untuk mencari jutaan calon pembeli baru yang memiliki karakteristik tingkah laku paling mirip dengan pembeli setia Anda."
+      },
+      {
+        id: "q-mkt-5",
+        question: "Mengapa menyusun Content Pillar (pilar tema konten) sangat penting dalam manajemen akun media sosial bisnis?",
+        options: [
+          "Menjaga variasi konten tetap seimbang antara edukasi, interaksi, testimoni, dan promosi sehingga followers tidak bosan",
+          "Membuat postingan hanya boleh seminggu sekali",
+          "Menghindari penggunaan tagar (hashtag)",
+          "Menyerahkan pengelolaan akun sepenuhnya kepada bot"
+        ],
+        correctIndex: 0,
+        explanation: "Content Pillar memberikan kerangka kerja tematik (misal: 40% edukasi, 30% hiburan/relatable, 20% social proof, 10% hard sell) agar feed profesional, teratur, dan memiliki engagement sehat."
       }
     ]
   }
