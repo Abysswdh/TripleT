@@ -1,16 +1,18 @@
 <div align="center">
   
-  # Doable! 
-  ### All about freelancer
+  # 🚀 Doable!
+  ### All-in-one freelance ecosystem — marketplace, project management, dan learning platform dalam satu tempat.
   
-  [![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-Visit_Site-success?style=for-the-badge)](https://[URL_DEMO])
-  [![GitHub](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github)](https://[URL_REPO])
+  [![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-Visit_Site-success?style=for-the-badge)](https://triple-t-lime.vercel.app/)
+  [![GitHub](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github)](https://github.com/Abysswdh/TripleT)
+  [![Next.js](https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+  [![Supabase](https://img.shields.io/badge/Supabase-Backend-3ECF8E?style=for-the-badge&logo=supabase)](https://supabase.com/)
   [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
   
-  **Submission for ITECHNO CUP 2026 - Web Development**
+  **Submission for ITECHNO CUP 2026 — Web Development**
   
   **By TripleT**
-  
+
 </div>
 
 ---
@@ -19,14 +21,11 @@
 
 - [Tentang Proyek](#-tentang-proyek)
 - [Fitur Unggulan](#-fitur-unggulan)
-- [Demo & Screenshot](#-demo--screenshot)
-- [Teknologi](#-teknologi)
-- [Arsitektur Sistem](#-arsitektur-sistem)
-- [Instalasi & Setup](#-instalasi--setup)
-- [Penggunaan](#-penggunaan)
-- [API Documentation](#-api-documentation)
-- [Testing](#-testing)
-- [Tim Developer](#-tim-pengembang)
+- [Demo & Video](#-demo--video)
+- [Teknologi](#️-teknologi)
+- [Arsitektur Sistem](#️-arsitektur-sistem)
+- [Instalasi & Setup](#️-instalasi--setup)
+- [Tim Developer](#-tim-developer)
 - [Lisensi](#-lisensi)
 
 ---
@@ -45,20 +44,22 @@
 
 ### Latar Belakang
 
-Pernahkah kamu berpikir bahwa di era digital yang serba terhubung ini, jutaan anak muda Indonesia justru masih kesulitan mendapatkan pekerjaan yang layak? Menurut Badan Pusat Statistik (BPS), tingkat pengangguran terbuka Indonesia pada Februari 2026 mencapai 4,68%, setara dengan 7,24 juta orang yang menganggur. Angka tersebut lebih tinggi dibanding negara ASEAN lain menurut proyeksi IMF 2026, seperti Vietnam (2,1%), Thailand (1%), Singapura (2%), dan Malaysia (3%). Permasalahan ini juga semakin serius bagi generasi muda, dimana kelompok usia 15-24 tahun memiliki tingkat pengangguran tertinggi di 16,36%, yang berarti kira-kira 1 dari 6 anak muda dalam angkatan kerja belum memperoleh pekerjaan. Di sisi lain, 57,80% penduduk bekerja Indonesia masih berada di sektor informal pada 2025, sehingga banyak orang memang bekerja, tetapi belum tentu memiliki pekerjaan yang stabil, terlindungi, dan memberi jalur karier yang jelas.
+Di era digital yang serba terhubung ini, jutaan anak muda Indonesia justru masih kesulitan mendapatkan pekerjaan yang layak. Menurut Badan Pusat Statistik (BPS), tingkat pengangguran terbuka Indonesia pada Februari 2026 mencapai **4,68%**, setara dengan **7,24 juta orang** yang menganggur — lebih tinggi dibanding negara ASEAN lain menurut proyeksi IMF 2026 seperti Vietnam (2,1%), Thailand (1%), Singapura (2%), dan Malaysia (3%).
 
-Kondisi tersebut bukan hanya terjadi karena keterbatasan lowongan, tetapi juga karena ada jarak antara kesiapan kandidat dan kebutuhan perusahaan. Menurut riset Populix dan KitaLulus yang dikutip ANTARA, 63% pencari kerja terkendala persyaratan pengalaman kerja, sementara 46% perusahaan kesulitan menemukan kandidat yang sesuai. Artinya, banyak anak muda belum memiliki pengalaman praktis, portofolio, atau bukti keterampilan yang dapat ditunjukkan ketika melamar kerja; akibatnya, mereka lebih berisiko bertahan pada pekerjaan low-level atau informal daripada masuk ke peran yang lebih sesuai dengan kemampuan mereka.
-
+Permasalahan ini terutama menimpa generasi muda: kelompok usia 15-24 tahun memiliki tingkat pengangguran tertinggi di **16,36%**, yang berarti kira-kira **1 dari 6 anak muda** dalam angkatan kerja belum memperoleh pekerjaan. Menurut riset Populix dan KitaLulus, **63% pencari kerja terkendala persyaratan pengalaman kerja**, sementara **46% perusahaan kesulitan menemukan kandidat yang sesuai**.
 
 ### Solusi yang Ditawarkan
 
-Doable! adalah platform web-app yang menggabungkan marketplace freelance dengan project management workspace komprehensif, sebuah fusi antara Fiverr dan Notion. Di sini, klien dan freelancer tidak sekadar bertemu dan berpisah, tetapi bekerja bersama dalam satu ruang digital yang terintegrasi. Klien bisa memposting proyek dengan mudah, cukup isi judul, deskripsi singkat, kategori, dan deadline, tanpa perlu pusing menyusun struktur proyek dari nol. Sementara itu, freelancer pemula hingga expert bisa menemukan proyek yang sesuai dengan keterampilan mereka, membangun portofolio dari setiap pekerjaan yang diselesaikan, dan mendapatkan pengalaman nyata yang selama ini menjadi syarat utama dunia kerja.
+**Doable!** adalah platform web-app yang menggabungkan **marketplace freelance** dengan **project management workspace** komprehensif — sebuah fusi antara **Fiverr** dan **Notion**. Di sini, klien dan freelancer tidak sekadar bertemu dan berpisah, tetapi bekerja bersama dalam satu ruang digital yang terintegrasi.
+
+- Klien bisa memposting proyek dengan mudah — cukup isi judul, deskripsi singkat, kategori, dan deadline.
+- Freelancer pemula hingga expert bisa menemukan proyek yang sesuai, membangun portofolio dari setiap pekerjaan yang diselesaikan, dan mendapatkan pengalaman nyata.
 
 ### Tujuan Proyek
 
-- 🎯 **Tujuan Utama**: [Tujuan primer aplikasi]
-- 📊 **Target Pengguna**: [Siapa yang akan menggunakan aplikasi ini]
-- 💡 **Value Proposition**: [Apa yang membuat aplikasi ini berbeda dari solusi lain]
+- 🎯 **Tujuan Utama**: Menjembatani kesenjangan antara pencari kerja muda yang belum berpengalaman dengan kebutuhan industri, melalui platform freelance yang dilengkapi tools profesional sehingga pengguna bisa bekerja, belajar, dan berkembang dalam satu ekosistem.
+- 📊 **Target Pengguna**: Mahasiswa, fresh graduate, dan profesional muda (18-30 tahun) yang ingin memulai atau mengembangkan karir freelance, serta klien/UMKM yang mencari talenta digital fleksibel.
+- 💡 **Value Proposition**: **All-in-one platform** — tidak perlu berpindah antara WhatsApp untuk komunikasi, Notion untuk project management, atau Udemy untuk belajar. Doable! mengintegrasikan marketplace, project management (lengkap dengan Gantt chart), real-time chat, dan gamified learning dalam satu aplikasi.
 
 ---
 
@@ -67,43 +68,32 @@ Doable! adalah platform web-app yang menggabungkan marketplace freelance dengan 
 ### Fitur Utama
 
 | Fitur | Deskripsi | Keunggulan |
-|----------|--------------|---------------|
-| **[Nama Fitur 1]** | [Deskripsi singkat fitur] | [Mengapa fitur ini penting/unik] |
-| **[Nama Fitur 2]** | [Deskripsi singkat fitur] | [Mengapa fitur ini penting/unik] |
-| **[Nama Fitur 3]** | [Deskripsi singkat fitur] | [Mengapa fitur ini penting/unik] |
-| **[Nama Fitur 4]** | [Deskripsi singkat fitur] | [Mengapa fitur ini penting/unik] |
+|-------|-----------|------------|
+| **🏪 Freelance Marketplace** | Marketplace dua arah: klien posting proyek, freelancer apply & bidding. Dilengkapi filter kategori, pencarian, dan sistem rekomendasi. | Terintegrasi langsung dengan project management — setelah deal, langsung kerja tanpa pindah platform. |
+| **📊 Project Management + Gantt Chart** | Workspace kolaboratif dengan Gantt chart interaktif, task tracking, milestone, dan timeline management. | Menggantikan kebutuhan tools terpisah seperti Notion/Trello — semua dalam satu tempat. |
+| **📚 Gamified Learning & Quiz** | Learning resources dan quiz interaktif untuk memvalidasi skill. Pemula bisa belajar, yang sudah mahir bisa membuktikan kompetensinya. | Sistem gamifikasi mendorong engagement — belajar sambil mengerjakan proyek nyata. |
+| **💬 Real-time Chat** | Komunikasi langsung antara klien dan freelancer dalam platform. | Tidak perlu berpindah ke WhatsApp atau platform messaging lain. |
 
 ### Fitur Tambahan
 
-- **[Fitur A]** - [Penjelasan singkat]
-- **[Fitur B]** - [Penjelasan singkat]
-- **[Fitur C]** - [Penjelasan singkat]
-- **[Fitur D]** - [Penjelasan singkat]
+- **🎨 Onboarding Interaktif** — Video welcome screen dan guided setup berdasarkan role (klien/freelancer) untuk pengalaman pertama yang seamless.
+- **👤 Profil & Portofolio** — Halaman profil profesional dengan showcase portofolio, skill badges, dan riwayat proyek.
+- **🔔 Notifikasi Real-time** — Sistem notifikasi untuk update proyek, pesan baru, dan milestone tercapai.
+- **⚙️ Pengaturan Akun** — Kelola profil, preferensi, dan keamanan akun dengan interface yang intuitif.
+- **📱 Responsive Design** — Tampilan optimal di desktop, tablet, dan mobile dengan animasi micro-interaction yang smooth.
+- **🌐 Role-based Dashboard** — Dashboard yang berbeda dan dioptimalkan untuk klien vs freelancer, masing-masing dengan fitur yang relevan.
 
 ---
 
-## 📸 Demo & Screenshot
+## 📸 Demo & Video
 
-### Live Demo
+### 🔗 Live Demo
 
-🔗 **[Kunjungi Website](https://[URL_DEMO])**
+**[👉 Kunjungi Doable!](https://triple-t-lime.vercel.app/)**
 
-### Screenshot Aplikasi
+### 📹 Video Demo
 
-<div align="center">
-  <img src="[URL_SCREENSHOT_1]" alt="Homepage" width="800"/>
-  <p><em>Homepage - Tampilan utama aplikasi</em></p>
-  
-  <img src="[URL_SCREENSHOT_2]" alt="Dashboard" width="800"/>
-  <p><em>Dashboard - Panel kontrol pengguna</em></p>
-  
-  <img src="[URL_SCREENSHOT_3]" alt="Feature" width="800"/>
-  <p><em>[Nama Fitur] - [Deskripsi screenshot]</em></p>
-</div>
-
-### Video Demo
-
-📹 **[Link Video Demo](https://[URL_VIDEO])** _(opsional)_
+**[📂 Tonton Video Demo di Google Drive](https://drive.google.com/drive/folders/1oowRB0q6nBLAREbKosVVWGHzm4nH1Q7j?usp=sharing)**
 
 ---
 
@@ -113,45 +103,64 @@ Doable! adalah platform web-app yang menggabungkan marketplace freelance dengan 
 
 #### Frontend
 ```
-Framework    : [React / Next.js / Vue / dll]
-UI Library   : [Tailwind CSS / Material-UI / Chakra UI / dll]
-State Mgmt   : [Redux / Zustand / Context API / dll]
-Validation   : [Zod / Yup / React Hook Form / dll]
+Framework       : Next.js 14 (App Router)
+Language        : TypeScript
+UI / Styling    : Tailwind CSS 3.4 + tailwindcss-animate
+Component Lib   : Radix UI (Dialog, Dropdown, Avatar, Label, Separator)
+Animation       : Framer Motion, GSAP, AOS (Animate On Scroll)
+3D Graphics     : Three.js + React Three Fiber, OGL
+Icons           : Lucide React
+Utilities       : clsx, tailwind-merge, class-variance-authority
 ```
 
-#### Backend
+#### Backend & Data
 ```
-Runtime      : [Node.js / Bun / Deno / dll]
-Framework    : [Express / Fastify / Hono / dll]
-Database     : [PostgreSQL / MongoDB / MySQL / dll]
-ORM          : [Prisma / Drizzle / TypeORM / dll]
-Auth         : [JWT / NextAuth / Clerk / dll]
+BaaS            : Supabase (Auth, Database, Storage, Realtime)
+Database        : PostgreSQL (via Supabase)
+Auth            : Supabase Auth + SSR (@supabase/ssr)
+API Routes      : Next.js API Routes (Route Handlers)
 ```
 
-#### DevOps & Tools
+#### DevOps & Deployment
 ```
-Deployment   : [Vercel / Netlify / Railway / dll]
-CI/CD        : [GitHub Actions / Vercel / dll]
-Testing      : [Jest / Vitest / Playwright / dll]
-Monitoring   : [Sentry / LogRocket / dll]
+Hosting         : Vercel
+Version Control : Git + GitHub
+Package Manager : npm
+Linting         : ESLint (eslint-config-next)
+Build Tool      : Next.js built-in (SWC compiler)
 ```
 
 ### Alasan Pemilihan Teknologi
 
 | Teknologi | Alasan Pemilihan |
 |-----------|------------------|
-| **[Tech 1]** | [Jelaskan mengapa memilih teknologi ini, keunggulannya untuk proyek ini] |
-| **[Tech 2]** | [Jelaskan mengapa memilih teknologi ini, keunggulannya untuk proyek ini] |
-| **[Tech 3]** | [Jelaskan mengapa memilih teknologi ini, keunggulannya untuk proyek ini] |
+| **Next.js 14** | App Router dengan React Server Components memungkinkan rendering hybrid (SSR/SSG/CSR) untuk performa optimal. File-based routing mempercepat development. |
+| **Supabase** | Open-source Firebase alternative yang menyediakan PostgreSQL, Auth, Realtime subscriptions, dan Storage dalam satu platform. Mengurangi kompleksitas backend secara signifikan. |
+| **Tailwind CSS** | Utility-first CSS framework yang mempercepat styling tanpa meninggalkan HTML. Dengan `tailwindcss-animate` dan `class-variance-authority`, komponen bisa dibuat konsisten dan reusable. |
+| **Framer Motion + GSAP** | Kombinasi dua animation library terbaik — Framer Motion untuk animasi deklaratif React, GSAP untuk animasi timeline kompleks dan scroll-triggered effects yang memberikan pengalaman premium. |
+| **Radix UI** | Headless, accessible UI primitives yang memberikan kontrol penuh atas styling sambil menjamin aksesibilitas (WAI-ARIA compliant). |
+| **TypeScript** | Static typing mencegah bug di compile-time, meningkatkan developer experience dengan IntelliSense, dan membuat refactoring lebih aman di proyek skala besar. |
 
 ### Dependencies Utama
 
 ```json
 {
   "dependencies": {
-    "[package-1]": "^x.x.x",
-    "[package-2]": "^x.x.x",
-    "[package-3]": "^x.x.x"
+    "next": "14.2.35",
+    "@supabase/supabase-js": "^2.112.3",
+    "@supabase/ssr": "^0.12.4",
+    "framer-motion": "^13.1.1",
+    "gsap": "^3.15.0",
+    "three": "^0.185.1",
+    "@react-three/fiber": "^8.18.0",
+    "@radix-ui/react-dialog": "^1.1.23",
+    "@radix-ui/react-dropdown-menu": "^2.1.24",
+    "tailwindcss": "^3.4.1",
+    "tailwindcss-animate": "^1.0.7",
+    "lucide-react": "^1.31.0",
+    "class-variance-authority": "^0.7.1",
+    "aos": "^2.3.4",
+    "ogl": "^1.0.11"
   }
 }
 ```
@@ -163,30 +172,83 @@ Monitoring   : [Sentry / LogRocket / dll]
 ### System Architecture
 
 ```
-[Tambahkan diagram arsitektur sistem - bisa menggunakan Mermaid atau gambar]
-```
-
-### Database Schema
-
-```
-[Tambahkan diagram ERD atau schema database]
+┌─────────────────────────────────────────────────────────┐
+│                        CLIENT                           │
+│              (Browser — Next.js Frontend)               │
+│                                                         │
+│   ┌──────────┐  ┌───────────┐  ┌─────────────────────┐ │
+│   │ Landing  │  │   Auth    │  │     Dashboard       │ │
+│   │  Page    │  │(Login/Reg)│  │ (Client/Freelancer) │ │
+│   └──────────┘  └───────────┘  └─────────────────────┘ │
+│                                  │                      │
+│         ┌────────────────────────┼──────────────┐       │
+│         │            │           │              │       │
+│    ┌────┴───┐  ┌─────┴────┐ ┌───┴────┐  ┌─────┴────┐  │
+│    │Market- │  │  Project │ │  Chat  │  │ Learning │  │
+│    │ place  │  │  Mgmt +  │ │  Room  │  │ & Quiz   │  │
+│    │        │  │  Gantt   │ │        │  │          │  │
+│    └────┬───┘  └────┬─────┘ └───┬────┘  └────┬─────┘  │
+│         └───────────┼───────────┼────────────┘         │
+└─────────────────────┼───────────┼──────────────────────┘
+                      │           │
+            ┌─────────▼───────────▼──────────┐
+            │     Next.js API Routes         │
+            │      (Route Handlers)          │
+            └─────────────┬──────────────────┘
+                          │
+            ┌─────────────▼──────────────────┐
+            │         SUPABASE               │
+            │                                │
+            │  ┌──────┐ ┌─────┐ ┌─────────┐  │
+            │  │ Auth │ │ DB  │ │Realtime │  │
+            │  │      │ │(PG) │ │         │  │
+            │  └──────┘ └─────┘ └─────────┘  │
+            │  ┌─────────┐                   │
+            │  │ Storage │                   │
+            │  └─────────┘                   │
+            └────────────────────────────────┘
 ```
 
 ### Folder Structure
 
 ```
-project-root/
+TripleT/
+├── public/                     # Static assets (images, videos, fonts)
 ├── src/
-│   ├── components/     # Reusable components
-│   ├── pages/          # Page components
-│   ├── hooks/          # Custom hooks
-│   ├── utils/          # Utility functions
-│   ├── services/       # API services
-│   ├── store/          # State management
-│   └── types/          # TypeScript types
-├── public/             # Static assets
-├── tests/              # Test files
-└── docs/               # Documentation
+│   ├── app/
+│   │   ├── (auth)/             # Auth route group
+│   │   │   ├── login/          #   Login page
+│   │   │   ├── register/       #   Registration page
+│   │   │   └── onboarding/     #   Guided onboarding flow
+│   │   ├── (dashboard)/        # Dashboard route group
+│   │   │   └── dashboard/      #   Role-based dashboard views
+│   │   │       ├── chat/       #     Real-time messaging
+│   │   │       ├── projects/   #     Project management + Gantt
+│   │   │       ├── explore/    #     Marketplace exploration
+│   │   │       ├── talent/     #     Talent discovery
+│   │   │       ├── learning/   #     Learning resources & quiz
+│   │   │       └── settings/   #     User settings
+│   │   ├── api/                # Next.js API routes
+│   │   ├── auth/               # Auth callback handlers
+│   │   ├── fonts/              # Custom fonts
+│   │   ├── globals.css         # Global styles & Tailwind directives
+│   │   ├── layout.tsx          # Root layout (metadata, providers)
+│   │   └── page.tsx            # Landing page
+│   ├── components/             # Reusable UI components
+│   │   ├── dashboard/          #   Dashboard-specific components
+│   │   ├── landing/            #   Landing page sections
+│   │   ├── settings/           #   Settings panel components
+│   │   └── ui/                 #   Shared UI primitives (Button, Dialog, etc.)
+│   ├── context/                # React context providers
+│   ├── hooks/                  # Custom React hooks
+│   ├── lib/                    # Utilities & Supabase client
+│   ├── locales/                # i18n translation files
+│   ├── types/                  # TypeScript type definitions
+│   └── middleware.ts           # Next.js middleware (auth guards)
+├── tailwind.config.ts          # Tailwind configuration
+├── next.config.mjs             # Next.js configuration
+├── tsconfig.json               # TypeScript configuration
+└── package.json                # Dependencies & scripts
 ```
 
 ---
@@ -196,64 +258,39 @@ project-root/
 ### Prerequisites
 
 Pastikan Anda telah menginstall:
-- **Node.js** (v18.x atau lebih tinggi)
-- **npm** / **yarn** / **pnpm**
-- **[Database]** (jika diperlukan)
+- **Node.js** v18.x atau lebih tinggi
+- **npm** (bundled with Node.js)
 - **Git**
+- Akun **Supabase** (untuk database & auth)
 
 ### Langkah Instalasi
 
 #### 1️⃣ Clone Repository
 
 ```bash
-git clone https://github.com/[username]/[repo-name].git
-cd [repo-name]
+git clone https://github.com/Abysswdh/TripleT.git
+cd TripleT
 ```
 
 #### 2️⃣ Install Dependencies
 
 ```bash
-# Menggunakan npm
 npm install
-
-# Atau menggunakan yarn
-yarn install
-
-# Atau menggunakan pnpm
-pnpm install
 ```
 
 #### 3️⃣ Setup Environment Variables
 
-Buat file `.env` di root directory:
+Buat file `.env.local` di root directory:
 
 ```env
-# Database
-DATABASE_URL="[connection_string]"
-
-# Authentication
-JWT_SECRET="[your_jwt_secret]"
-NEXTAUTH_SECRET="[your_nextauth_secret]"
-
-# API Keys
-API_KEY="[your_api_key]"
-
-# Other configs
-NODE_ENV="development"
-PORT=3000
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-#### 4️⃣ Setup Database
+> **💡 Tip:** Dapatkan kredensial Supabase dari [Supabase Dashboard](https://app.supabase.com/) → Project Settings → API.
 
-```bash
-# Jalankan migrasi database
-npm run db:migrate
-
-# Seed data (opsional)
-npm run db:seed
-```
-
-#### 5️⃣ Run Development Server
+#### 4️⃣ Run Development Server
 
 ```bash
 npm run dev
@@ -261,130 +298,25 @@ npm run dev
 
 Aplikasi akan berjalan di `http://localhost:3000`
 
----
-
-## 🚀 Penggunaan
-
-### Menjalankan Aplikasi
+#### 5️⃣ Build untuk Production
 
 ```bash
-# Development mode
-npm run dev
-
-# Production build
 npm run build
 npm run start
-
-# Run tests
-npm run test
-
-# Linting
-npm run lint
-```
-
-### User Guide
-
-#### Untuk Pengguna Umum
-
-1. **Registrasi/Login**: [Jelaskan cara mendaftar atau login]
-2. **[Fitur 1]**: [Jelaskan cara menggunakan fitur ini]
-3. **[Fitur 2]**: [Jelaskan cara menggunakan fitur ini]
-
-#### Untuk Admin
-
-1. **Akses Admin Panel**: [Jelaskan cara mengakses]
-2. **[Fungsi Admin 1]**: [Jelaskan cara menggunakan]
-3. **[Fungsi Admin 2]**: [Jelaskan cara menggunakan]
-
----
-
-## 📚 API Documentation
-
-### Base URL
-
-```
-Development: http://localhost:3000/api
-Production:  https://[domain]/api
-```
-
-### Endpoints
-
-#### Authentication
-
-```http
-POST /api/auth/register
-POST /api/auth/login
-POST /api/auth/logout
-GET  /api/auth/me
-```
-
-#### [Resource 1]
-
-```http
-GET    /api/[resource]       # Get all
-GET    /api/[resource]/:id   # Get by ID
-POST   /api/[resource]       # Create
-PUT    /api/[resource]/:id   # Update
-DELETE /api/[resource]/:id   # Delete
-```
-
-### Example Request
-
-```javascript
-// Login
-const response = await fetch('/api/auth/login', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    email: 'user@example.com',
-    password: 'password123'
-  })
-});
-```
-
-📖 **[Dokumentasi API Lengkap](./docs/API.md)** _(opsional)_
-
----
-
-## 🧪 Testing
-
-### Running Tests
-
-```bash
-# Unit tests
-npm run test
-
-# Integration tests
-npm run test:integration
-
-# E2E tests
-npm run test:e2e
-
-# Test coverage
-npm run test:coverage
-```
-
-### Test Coverage
-
-```
-Statements   : XX%
-Branches     : XX%
-Functions    : XX%
-Lines        : XX%
 ```
 
 ---
 
 ## 📄 Lisensi
 
-Proyek ini dilisensikan di bawah [MIT License](LICENSE) - lihat file LICENSE untuk detail lebih lanjut.
+Proyek ini dilisensikan di bawah [MIT License](LICENSE) — lihat file LICENSE untuk detail lebih lanjut.
 
 ---
 
 <div align="center">
 
-  **Made with ❤️ by [Nama Tim] for ITECHNO CUP 2026**
+  **Made with ❤️ by TripleT for ITECHNO CUP 2026**
 
-  
+  [🚀 Live Demo](https://triple-t-lime.vercel.app/) · [📂 Video Demo](https://drive.google.com/drive/folders/1oowRB0q6nBLAREbKosVVWGHzm4nH1Q7j?usp=sharing) · [📦 Repository](https://github.com/Abysswdh/TripleT)
+
 </div>
-
