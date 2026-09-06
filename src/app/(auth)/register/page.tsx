@@ -59,194 +59,293 @@ export default function RegisterPage() {
 
   if (success) {
     return (
-      <div className="animate-fade-in text-center">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10">
-          <CheckCircle2 className="h-8 w-8 text-emerald-500" />
+      <div className="animate-fade-in mx-auto w-full max-w-4xl py-4 sm:py-8 px-2 sm:px-4">
+        <div className="overflow-hidden rounded-3xl border border-slate-200/90 dark:border-border/60 bg-card shadow-2xl shadow-slate-200/60 dark:shadow-none flex flex-col lg:flex-row min-h-[500px]">
+          {/* Left Column Video */}
+          <div className="relative hidden lg:flex lg:w-1/2 flex-col justify-between overflow-hidden bg-black p-8 text-white select-none">
+            <video
+              src="/videos/loop_anim.mp4"
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="absolute inset-0 h-full w-full object-cover object-center opacity-85"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-black/60 pointer-events-none" />
+            <div className="relative z-10">
+              <div className="bg-white/95 backdrop-blur-md rounded-xl px-3 py-1.5 inline-flex items-center shadow-md">
+                <BrandLogo variant="both" height={28} />
+              </div>
+            </div>
+            <div className="relative z-10 space-y-1">
+              <h3 className="text-xl font-bold text-white font-heading">Satu Langkah Lagi!</h3>
+              <p className="text-xs text-white/80">Konfirmasi emailmu untuk langsung mulai menjelajah platform.</p>
+            </div>
+          </div>
+
+          {/* Right Column Success */}
+          <div className="w-full lg:w-1/2 p-8 sm:p-12 flex flex-col items-center justify-center text-center">
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+              <CheckCircle2 className="h-8 w-8 text-emerald-500" />
+            </div>
+            <h2 className="mb-2 text-2xl font-bold font-heading">Periksa Email Kamu</h2>
+            <p className="mb-6 text-xs sm:text-sm text-muted-foreground max-w-sm leading-relaxed">
+              Tautan konfirmasi pendaftaran telah dikirimkan ke <strong>{email}</strong>.
+              <br className="hidden sm:block" />
+              Buka email dan klik tautan untuk mengaktifkan akunmu.
+            </p>
+            <Link
+              href="/login"
+              className="inline-flex items-center rounded-xl bg-primary px-6 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-lg shadow-primary/25 hover:bg-primary-600 transition-all cursor-pointer"
+            >
+              Lanjut ke Halaman Masuk
+            </Link>
+          </div>
         </div>
-        <h2 className="mb-2 text-2xl font-bold">Check Your Email</h2>
-        <p className="mb-6 text-muted-foreground">
-          We&apos;ve sent a confirmation link to <strong>{email}</strong>.
-          <br />
-          Click the link to activate your account and complete onboarding.
-        </p>
-        <Link
-          href="/login"
-          className="inline-flex items-center rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary/25 transition-all hover:bg-primary-600"
-        >
-          Go to Login
-        </Link>
       </div>
     );
   }
 
   return (
-    <div className="animate-fade-in mx-auto w-full max-w-md py-6">
-      {/* Logo */}
-      <div className="mb-8 text-center">
-        <Link href="/" className="inline-flex items-center justify-center">
-          <BrandLogo variant="full" height={52} />
-        </Link>
-      </div>
+    <div className="animate-fade-in mx-auto w-full max-w-4xl py-4 sm:py-8 px-2 sm:px-4">
+      {/* 2-Column Split Card */}
+      <div className="overflow-hidden rounded-3xl border border-slate-200/90 dark:border-border/60 bg-card shadow-2xl shadow-slate-200/60 dark:shadow-none flex flex-col lg:flex-row min-h-[580px]">
+        {/* Left Column: Ambient Video Banner */}
+        <div className="relative hidden lg:flex lg:w-1/2 flex-col justify-between overflow-hidden bg-black p-8 text-white select-none">
+          {/* Ambient Video Background */}
+          <video
+            src="/videos/loop_anim.mp4"
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 h-full w-full object-cover object-center opacity-85"
+          />
+          {/* Cinematic Dark Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-black/60 pointer-events-none" />
 
-      {/* Card */}
-      <div className="rounded-2xl border border-border/50 bg-card p-8 shadow-xl shadow-black/5">
-        <div className="mb-6 text-center">
-          <h1 className="text-2xl font-bold tracking-tight">Create your account</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Start posting projects and finding talent
-          </p>
-        </div>
-
-        {error && (
-          <div className="mb-4 rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-            {error}
-          </div>
-        )}
-
-        {/* Google Sign-in */}
-        <button
-          type="button"
-          onClick={handleGoogleSignIn}
-          disabled={googleLoading || loading}
-          className="mb-4 flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-border bg-background text-sm font-medium transition-colors hover:bg-muted/50 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {googleLoading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <svg className="h-4 w-4" viewBox="0 0 24 24">
-              <path
-                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                fill="#4285F4"
-              />
-              <path
-                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                fill="#34A853"
-              />
-              <path
-                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                fill="#FBBC05"
-              />
-              <path
-                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                fill="#EA4335"
-              />
-            </svg>
-          )}
-          <span>Continue with Google</span>
-        </button>
-
-        <div className="relative mb-4 flex items-center justify-center">
-          <div className="w-full border-t border-border/60" />
-          <span className="absolute bg-card px-2 text-xs uppercase tracking-wider text-muted-foreground">
-            or continue with email
-          </span>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="fullName" className="mb-1.5 block text-sm font-medium">
-              Full Name
-            </label>
-            <input
-              id="fullName"
-              type="text"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              placeholder="John Doe"
-              required
-              className="h-11 w-full rounded-lg border border-input bg-background px-4 text-sm transition-colors placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-            />
+          {/* Top Brand Pill */}
+          <div className="relative z-10 flex items-center justify-between">
+            <Link href="/" className="inline-flex items-center gap-2 bg-white/95 backdrop-blur-md rounded-xl px-3 py-1.5 shadow-md hover:opacity-95 transition-all">
+              <BrandLogo variant="both" height={28} />
+            </Link>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[11px] font-semibold text-white/90 shadow-xs">
+              <span className="h-2 w-2 rounded-full bg-blue-400 animate-pulse" />
+              <span>Daftar Gratis</span>
+            </span>
           </div>
 
-          <div>
-            <label htmlFor="email" className="mb-1.5 block text-sm font-medium">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              required
-              className="h-11 w-full rounded-lg border border-input bg-background px-4 text-sm transition-colors placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="password" className="mb-1.5 block text-sm font-medium">
-              Password
-            </label>
-            <div className="relative">
-              <input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Min. 6 characters"
-                required
-                minLength={6}
-                className="h-11 w-full rounded-lg border border-input bg-background px-4 pr-10 text-sm transition-colors placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                {showPassword ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
-              </button>
+          {/* Bottom Highlights & Social Proof */}
+          <div className="relative z-10 space-y-4">
+            <div className="space-y-1.5">
+              <h2 className="text-2xl font-bold font-heading text-white leading-tight">
+                Mulai Perjalanan Karir & Proyek Impianmu
+              </h2>
+              <p className="text-xs text-white/80 leading-relaxed font-light">
+                Daftar sekarang untuk mengakses ribuan lowongan proyek, kuis sertifikasi skill, dan talenta terverifikasi.
+              </p>
             </div>
-            {/* Password strength indicator */}
-            {password && (
-              <div className="mt-2 flex gap-1">
-                {[1, 2, 3, 4].map((i) => (
-                  <div
-                    key={i}
-                    className={`h-1 flex-1 rounded-full transition-colors ${password.length >= i * 3
-                        ? password.length >= 12
-                          ? "bg-emerald-500"
-                          : password.length >= 8
-                            ? "bg-amber-500"
-                            : "bg-red-500"
-                        : "bg-muted"
-                      }`}
-                  />
-                ))}
+
+            <div className="grid grid-cols-3 gap-2 pt-3 border-t border-white/15 text-[11px] text-white/85">
+              <div className="flex flex-col">
+                <span className="font-bold text-white text-sm">Gratis</span>
+                <span className="text-[10px] text-white/60">Buat Profil</span>
               </div>
-            )}
+              <div className="flex flex-col">
+                <span className="font-bold text-white text-sm">Cepat</span>
+                <span className="text-[10px] text-white/60">Match Talenta</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="font-bold text-white text-sm">Aman</span>
+                <span className="text-[10px] text-white/60">Sistem Rekber</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Register Form */}
+        <div className="w-full lg:w-1/2 p-6 sm:p-10 flex flex-col justify-center bg-card">
+          {/* Mobile-only header */}
+          <div className="mb-6 flex items-center justify-between lg:hidden">
+            <Link href="/" className="inline-flex items-center">
+              <BrandLogo variant="both" height={36} />
+            </Link>
+            <Link
+              href="/"
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              ← Beranda
+            </Link>
           </div>
 
+          {/* Desktop-only back link */}
+          <div className="mb-6 hidden lg:flex items-center justify-end">
+            <Link
+              href="/"
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              ← Kembali ke Beranda
+            </Link>
+          </div>
+
+          <div className="mb-6 text-left">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight font-heading">Buat Akun Baru</h1>
+            <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
+              Mulai posting proyek atau tawarkan keahlianmu
+            </p>
+          </div>
+
+          {error && (
+            <div className="mb-4 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-xs sm:text-sm text-destructive">
+              {error}
+            </div>
+          )}
+
+          {/* Google Sign-in */}
           <button
-            type="submit"
-            disabled={loading}
-            className="flex h-11 w-full items-center justify-center rounded-lg bg-primary text-sm font-semibold text-white shadow-lg shadow-primary/25 transition-all hover:bg-primary-600 hover:shadow-xl hover:shadow-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
+            type="button"
+            onClick={handleGoogleSignIn}
+            disabled={googleLoading || loading}
+            className="mb-4 flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-border bg-background text-sm font-medium transition-colors hover:bg-muted/50 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {loading ? (
+            {googleLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              "Create Account"
+              <svg className="h-4 w-4" viewBox="0 0 24 24">
+                <path
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  fill="#4285F4"
+                />
+                <path
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  fill="#34A853"
+                />
+                <path
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                  fill="#FBBC05"
+                />
+                <path
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                  fill="#EA4335"
+                />
+              </svg>
             )}
+            <span>Daftar dengan Google</span>
           </button>
-        </form>
 
-        <p className="mt-4 text-center text-xs text-muted-foreground">
-          By creating an account, you agree to our{" "}
-          <a href="#" className="text-primary hover:underline">Terms</a> and{" "}
-          <a href="#" className="text-primary hover:underline">Privacy Policy</a>.
-        </p>
+          <div className="relative mb-4 flex items-center justify-center">
+            <div className="w-full border-t border-border/60" />
+            <span className="absolute bg-card px-2 text-[11px] uppercase tracking-wider text-muted-foreground">
+              atau daftar dengan email
+            </span>
+          </div>
 
-        <div className="mt-6 text-center text-sm text-muted-foreground">
-          Already have an account?{" "}
-          <Link
-            href="/login"
-            className="font-medium text-primary hover:text-primary-600"
-          >
-            Sign in
-          </Link>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="fullName" className="mb-1.5 block text-xs sm:text-sm font-medium">
+                Nama Lengkap
+              </label>
+              <input
+                id="fullName"
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="cth. Arya Pratama"
+                required
+                className="h-11 w-full rounded-xl border border-input bg-background px-4 text-xs sm:text-sm transition-colors placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="email" className="mb-1.5 block text-xs sm:text-sm font-medium">
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                required
+                className="h-11 w-full rounded-xl border border-input bg-background px-4 text-xs sm:text-sm transition-colors placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="password" className="mb-1.5 block text-xs sm:text-sm font-medium">
+                Kata Sandi
+              </label>
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Min. 6 karakter"
+                  required
+                  minLength={6}
+                  className="h-11 w-full rounded-xl border border-input bg-background px-4 pr-10 text-xs sm:text-sm transition-colors placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+              {/* Password strength indicator */}
+              {password && (
+                <div className="mt-2 flex gap-1">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div
+                      key={i}
+                      className={`h-1 flex-1 rounded-full transition-colors ${password.length >= i * 3
+                          ? password.length >= 12
+                            ? "bg-emerald-500"
+                            : password.length >= 8
+                              ? "bg-amber-500"
+                              : "bg-red-500"
+                          : "bg-muted"
+                        }`}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex h-11 w-full items-center justify-center rounded-xl bg-primary text-xs sm:text-sm font-semibold text-white shadow-lg shadow-primary/25 transition-all hover:bg-primary-600 hover:shadow-xl hover:shadow-primary/30 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+            >
+              {loading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Daftar Akun Baru"
+              )}
+            </button>
+          </form>
+
+          <p className="mt-4 text-center text-[11px] text-muted-foreground leading-relaxed">
+            Dengan mendaftar, kamu menyetujui{" "}
+            <Link href="/terms" className="text-primary hover:underline">Ketentuan Layanan</Link> dan{" "}
+            <Link href="/privacy" className="text-primary hover:underline">Kebijakan Privasi</Link> Doable!.
+          </p>
+
+          <div className="mt-6 text-center text-xs sm:text-sm text-muted-foreground">
+            Sudah memiliki akun?{" "}
+            <Link
+              href="/login"
+              className="font-semibold text-primary hover:text-primary-600"
+            >
+              Masuk di sini
+            </Link>
+          </div>
         </div>
       </div>
     </div>

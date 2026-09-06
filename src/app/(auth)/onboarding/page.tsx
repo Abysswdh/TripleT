@@ -10,6 +10,7 @@ import logoWithText from "@/assets/logo_with_text.svg";
 import logoWithoutText from "@/assets/logo_wo_text.svg";
 import { useAuth } from "@/hooks/use-auth";
 import { useOnboarding } from "@/hooks/use-onboarding";
+import { StepIntro } from "./components/step-intro";
 import { StepIdentity } from "./components/step-identity";
 import { StepBackground } from "./components/step-background";
 import { StepSkills } from "./components/step-skills";
@@ -128,8 +129,8 @@ function OnboardingContent() {
     );
   }
 
-  // If visitor is not authenticated yet, guide them to login/register (bypassed in dev mode for UI design)
-  if (!user && step !== 6 && !isDev) {
+  // If visitor is not authenticated yet, guide them to login/register (bypassed in dev mode for UI design or during Step 0 intro)
+  if (!user && step !== 0 && step !== 6 && !isDev) {
     return (
       <div className="animate-fade-in text-center max-w-md mx-auto p-4">
         <div className="mb-6">
@@ -186,7 +187,7 @@ function OnboardingContent() {
           </div>
 
           <div className="flex flex-wrap items-center gap-1">
-            {[1, 2, 3, 4, 5].map((num) => (
+            {[0, 1, 2, 3, 4, 5].map((num) => (
               <button
                 key={num}
                 type="button"
@@ -197,7 +198,7 @@ function OnboardingContent() {
                     : "bg-white/80 dark:bg-card border border-border/80 text-foreground hover:bg-amber-500/20"
                 }`}
               >
-                Step {num}
+                {num === 0 ? "Intro (0)" : `Step ${num}`}
               </button>
             ))}
 
@@ -216,12 +217,18 @@ function OnboardingContent() {
         </div>
       )}
 
-      {/* Split-Card: Responsive & Scrollable container */}
-      <div className="overflow-hidden min-h-[100dvh] sm:min-h-0 sm:h-[600px] sm:max-h-[90vh] rounded-none sm:rounded-3xl border-0 sm:border border-slate-200/90 bg-white shadow-2xl shadow-slate-300/40 flex flex-col lg:flex-row flex-1 sm:flex-initial">
-        {/* Left Side: React Bits Silk Canvas Banner */}
-        <div className="relative w-full lg:w-[360px] lg:min-w-[360px] h-auto lg:h-full overflow-hidden bg-[#0C0838] flex flex-col justify-between p-4 sm:p-6 lg:p-7 text-white select-none shrink-0">
-          {/* Animated WebGL Silk Background */}
-          <div className="absolute inset-0 z-0">
+      {/* Step 0: Cinematic Brand Intro Video, otherwise Split-Card Wizard */}
+      {step === 0 ? (
+        <div className="overflow-hidden min-h-[100dvh] sm:min-h-0 sm:h-[600px] sm:max-h-[90vh] rounded-none sm:rounded-3xl border-0 sm:border border-slate-200/90 bg-black shadow-2xl shadow-slate-300/40 flex flex-1 sm:flex-initial">
+          <StepIntro onStart={() => setStep(1)} />
+        </div>
+      ) : (
+        /* Split-Card: Responsive & Scrollable container */
+        <div className="overflow-hidden min-h-[100dvh] sm:min-h-0 sm:h-[600px] sm:max-h-[90vh] rounded-none sm:rounded-3xl border-0 sm:border border-slate-200/90 bg-white shadow-2xl shadow-slate-300/40 flex flex-col lg:flex-row flex-1 sm:flex-initial">
+          {/* Left Side: React Bits Silk Canvas Banner */}
+          <div className="relative w-full lg:w-[360px] lg:min-w-[360px] h-auto lg:h-full overflow-hidden bg-[#0C0838] flex flex-col justify-between p-4 sm:p-6 lg:p-7 text-white select-none shrink-0">
+            {/* Animated WebGL Silk Background */}
+            <div className="absolute inset-0 z-0">
             <Silk
               color="#2D1FE0"
               speed={4}
@@ -300,7 +307,7 @@ function OnboardingContent() {
                 data={data}
                 onUpdate={updateData}
                 onNext={nextStep}
-                onPrev={isRoleSwitchMode ? () => router.push("/client/dashboard") : () => router.push("/login")}
+                onPrev={isRoleSwitchMode ? () => router.push("/client/dashboard") : () => setStep(0)}
               />
             )}
 
@@ -341,6 +348,7 @@ function OnboardingContent() {
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }
