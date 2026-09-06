@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { useDashboardRole, DashboardRole } from "@/context/role-context";
@@ -187,6 +188,11 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
   const { currency: globalCurrency, setCurrency: setGlobalCurrency, formatMoney } = useCurrency();
   const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
   const currentRole = defaultRole || activeRole;
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const tabParam = searchParams?.get("tab") as SettingsTab | null;
@@ -854,9 +860,9 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
         </div>
       </div>
 
-      {/* Floating Top Notification Popup (Always visible when scrolled) */}
-      {(saveSuccess || errorMessage) && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] w-full max-w-md px-4 pointer-events-auto transition-all animate-in fade-in slide-in-from-top-4 duration-300">
+      {/* Floating Top Notification Popup (Rendered in portal to avoid any clipping or stacking issues) */}
+      {mounted && (saveSuccess || errorMessage) && createPortal(
+        <div className="fixed top-20 sm:top-24 left-0 right-0 mx-auto z-[9999] w-full max-w-md px-4 pointer-events-auto transition-all animate-in fade-in slide-in-from-top-4 duration-300">
           {saveSuccess && (
             <div className="flex items-center justify-between gap-3.5 rounded-2xl bg-card/95 backdrop-blur-xl border border-emerald-500/40 p-4 text-foreground shadow-2xl shadow-emerald-500/20 ring-1 ring-emerald-500/30">
               <div className="flex items-center gap-3 min-w-0">
@@ -906,7 +912,8 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
               </button>
             </div>
           )}
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Main Settings Grid */}
