@@ -562,7 +562,7 @@ export function FreelancerDashboard() {
         {/* ========================================================================= */}
         {/* LEFT COLUMN: SCROLLABLE FEED (Pekerjaan Saya, Proyek, Keahlian, Pendapatan)*/}
         {/* ========================================================================= */}
-        <div className="lg:col-span-7 space-y-8">
+        <div className="lg:col-span-7 space-y-8 order-2 lg:order-1">
           {/* 1. PEKERJAAN SAYA (Paling Atas) */}
           <section className="space-y-4">
             <div className="flex items-center justify-between border-b border-border/60 pb-3">
@@ -842,7 +842,11 @@ export function FreelancerDashboard() {
                       <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2 shrink-0 border-t sm:border-t-0 border-border/40 pt-3 sm:pt-0">
                         <div className="sm:text-right">
                           <span className="text-sm font-bold text-foreground font-heading block">
-                            {quest.budgetNumeric > 0 ? formatMoney(quest.budgetNumeric, "IDR") : quest.budget}
+                            {quest.isSimulated
+                              ? "Akses Gratis (Praktik)"
+                              : quest.budgetNumeric > 0
+                              ? formatMoney(quest.budgetNumeric, "IDR")
+                              : quest.budget}
                           </span>
                           <span className="text-[10px] font-semibold text-amber-600 flex items-center gap-1 sm:justify-end">
                             <Zap className="h-3 w-3" />
@@ -1092,7 +1096,7 @@ export function FreelancerDashboard() {
         {/* ========================================================================= */}
         {/* RIGHT COLUMN: STICKY GUIDE (Plan Anda, Rekomendasi AI, Jalur Karir Talenta)*/}
         {/* ========================================================================= */}
-        <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-20 lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto pr-1">
+        <div className="lg:col-span-5 space-y-6 order-1 lg:order-2 lg:sticky lg:top-20 lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto pr-1">
           {/* 1. Unified Smart Calendar & MRP Workload Planner (Tugas Hari Ini + Streak + Kalender Harian) */}
           <UnifiedSmartCalendarPlanner
             streakDays={streakDays}

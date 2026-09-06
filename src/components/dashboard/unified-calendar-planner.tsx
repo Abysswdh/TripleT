@@ -467,7 +467,7 @@ export function UnifiedSmartCalendarPlanner({
               onClick={() => {
                 setSelectedDateKey(day.dateKey);
               }}
-              className={`relative flex flex-col items-center justify-center py-2.5 sm:py-3 px-1 rounded-2xl transition-all cursor-pointer select-none text-center gap-0.5 ${cardClasses}`}
+              className={`relative flex flex-col items-center justify-center py-2 sm:py-3 px-0.5 sm:px-1 rounded-xl sm:rounded-2xl transition-all cursor-pointer select-none text-center gap-0.5 ${cardClasses}`}
             >
               {/* Overdue alert indicator */}
               {day.hasOverdue && (
@@ -478,12 +478,21 @@ export function UnifiedSmartCalendarPlanner({
               )}
 
               {/* Day Label */}
-              <span className={`text-[10px] sm:text-[11px] leading-tight ${labelClasses}`}>
-                {day.label}
+              <span className={`text-[9px] sm:text-[11px] leading-tight truncate max-w-full px-0.5 font-bold ${labelClasses}`}>
+                <span className="sm:hidden">
+                  {day.offset === -1
+                    ? "Kmr"
+                    : day.offset === 0
+                    ? "Ini"
+                    : day.offset === 1
+                    ? "Bsk"
+                    : day.label}
+                </span>
+                <span className="hidden sm:inline">{day.label}</span>
               </span>
 
               {/* Date Number */}
-              <span className={`text-sm sm:text-base font-heading my-0.5 leading-tight ${numberClasses}`}>
+              <span className={`text-xs sm:text-base font-heading my-0.5 leading-tight ${numberClasses}`}>
                 {day.dateNum}
               </span>
             </button>
@@ -492,7 +501,7 @@ export function UnifiedSmartCalendarPlanner({
       </div>
 
       {/* Sleek Mini Status Legend (Clean Single Line without separator dots) */}
-      <div className="flex items-center justify-center gap-3 sm:gap-4.5 pt-1 text-[10px] text-muted-foreground/80 select-none border-t border-border/20">
+      <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-4.5 pt-1 text-[10px] text-muted-foreground/80 select-none border-t border-border/20">
         <span className="inline-flex items-center gap-1.5 font-medium">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
           <span>Streak Aktif</span>

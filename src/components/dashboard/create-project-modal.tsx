@@ -752,7 +752,7 @@ export function CreateProjectModal({
   const currentInfo = STEP_INFO[step] || STEP_INFO[1];
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-5 md:p-6 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-5 md:p-6 animate-in fade-in duration-200">
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
@@ -761,13 +761,13 @@ export function CreateProjectModal({
         }}
       />
 
-      {/* Split-Card Modal Box — Enlarged, Comfortable & Balanced */}
-      <div className="relative z-10 w-full max-w-[1140px] h-[640px] max-h-[95vh] overflow-hidden rounded-3xl border border-white/15 sm:border-slate-200/90 bg-card shadow-2xl shadow-black/50 flex flex-col lg:flex-row my-auto">
+      {/* Split-Card Modal Box — Responsive, Comfortable & Balanced */}
+      <div className="relative z-10 w-full max-w-[1140px] max-h-[94vh] sm:max-h-[90vh] lg:h-[680px] overflow-hidden rounded-2xl sm:rounded-3xl border border-white/15 sm:border-slate-200/90 bg-card shadow-2xl shadow-black/50 flex flex-col lg:flex-row my-auto">
         {/* Reusable Windows-Style Corner Close Button */}
         <ModalCloseButton onClick={onClose} />
 
         {/* Left Side: WebGL Silk Banner */}
-        <div className="relative w-full lg:w-[370px] lg:min-w-[370px] h-[150px] sm:h-[170px] lg:h-auto overflow-hidden bg-[#0C0838] flex flex-col justify-between p-6 sm:p-7 text-white select-none shrink-0">
+        <div className="relative w-full lg:w-[370px] lg:min-w-[370px] h-auto lg:h-auto overflow-hidden bg-[#0C0838] flex flex-col justify-between p-4 sm:p-6 lg:p-7 text-white select-none shrink-0">
           {/* Animated WebGL Silk Background */}
           <div className="absolute inset-0 z-0 pointer-events-none">
             <Silk
@@ -785,37 +785,37 @@ export function CreateProjectModal({
 
           {/* Top Branding & Builder Badge */}
           <div className="relative z-20 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2 sm:gap-2.5">
               <Image
                 src={logoWithoutText}
                 alt="Doable! Logo"
                 height={28}
                 width={28}
-                className="h-7 w-7 object-contain brightness-0 invert"
+                className="h-6 w-6 sm:h-7 sm:w-7 object-contain brightness-0 invert"
               />
-              <span className="text-xl font-heading font-extrabold tracking-tight text-white">
+              <span className="text-lg sm:text-xl font-heading font-extrabold tracking-tight text-white">
                 Doable!
               </span>
             </div>
 
-            <span className="rounded-full bg-white/10 backdrop-blur-md px-3 py-1 text-xs font-bold text-white/90 border border-white/15 flex items-center gap-1.5">
-              <Sparkles className="h-3.5 w-3.5 text-blue-300" />
+            <span className="rounded-full bg-white/10 backdrop-blur-md px-2.5 sm:px-3 py-0.5 sm:py-1 text-[11px] sm:text-xs font-bold text-white/90 border border-white/15 flex items-center gap-1.5">
+              <Sparkles className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-blue-300" />
               <span>Project Builder</span>
             </span>
           </div>
 
           {/* Step Main Title & Description on Left Sidebar */}
-          <div className="relative z-20 my-auto py-2">
-            <h2 className="text-2xl sm:text-3xl font-heading font-extrabold tracking-tight text-white drop-shadow-md leading-tight">
+          <div className="relative z-20 my-1.5 sm:my-auto py-1 sm:py-2">
+            <h2 className="text-lg sm:text-2xl lg:text-3xl font-heading font-extrabold tracking-tight text-white drop-shadow-md leading-tight">
               {currentInfo.title}
             </h2>
-            <p className="mt-2 text-sm text-white/85 leading-relaxed font-light hidden sm:block">
+            <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-white/85 leading-relaxed font-light hidden sm:block">
               {currentInfo.desc}
             </p>
           </div>
 
           {/* Bottom Progress Bar & Step Counter */}
-          <div className="relative z-20 flex items-center justify-between text-sm text-white/90 pt-4 border-t border-white/15">
+          <div className="relative z-20 flex items-center justify-between text-xs sm:text-sm text-white/90 pt-2.5 sm:pt-4 border-t border-white/15">
             <span className="font-semibold text-xs sm:text-sm">
               {step === 7 ? "Selesai & Fast-Match" : `Langkah ${step} dari ${TOTAL_STEPS}`}
             </span>
@@ -823,12 +823,12 @@ export function CreateProjectModal({
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <div
                   key={i}
-                  className={`h-2.5 rounded-full transition-all duration-400 ease-out ${
+                  className={`h-2 sm:h-2.5 rounded-full transition-all duration-400 ease-out ${
                     i === step
-                      ? "w-8 bg-white shadow-sm shadow-white/60"
+                      ? "w-6 sm:w-8 bg-white shadow-sm shadow-white/60"
                       : i < step
-                      ? "w-3 bg-blue-300"
-                      : "w-2 bg-white/25"
+                      ? "w-2.5 sm:w-3 bg-blue-300"
+                      : "w-1.5 sm:w-2 bg-white/25"
                   }`}
                 />
               ))}
@@ -836,24 +836,24 @@ export function CreateProjectModal({
           </div>
         </div>
 
-        {/* Right Side: Step Wizard Form Content (Universal & Spacious) */}
-        <div className="relative flex-1 bg-card p-6 sm:p-8 lg:p-9 flex flex-col justify-between overflow-hidden">
+        {/* Right Side: Step Wizard Form Content (Responsive & Scrollable on Mobile) */}
+        <div className="relative flex-1 bg-card p-4 sm:p-6 lg:p-8 flex flex-col justify-between overflow-y-auto min-h-0">
           {/* STEP 1: Info, Universal Category, Auto-Tuned Difficulty & Recruitment Mode */}
           {step === 1 && (
-            <div className="space-y-4 animate-in fade-in-50 slide-in-from-right-4 duration-300 ease-out my-auto">
+            <div className="space-y-3.5 sm:space-y-4 animate-in fade-in-50 slide-in-from-right-4 duration-300 ease-out my-auto">
               {/* Title Input with Realtime AI Analysis */}
               <div className="space-y-1.5">
-                <label className="text-sm font-bold text-foreground flex items-center justify-between pr-8">
+                <label className="text-xs sm:text-sm font-bold text-foreground flex items-center justify-between pr-8">
                   <div className="flex items-center gap-2">
                     <span>Judul Proyek / Pekerjaan <span className="text-rose-500">*</span></span>
                     {isAnalyzingAI && (
                       <span className="text-[11px] font-semibold text-primary animate-pulse flex items-center gap-1">
                         <Bot className="h-3 w-3" />
-                        <span>Menganalisis kebutuhan...</span>
+                        <span>Menganalisis...</span>
                       </span>
                     )}
                   </div>
-                  <span className="text-xs font-normal text-muted-foreground">Ketik kata kunci kebutuhan</span>
+                  <span className="text-[11px] sm:text-xs font-normal text-muted-foreground hidden sm:inline">Ketik kata kunci kebutuhan</span>
                 </label>
                 <div className="relative">
                   <input
@@ -861,7 +861,7 @@ export function CreateProjectModal({
                     value={title}
                     onChange={(e) => handleTitleChange(e.target.value)}
                     placeholder="Contoh: Poster Menu Nasi Goreng Pak Rahmat / Foto Spot Bali / Landing Page"
-                    className="h-11 w-full rounded-2xl border border-input bg-background pl-4 pr-10 text-sm sm:text-base font-medium focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-muted-foreground/60"
+                    className="h-10 sm:h-11 w-full rounded-xl sm:rounded-2xl border border-input bg-background pl-3.5 sm:pl-4 pr-10 text-xs sm:text-sm md:text-base font-medium focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-muted-foreground/60"
                     required
                   />
                   <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-primary/70 pointer-events-none">
@@ -871,14 +871,14 @@ export function CreateProjectModal({
               </div>
 
               {/* Universal Category Grid with 'Kategori Lainnya' */}
-              <div className="space-y-2">
+              <div className="space-y-1.5 sm:space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm font-bold text-foreground flex items-center gap-2">
+                  <label className="text-xs sm:text-sm font-bold text-foreground flex items-center gap-2">
                     <span>Kategori Pekerjaan</span>
                   </label>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5">
                   {TOP_CATEGORIES.map((cat) => {
                     const Icon = cat.icon;
                     const isSelected = category === cat.id || canonicalizeProjectCategory(category) === cat.id;
@@ -887,22 +887,22 @@ export function CreateProjectModal({
                       <div
                         key={cat.id}
                         onClick={() => handleSelectCategory(cat.id)}
-                        className={`p-3 rounded-2xl border cursor-pointer transition-all flex items-center gap-3 ${
+                        className={`p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border cursor-pointer transition-all flex items-center gap-2.5 sm:gap-3 ${
                           isSelected
                             ? "border-primary bg-primary/10 ring-2 ring-primary/20 shadow-xs"
                             : "border-border/70 bg-card hover:bg-muted/50"
                         }`}
                       >
                         <div
-                          className={`p-2.5 rounded-xl shrink-0 ${
+                          className={`p-2 sm:p-2.5 rounded-xl shrink-0 ${
                             isSelected ? "bg-primary text-white" : "bg-muted text-muted-foreground"
                           }`}
                         >
                           <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
                         </div>
-                        <div className="min-w-0">
-                          <h4 className="text-sm font-bold text-foreground truncate">{cat.label}</h4>
-                          <p className="text-xs text-muted-foreground truncate mt-0.5">{cat.desc}</p>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="text-xs sm:text-sm font-bold text-foreground line-clamp-1 leading-snug">{cat.label}</h4>
+                          <p className="text-[11px] sm:text-xs text-muted-foreground line-clamp-1 mt-0.5">{cat.desc}</p>
                         </div>
                       </div>
                     );
@@ -911,13 +911,13 @@ export function CreateProjectModal({
               </div>
 
               {/* Enlarged Scale & Recruitment Mode Grid */}
-              <div className="grid grid-cols-2 gap-3.5 pt-0.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5 pt-0.5">
                 {/* Skala Pengerjaan - Clean, Prominent & Scaled */}
                 <div className="space-y-1.5">
-                  <label className="text-sm font-bold text-foreground">
+                  <label className="text-xs sm:text-sm font-bold text-foreground">
                     Skala Pengerjaan
                   </label>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
                     {[
                       { id: "Starter" as const, label: "Mikro / Cepat" },
                       { id: "Standard" as const, label: "Standar" },
@@ -927,7 +927,7 @@ export function CreateProjectModal({
                         key={tier.id}
                         type="button"
                         onClick={() => setDifficulty(tier.id)}
-                        className={`h-11 px-1.5 text-center rounded-xl border text-xs sm:text-sm font-bold transition-all ${
+                        className={`h-10 sm:h-11 px-1 sm:px-1.5 text-center rounded-xl border text-xs sm:text-sm font-bold transition-all ${
                           difficulty === tier.id
                             ? "border-primary bg-primary/10 text-primary ring-2 ring-primary/20 shadow-xs"
                             : "border-border/70 bg-card text-muted-foreground hover:bg-muted/50"
@@ -941,50 +941,46 @@ export function CreateProjectModal({
 
                 {/* Hiring Mode */}
                 <div className="space-y-1.5">
-                  <label className="text-sm font-bold text-foreground">
+                  <label className="text-xs sm:text-sm font-bold text-foreground">
                     Visibilitas Pelamar
                   </label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
                     <button
                       type="button"
                       onClick={() => setHiringMode("public")}
-                      className={`h-11 px-3 rounded-xl border flex items-center gap-2 transition-all ${
+                      className={`h-10 sm:h-11 px-3 rounded-xl border flex items-center justify-center sm:justify-start gap-2 transition-all ${
                         hiringMode === "public"
                           ? "border-primary bg-primary/10 ring-2 ring-primary/20 text-foreground font-bold"
                           : "border-border/70 bg-card text-muted-foreground hover:bg-muted/50"
                       }`}
                     >
                       <Users className="h-4 w-4 text-primary shrink-0" />
-                      <div className="text-left min-w-0">
-                        <span className="text-xs font-bold text-foreground block truncate">Publik</span>
-                      </div>
+                      <span className="text-xs sm:text-sm font-bold text-foreground">Publik</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => setHiringMode("private")}
-                      className={`h-11 px-3 rounded-xl border flex items-center gap-2 transition-all ${
+                      className={`h-10 sm:h-11 px-3 rounded-xl border flex items-center justify-center sm:justify-start gap-2 transition-all ${
                         hiringMode === "private"
                           ? "border-primary bg-primary/10 ring-2 ring-primary/20 text-foreground font-bold"
                           : "border-border/70 bg-card text-muted-foreground hover:bg-muted/50"
                       }`}
                     >
                       <Lock className="h-4 w-4 text-primary shrink-0" />
-                      <div className="text-left min-w-0">
-                        <span className="text-xs font-bold text-foreground block truncate">Privat</span>
-                      </div>
+                      <span className="text-xs sm:text-sm font-bold text-foreground">Privat</span>
                     </button>
                   </div>
                 </div>
               </div>
 
               {/* Step 1 Actions */}
-              <div className="pt-2.5 flex items-center justify-end border-t border-border/40">
+              <div className="pt-3 flex items-center justify-end border-t border-border/40 mt-3">
                 <button
                   type="button"
                   disabled={!title.trim()}
                   onClick={() => setStep(2)}
-                  className="h-11 inline-flex items-center gap-2 rounded-2xl bg-primary px-7 text-sm font-bold text-white shadow-md shadow-primary/25 hover:bg-primary-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="h-10 sm:h-11 w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl sm:rounded-2xl bg-primary px-6 sm:px-7 text-xs sm:text-sm font-bold text-white shadow-md shadow-primary/25 hover:bg-primary-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span>Lanjut: Scope & Detail</span>
                   <ArrowRight className="h-4 w-4" />
@@ -1076,11 +1072,11 @@ export function CreateProjectModal({
               </div>
 
               {/* Step 2 Actions */}
-              <div className="pt-3 flex items-center justify-end gap-2.5 border-t border-border/40">
+              <div className="pt-3 flex items-center justify-between sm:justify-end gap-2 sm:gap-2.5 border-t border-border/40 mt-3">
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  className="h-11 inline-flex items-center gap-2 rounded-2xl border border-border px-6 text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors"
+                  className="h-10 sm:h-11 flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl sm:rounded-2xl border border-border px-5 sm:px-6 text-xs sm:text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   <span>Kembali</span>
@@ -1090,9 +1086,9 @@ export function CreateProjectModal({
                   type="button"
                   disabled={!description.trim()}
                   onClick={() => setStep(3)}
-                  className="h-11 inline-flex items-center gap-2 rounded-2xl bg-primary px-7 text-sm font-bold text-white shadow-md shadow-primary/25 hover:bg-primary-600 transition-all disabled:opacity-50"
+                  className="h-10 sm:h-11 flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl sm:rounded-2xl bg-primary px-6 sm:px-7 text-xs sm:text-sm font-bold text-white shadow-md shadow-primary/25 hover:bg-primary-600 transition-all disabled:opacity-50"
                 >
-                  <span>Lanjut: Keahlian & Kriteria</span>
+                  <span>Lanjut: Kriteria</span>
                   <ArrowRight className="h-4 w-4" />
                 </button>
               </div>
@@ -1104,10 +1100,10 @@ export function CreateProjectModal({
             <div className="space-y-4 animate-in fade-in-50 slide-in-from-right-4 duration-300 ease-out my-auto">
               {/* Skill / Software Chips */}
               <div className="space-y-2">
-                <label className="text-sm font-bold text-foreground">
+                <label className="text-xs sm:text-sm font-bold text-foreground">
                   Skill / Alat yang Direkomendasikan
                 </label>
-                <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto p-0.5">
+                <div className="flex flex-wrap gap-1.5 sm:gap-2 max-h-24 overflow-y-auto p-0.5">
                   {suggestedSkills.map((skill) => {
                     const isSelected = selectedSkills.includes(skill);
                     return (
@@ -1115,7 +1111,7 @@ export function CreateProjectModal({
                         key={skill}
                         type="button"
                         onClick={() => toggleSkill(skill)}
-                        className={`rounded-xl px-3 py-1.5 text-xs sm:text-sm font-semibold transition-all ${
+                        className={`rounded-xl px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-semibold transition-all ${
                           isSelected
                             ? "bg-primary text-white shadow-xs"
                             : "bg-muted/70 text-foreground hover:bg-muted"
@@ -1133,17 +1129,17 @@ export function CreateProjectModal({
                   value={customSkillInput}
                   onChange={(e) => setCustomSkillInput(e.target.value)}
                   onKeyDown={handleAddCustomSkill}
-                  placeholder="+ Ketik keahlian/software kustom lainnya dan tekan Enter"
-                  className="h-10 w-full sm:w-88 rounded-xl border border-dashed border-border bg-background px-3.5 text-sm focus:border-primary focus:outline-none"
+                  placeholder="+ Ketik keahlian/software kustom & Enter"
+                  className="h-10 w-full sm:w-88 rounded-xl border border-dashed border-border bg-background px-3.5 text-xs sm:text-sm focus:border-primary focus:outline-none"
                 />
               </div>
 
               {/* Experience Level (Clean, Scaled & Prominent) */}
               <div className="space-y-1.5">
-                <label className="text-sm font-bold text-foreground">
+                <label className="text-xs sm:text-sm font-bold text-foreground">
                   Kualifikasi Talenta yang Dicari
                 </label>
-                <div className="grid grid-cols-3 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-2.5">
                   {[
                     { id: "Junior" as const, label: "Pemula / Starter", desc: "Ramah budget & tugas cepat" },
                     { id: "Intermediate" as const, label: "Menengah", desc: "Portofolio teruji & mandiri" },
@@ -1153,14 +1149,14 @@ export function CreateProjectModal({
                       key={lvl.id}
                       type="button"
                       onClick={() => setExperienceLevel(lvl.id)}
-                      className={`p-3 rounded-2xl border text-left transition-all ${
+                      className={`p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border text-left transition-all ${
                         experienceLevel === lvl.id
                           ? "border-primary bg-primary/10 ring-2 ring-primary/20 shadow-xs"
                           : "border-border/70 bg-card hover:bg-muted/50"
                       }`}
                     >
-                      <span className="text-sm font-bold text-foreground block">{lvl.label}</span>
-                      <span className="text-xs text-muted-foreground block truncate mt-0.5">{lvl.desc}</span>
+                      <span className="text-xs sm:text-sm font-bold text-foreground block">{lvl.label}</span>
+                      <span className="text-[11px] sm:text-xs text-muted-foreground block truncate mt-0.5">{lvl.desc}</span>
                     </button>
                   ))}
                 </div>
@@ -1168,24 +1164,24 @@ export function CreateProjectModal({
 
               {/* Screening Question Input */}
               <div className="space-y-1.5">
-                <label className="text-sm font-bold text-foreground">
+                <label className="text-xs sm:text-sm font-bold text-foreground">
                   Pertanyaan Skrining Pelamar (Opsional)
                 </label>
                 <input
                   type="text"
                   value={screeningQuestion}
                   onChange={(e) => setScreeningQuestion(e.target.value)}
-                  placeholder="Contoh: Sertakan link contoh hasil karya serupa yang pernah Anda buat."
-                  className="h-10 w-full rounded-xl border border-input bg-background px-3.5 text-sm focus:border-primary focus:outline-none"
+                  placeholder="Contoh: Sertakan link portofolio karya serupa."
+                  className="h-10 w-full rounded-xl border border-input bg-background px-3.5 text-xs sm:text-sm focus:border-primary focus:outline-none"
                 />
               </div>
 
               {/* Step 3 Actions */}
-              <div className="pt-3 flex items-center justify-end gap-2.5 border-t border-border/40">
+              <div className="pt-3 flex items-center justify-between sm:justify-end gap-2 sm:gap-2.5 border-t border-border/40 mt-3">
                 <button
                   type="button"
                   onClick={() => setStep(2)}
-                  className="h-11 inline-flex items-center gap-2 rounded-2xl border border-border px-6 text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors"
+                  className="h-10 sm:h-11 flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl sm:rounded-2xl border border-border px-5 sm:px-6 text-xs sm:text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   <span>Kembali</span>
@@ -1194,9 +1190,9 @@ export function CreateProjectModal({
                 <button
                   type="button"
                   onClick={() => setStep(4)}
-                  className="h-11 inline-flex items-center gap-2 rounded-2xl bg-primary px-7 text-sm font-bold text-white shadow-md shadow-primary/25 hover:bg-primary-600 transition-all"
+                  className="h-10 sm:h-11 flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl sm:rounded-2xl bg-primary px-6 sm:px-7 text-xs sm:text-sm font-bold text-white shadow-md shadow-primary/25 hover:bg-primary-600 transition-all"
                 >
-                  <span>Lanjut: Output & Serah Terima</span>
+                  <span>Lanjut: Output</span>
                   <ArrowRight className="h-4 w-4" />
                 </button>
               </div>
@@ -1207,9 +1203,9 @@ export function CreateProjectModal({
           {step === 4 && (
             <div className="space-y-4 animate-in fade-in-50 slide-in-from-right-4 duration-300 ease-out my-auto">
               {/* Universal Reference Links */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                  <label className="text-xs sm:text-sm font-bold text-foreground flex items-center gap-1.5">
                     <LinkIcon className="h-4 w-4 text-primary" />
                     <span>Link Acuan / Moodboard (Opsional)</span>
                   </label>
@@ -1217,32 +1213,32 @@ export function CreateProjectModal({
                     type="url"
                     value={referenceUrl}
                     onChange={(e) => setReferenceUrl(e.target.value)}
-                    placeholder="Link Google Drive, Pinterest, Figma, YouTube, dsb."
-                    className="h-10 w-full rounded-xl border border-input bg-background px-3.5 text-sm focus:border-primary focus:outline-none placeholder:text-muted-foreground/60"
+                    placeholder="Link Drive, Pinterest, Figma, YouTube, dsb."
+                    className="h-10 w-full rounded-xl border border-input bg-background px-3.5 text-xs sm:text-sm focus:border-primary focus:outline-none placeholder:text-muted-foreground/60"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                  <label className="text-xs sm:text-sm font-bold text-foreground flex items-center gap-1.5">
                     <FileCode className="h-4 w-4 text-primary" />
-                    <span>Link Bahan Kerja / Aset Awal (Opsional)</span>
+                    <span>Link Bahan Kerja / Aset (Opsional)</span>
                   </label>
                   <input
                     type="url"
                     value={assetsUrl}
                     onChange={(e) => setAssetsUrl(e.target.value)}
                     placeholder="Link Drive logo/foto bahan, Dropbox, repo, dsb."
-                    className="h-10 w-full rounded-xl border border-input bg-background px-3.5 text-sm focus:border-primary focus:outline-none placeholder:text-muted-foreground/60"
+                    className="h-10 w-full rounded-xl border border-input bg-background px-3.5 text-xs sm:text-sm focus:border-primary focus:outline-none placeholder:text-muted-foreground/60"
                   />
                 </div>
               </div>
 
               {/* Universal Deliverables Checklist with Add Custom Item */}
               <div className="space-y-2">
-                <label className="text-sm font-bold text-foreground">
+                <label className="text-xs sm:text-sm font-bold text-foreground">
                   Format Hasil / Serah Terima Wajib
                 </label>
-                <div className="grid grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5">
                   {[
                     "File Final Siap Pakai / High-Res (PNG, JPG, PDF, MP4, dsb.)",
                     "File Mentahan Asli / Editable (AI, PSD, RAW, Word, Code)",
@@ -1254,14 +1250,14 @@ export function CreateProjectModal({
                       <div
                         key={item}
                         onClick={() => toggleDeliverableCheck(item)}
-                        className={`p-2.5 rounded-2xl border cursor-pointer flex items-center gap-2.5 text-sm transition-all ${
+                        className={`p-2 sm:p-2.5 rounded-xl sm:rounded-2xl border cursor-pointer flex items-center gap-2.5 text-xs sm:text-sm transition-all ${
                           isChecked
                             ? "border-primary bg-primary/10 text-foreground font-semibold"
                             : "border-border/60 bg-card text-muted-foreground hover:bg-muted/40"
                         }`}
                       >
                         <div
-                          className={`h-4.5 w-4.5 rounded-lg flex items-center justify-center border ${
+                          className={`h-4.5 w-4.5 rounded-lg flex items-center justify-center border shrink-0 ${
                             isChecked ? "bg-primary border-primary text-white" : "border-border"
                           }`}
                         >
@@ -1280,7 +1276,7 @@ export function CreateProjectModal({
                     value={customDeliverableInput}
                     onChange={(e) => setCustomDeliverableInput(e.target.value)}
                     onKeyDown={handleAddCustomDeliverable}
-                    placeholder="+ Tambah format serah terima kustom (contoh: 10 Foto High-Res Pura Uluwatu)"
+                    placeholder="+ Tambah format serah terima kustom..."
                     className="h-9 flex-1 rounded-xl border border-dashed border-border bg-background px-3 text-xs focus:border-primary focus:outline-none"
                   />
                   <button
@@ -1296,16 +1292,16 @@ export function CreateProjectModal({
 
               {/* Free revisions */}
               <div className="space-y-1.5">
-                <label className="text-sm font-bold text-foreground">
+                <label className="text-xs sm:text-sm font-bold text-foreground">
                   Jatah Garansi Revisi Minor
                 </label>
-                <div className="grid grid-cols-3 gap-2.5">
+                <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
                   {(["1x", "2x", "3x"] as const).map((rev) => (
                     <button
                       key={rev}
                       type="button"
                       onClick={() => setFreeRevisions(rev)}
-                      className={`h-10 text-center rounded-xl border text-sm font-bold transition-all ${
+                      className={`h-10 text-center rounded-xl border text-xs sm:text-sm font-bold transition-all ${
                         freeRevisions === rev
                           ? "border-primary bg-primary/10 text-primary ring-2 ring-primary/20"
                           : "border-border/60 bg-card text-muted-foreground hover:bg-muted/50"
@@ -1318,11 +1314,11 @@ export function CreateProjectModal({
               </div>
 
               {/* Step 4 Actions */}
-              <div className="pt-3 flex items-center justify-end gap-2.5 border-t border-border/40">
+              <div className="pt-3 flex items-center justify-between sm:justify-end gap-2 sm:gap-2.5 border-t border-border/40 mt-3">
                 <button
                   type="button"
                   onClick={() => setStep(3)}
-                  className="h-11 inline-flex items-center gap-2 rounded-2xl border border-border px-6 text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors"
+                  className="h-10 sm:h-11 flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl sm:rounded-2xl border border-border px-5 sm:px-6 text-xs sm:text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   <span>Kembali</span>
@@ -1331,9 +1327,9 @@ export function CreateProjectModal({
                 <button
                   type="button"
                   onClick={() => setStep(5)}
-                  className="h-11 inline-flex items-center gap-2 rounded-2xl bg-primary px-7 text-sm font-bold text-white shadow-md shadow-primary/25 hover:bg-primary-600 transition-all"
+                  className="h-10 sm:h-11 flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl sm:rounded-2xl bg-primary px-6 sm:px-7 text-xs sm:text-sm font-bold text-white shadow-md shadow-primary/25 hover:bg-primary-600 transition-all"
                 >
-                  <span>Lanjut: Timeline & Jadwal</span>
+                  <span>Lanjut: Jadwal</span>
                   <ArrowRight className="h-4 w-4" />
                 </button>
               </div>
@@ -1345,20 +1341,20 @@ export function CreateProjectModal({
             <div className="space-y-4 animate-in fade-in-50 slide-in-from-right-4 duration-300 ease-out my-auto">
               {/* Duration Input */}
               <div className="space-y-1.5">
-                <label className="text-sm font-bold text-foreground">
+                <label className="text-xs sm:text-sm font-bold text-foreground">
                   Target Durasi Pengerjaan Total (Hari Kalender) <span className="text-rose-500">*</span>
                 </label>
-                <div className="flex items-center gap-3.5">
+                <div className="flex items-center gap-3">
                   <input
                     type="number"
                     value={durationDays}
                     onChange={(e) => handleDurationChange(e.target.value)}
                     min={1}
                     max={180}
-                    className="h-10 w-32 rounded-xl border border-input bg-background px-3.5 text-base font-bold text-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    className="h-10 w-28 sm:w-32 rounded-xl border border-input bg-background px-3.5 text-sm sm:text-base font-bold text-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                   />
-                  <span className="text-sm text-muted-foreground">
-                    Estimasi pengerjaan: {parsedDuration} hari kerja
+                  <span className="text-xs sm:text-sm text-muted-foreground">
+                    Estimasi: {parsedDuration} hari kerja
                   </span>
                 </div>
               </div>
@@ -1366,30 +1362,30 @@ export function CreateProjectModal({
               {/* Gantt Tasks Timeline Preview */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                  <label className="text-xs sm:text-sm font-bold text-foreground flex items-center gap-1.5">
                     <Calendar className="h-4 w-4 text-primary" />
-                    <span>Rencana Tahapan Tugas (Auto-Generated)</span>
+                    <span>Rencana Tahapan Tugas</span>
                   </label>
-                  <span className="text-xs text-muted-foreground font-semibold">
-                    {ganttTasks.length} tahapan kerja
+                  <span className="text-[11px] sm:text-xs text-muted-foreground font-semibold">
+                    {ganttTasks.length} tahapan
                   </span>
                 </div>
 
-                <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                <div className="space-y-2 max-h-36 sm:max-h-40 overflow-y-auto pr-1">
                   {ganttTasks.map((t) => (
                     <div
                       key={t.id}
-                      className="p-2.5 rounded-2xl border border-border/70 bg-card/80 flex items-center justify-between gap-2.5 text-sm"
+                      className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl border border-border/70 bg-card/80 flex items-center justify-between gap-2.5 text-xs sm:text-sm"
                     >
                       <div className="min-w-0 space-y-0.5">
                         <div className="flex items-center gap-2">
-                          <span className="rounded-md bg-primary/10 text-primary px-2 py-0.5 text-xs font-bold">
+                          <span className="rounded-md bg-primary/10 text-primary px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-xs font-bold shrink-0">
                             {t.milestonePhase}
                           </span>
                           <span className="font-semibold text-foreground truncate">{t.name}</span>
                         </div>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <Clock className="h-3.5 w-3.5" />
+                        <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                          <Clock className="h-3 w-3" />
                           <span>
                             {t.startDate} &rarr; {t.endDate}
                           </span>
@@ -1417,12 +1413,12 @@ export function CreateProjectModal({
                     value={newTaskName}
                     onChange={(e) => setNewTaskName(e.target.value)}
                     placeholder="+ Tambah tahapan tugas kustom..."
-                    className="h-9 flex-1 rounded-xl border border-dashed border-border bg-background px-3 text-sm focus:border-primary focus:outline-none"
+                    className="h-9 flex-1 rounded-xl border border-dashed border-border bg-background px-3 text-xs sm:text-sm focus:border-primary focus:outline-none"
                   />
                   <button
                     type="submit"
                     disabled={!newTaskName.trim()}
-                    className="h-9 px-3.5 rounded-xl bg-muted hover:bg-muted/80 text-sm font-bold text-foreground flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                    className="h-9 px-3.5 rounded-xl bg-muted hover:bg-muted/80 text-xs sm:text-sm font-bold text-foreground flex items-center gap-1.5 transition-colors disabled:opacity-50"
                   >
                     <Plus className="h-4 w-4" />
                     <span>Tambah</span>
@@ -1431,11 +1427,11 @@ export function CreateProjectModal({
               </div>
 
               {/* Step 5 Actions */}
-              <div className="pt-3 flex items-center justify-end gap-2.5 border-t border-border/40">
+              <div className="pt-3 flex items-center justify-between sm:justify-end gap-2 sm:gap-2.5 border-t border-border/40 mt-3">
                 <button
                   type="button"
                   onClick={() => setStep(4)}
-                  className="h-11 inline-flex items-center gap-2 rounded-2xl border border-border px-6 text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors"
+                  className="h-10 sm:h-11 flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl sm:rounded-2xl border border-border px-5 sm:px-6 text-xs sm:text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   <span>Kembali</span>
@@ -1444,9 +1440,9 @@ export function CreateProjectModal({
                 <button
                   type="button"
                   onClick={() => setStep(6)}
-                  className="h-11 inline-flex items-center gap-2 rounded-2xl bg-primary px-7 text-sm font-bold text-white shadow-md shadow-primary/25 hover:bg-primary-600 transition-all"
+                  className="h-10 sm:h-11 flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl sm:rounded-2xl bg-primary px-6 sm:px-7 text-xs sm:text-sm font-bold text-white shadow-md shadow-primary/25 hover:bg-primary-600 transition-all"
                 >
-                  <span>Lanjut: Budget & Dana Aman</span>
+                  <span>Lanjut: Budget</span>
                   <ArrowRight className="h-4 w-4" />
                 </button>
               </div>
@@ -1458,7 +1454,7 @@ export function CreateProjectModal({
             <form onSubmit={handleSubmit} className="space-y-4 animate-in fade-in-50 slide-in-from-right-4 duration-300 ease-out my-auto">
               {/* Budget Input */}
               <div className="space-y-1.5">
-                <label className="text-sm font-bold text-foreground flex items-center justify-between">
+                <label className="text-xs sm:text-sm font-bold text-foreground flex items-center justify-between">
                   <span>Total Anggaran Proyek (Rp) <span className="text-rose-500">*</span></span>
                   <span className="text-xs font-semibold text-primary">
                     Estimasi: Rp {parsedBudget.toLocaleString("id-ID")}
@@ -1470,43 +1466,43 @@ export function CreateProjectModal({
                   onChange={(e) => setBudget(e.target.value)}
                   required
                   placeholder="150000"
-                  className="h-11 w-full rounded-2xl border border-input bg-background px-4 text-base font-bold text-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="h-10 sm:h-11 w-full rounded-xl sm:rounded-2xl border border-input bg-background px-4 text-sm sm:text-base font-bold text-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
               </div>
 
               {/* Milestone Breakdown */}
-              <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 to-indigo-500/5 p-3.5 space-y-2.5">
+              <div className="rounded-xl sm:rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 to-indigo-500/5 p-3 sm:p-3.5 space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-sm font-bold text-foreground">
-                    <ShieldCheck className="h-4.5 w-4.5 text-primary" />
-                    <span>Simulasi Pencairan Dana Bertahap (Garansi Aman)</span>
+                  <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-bold text-foreground">
+                    <ShieldCheck className="h-4 w-4 sm:h-4.5 sm:w-4.5 text-primary shrink-0" />
+                    <span>Simulasi Garansi Rekber Aman</span>
                   </div>
-                  <span className="text-xs font-bold text-emerald-600 bg-emerald-500/10 px-2.5 py-0.5 rounded-full">
-                    100% Proteksi Dana
+                  <span className="text-[10px] sm:text-xs font-bold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                    100% Proteksi
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2.5">
-                  <div className="p-2.5 rounded-xl bg-card border border-border/60 shadow-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5">
+                  <div className="p-2 sm:p-2.5 rounded-xl bg-card border border-border/60 shadow-xs">
                     <span className="text-xs font-bold text-foreground block">
                       Milestone 1 (40%)
                     </span>
                     <span className="text-[11px] text-muted-foreground block truncate">
                       Draft Awal & Konsep
                     </span>
-                    <span className="text-sm font-bold text-primary block mt-1">
+                    <span className="text-xs sm:text-sm font-bold text-primary block mt-0.5 sm:mt-1">
                       Rp {m1Amount.toLocaleString("id-ID")}
                     </span>
                   </div>
 
-                  <div className="p-2.5 rounded-xl bg-card border border-border/60 shadow-xs">
+                  <div className="p-2 sm:p-2.5 rounded-xl bg-card border border-border/60 shadow-xs">
                     <span className="text-xs font-bold text-foreground block">
                       Milestone 2 (60%)
                     </span>
                     <span className="text-[11px] text-muted-foreground block truncate">
                       Hasil Akhir & Serah Terima
                     </span>
-                    <span className="text-sm font-bold text-primary block mt-1">
+                    <span className="text-xs sm:text-sm font-bold text-primary block mt-0.5 sm:mt-1">
                       Rp {m2Amount.toLocaleString("id-ID")}
                     </span>
                   </div>
@@ -1515,10 +1511,10 @@ export function CreateProjectModal({
 
               {/* Preferred Payment Method */}
               <div className="space-y-1.5">
-                <label className="text-sm font-bold text-foreground">
-                  Preferensi Metode Pembayaran Aman (Rekening Bersama)
+                <label className="text-xs sm:text-sm font-bold text-foreground">
+                  Preferensi Metode Pembayaran Aman
                 </label>
-                <div className="grid grid-cols-3 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-2.5">
                   {[
                     { id: "va" as const, label: "Virtual Account", icon: Building2, desc: "BCA, Mandiri, BRI" },
                     { id: "qris" as const, label: "QRIS & E-Wallet", icon: QrCode, desc: "GoPay, OVO, ShopeePay" },
@@ -1531,13 +1527,13 @@ export function CreateProjectModal({
                         key={pm.id}
                         type="button"
                         onClick={() => setPaymentMethodPreference(pm.id)}
-                        className={`p-2.5 rounded-2xl border text-left transition-all ${
+                        className={`p-2.5 rounded-xl sm:rounded-2xl border text-left transition-all ${
                           isSelected
                             ? "border-primary bg-primary/10 ring-2 ring-primary/20 shadow-xs"
                             : "border-border/70 bg-card hover:bg-muted/50"
                         }`}
                       >
-                        <Icon className="h-4.5 w-4.5 text-primary mb-1" />
+                        <Icon className="h-4 w-4 text-primary mb-1" />
                         <span className="text-xs font-bold text-foreground block">{pm.label}</span>
                         <span className="text-[10px] text-muted-foreground block truncate">{pm.desc}</span>
                       </button>
@@ -1547,11 +1543,11 @@ export function CreateProjectModal({
               </div>
 
               {/* Step 6 Actions */}
-              <div className="pt-3 flex items-center justify-end gap-2.5 border-t border-border/40">
+              <div className="pt-3 flex items-center justify-between sm:justify-end gap-2 sm:gap-2.5 border-t border-border/40 mt-3">
                 <button
                   type="button"
                   onClick={() => setStep(5)}
-                  className="h-11 inline-flex items-center gap-2 rounded-2xl border border-border px-6 text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors"
+                  className="h-10 sm:h-11 flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl sm:rounded-2xl border border-border px-5 sm:px-6 text-xs sm:text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   <span>Kembali</span>
@@ -1560,17 +1556,17 @@ export function CreateProjectModal({
                 <button
                   type="submit"
                   disabled={isSubmitting || parsedBudget <= 0}
-                  className="h-11 inline-flex items-center gap-2 rounded-2xl bg-primary px-7 text-sm font-bold text-white shadow-md shadow-primary/25 hover:bg-primary-600 transition-all disabled:opacity-50"
+                  className="h-10 sm:h-11 flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl sm:rounded-2xl bg-primary px-6 sm:px-7 text-xs sm:text-sm font-bold text-white shadow-md shadow-primary/25 hover:bg-primary-600 transition-all disabled:opacity-50"
                 >
                   {isSubmitting ? (
                     <>
                       <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                      <span>Mempublikasikan...</span>
+                      <span>Publikasi...</span>
                     </>
                   ) : (
                     <>
                       <Send className="h-4 w-4" />
-                      <span>Publikasikan Sekarang</span>
+                      <span>Publikasikan</span>
                     </>
                   )}
                 </button>
@@ -1580,39 +1576,39 @@ export function CreateProjectModal({
 
           {/* STEP 7: Success Screen & Fast-Match Talent Preview */}
           {step === 7 && (
-            <div className="py-2 space-y-5 animate-in zoom-in-95 duration-300 my-auto">
+            <div className="py-2 space-y-4 sm:space-y-5 animate-in zoom-in-95 duration-300 my-auto">
               <div className="text-center space-y-1.5">
-                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 shadow-md shadow-emerald-500/10">
-                  <CheckCircle2 className="h-8 w-8" />
+                <div className="mx-auto flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 shadow-md shadow-emerald-500/10">
+                  <CheckCircle2 className="h-7 w-7 sm:h-8 sm:w-8" />
                 </div>
-                <h3 className="text-xl font-bold font-heading text-foreground">
+                <h3 className="text-lg sm:text-xl font-bold font-heading text-foreground">
                   Proyek Berhasil Dipublikasikan!
                 </h3>
-                <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                <p className="text-xs sm:text-sm text-muted-foreground max-w-md mx-auto">
                   Proyek <strong>&ldquo;{title}&rdquo;</strong> kini aktif di status <strong>Hiring</strong>.
                 </p>
               </div>
 
               {/* Fast-Match Recommendation Cards */}
               <div className="space-y-2.5">
-                <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center justify-between text-xs sm:text-sm">
                   <span className="font-bold text-foreground flex items-center gap-1.5">
                     <Sparkles className="h-4 w-4 text-primary" />
-                    <span>AI Fast-Match: Rekomendasi Talenta Cocok</span>
+                    <span>AI Fast-Match Talenta</span>
                   </span>
-                  <span className="text-xs text-muted-foreground font-semibold">Berdasarkan Kategori & Skill</span>
+                  <span className="text-[11px] sm:text-xs text-muted-foreground font-semibold">Kategori & Skill</span>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                   {matchedTalents.map((talent) => {
                     const isInvited = invitedTalents[talent.id];
                     return (
                       <div
                         key={talent.id}
-                        className="p-3 rounded-2xl border border-border/80 bg-card/80 flex flex-col justify-between gap-2.5 shadow-xs hover:border-primary/40 transition-all"
+                        className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border border-border/80 bg-card/80 flex flex-col justify-between gap-2.5 shadow-xs hover:border-primary/40 transition-all"
                       >
                         <div className="flex items-start gap-2.5">
-                          <div className="relative h-9 w-9 rounded-full overflow-hidden border border-border shrink-0 bg-muted">
+                          <div className="relative h-8 w-8 sm:h-9 sm:w-9 rounded-full overflow-hidden border border-border shrink-0 bg-muted">
                             <Image
                               src={talent.avatar}
                               alt={talent.name}
@@ -1623,17 +1619,17 @@ export function CreateProjectModal({
                             />
                           </div>
                           <div className="min-w-0">
-                            <h4 className="text-sm font-bold text-foreground truncate">{talent.name}</h4>
-                            <p className="text-xs text-muted-foreground truncate">{talent.role}</p>
+                            <h4 className="text-xs sm:text-sm font-bold text-foreground truncate">{talent.name}</h4>
+                            <p className="text-[11px] sm:text-xs text-muted-foreground truncate">{talent.role}</p>
                             {talent.reviewsCount > 0 && Number(talent.rating) > 0 ? (
-                              <div className="flex items-center gap-1 text-xs font-semibold text-amber-500 mt-0.5">
-                                <Star className="h-3.5 w-3.5 fill-amber-500" />
+                              <div className="flex items-center gap-1 text-[11px] sm:text-xs font-semibold text-amber-500 mt-0.5">
+                                <Star className="h-3 w-3 sm:h-3.5 sm:w-3.5 fill-amber-500" />
                                 <span>{typeof talent.rating === "number" ? talent.rating.toFixed(1) : talent.rating}</span>
                                 <span className="text-muted-foreground font-normal">({talent.reviewsCount})</span>
                               </div>
                             ) : (
-                              <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground mt-0.5">
-                                <Star className="h-3.5 w-3.5 text-muted-foreground/50" />
+                              <div className="flex items-center gap-1 text-[11px] sm:text-xs font-medium text-muted-foreground mt-0.5">
+                                <Star className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-muted-foreground/50" />
                                 <span>-</span>
                                 <span className="text-muted-foreground font-normal">({talent.reviewsCount || 0})</span>
                               </div>
@@ -1642,7 +1638,7 @@ export function CreateProjectModal({
                         </div>
 
                         <div className="flex items-center justify-between pt-1.5 border-t border-border/50 text-xs">
-                          <span className="font-bold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-md">
+                          <span className="font-bold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-md text-[11px] sm:text-xs">
                             {talent.matchScore}%
                           </span>
 
@@ -1666,11 +1662,11 @@ export function CreateProjectModal({
               </div>
 
               {/* Navigation CTAs */}
-              <div className="pt-2 flex items-center justify-center gap-3">
+              <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="h-11 inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-6 text-sm font-bold text-white shadow-md shadow-primary/25 hover:bg-primary-600 transition-all"
+                  className="h-10 sm:h-11 w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl sm:rounded-2xl bg-primary px-6 text-xs sm:text-sm font-bold text-white shadow-md shadow-primary/25 hover:bg-primary-600 transition-all"
                 >
                   <Layers className="h-4 w-4" />
                   <span>Dashboard Proyek</span>
@@ -1679,7 +1675,7 @@ export function CreateProjectModal({
                 <Link
                   href="/client/projects"
                   onClick={onClose}
-                  className="h-11 inline-flex items-center justify-center rounded-2xl border border-border bg-card px-6 text-sm font-semibold text-foreground hover:bg-muted transition-colors"
+                  className="h-10 sm:h-11 w-full sm:w-auto inline-flex items-center justify-center rounded-xl sm:rounded-2xl border border-border bg-card px-6 text-xs sm:text-sm font-semibold text-foreground hover:bg-muted transition-colors"
                 >
                   <span>Daftar Proyek</span>
                 </Link>
