@@ -373,18 +373,18 @@ export async function computeMRPPlan(params: {
     ...quizTasks.map(applyCompletion),
   ];
 
-  // 7. Deterministic MRP Workload Leveling (Spreading across 7 days)
-  // Day 0 = Today, Day 1 = Tomorrow, ..., Day 6 = 6 days ahead
+  // 7. Deterministic MRP Workload Leveling (Including Kemarin for streak audit + 6 days ahead)
   const dayLabels = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
   const daysMap: Record<string, DayWorkload> = {};
 
-  for (let i = 0; i < 7; i++) {
+  for (let i = -1; i < 7; i++) {
     const d = new Date(today);
     d.setDate(today.getDate() + i);
     const dKey = formatLocalDateKey(d);
 
     let label = `${dayLabels[d.getDay()]}, ${d.getDate()}`;
-    if (i === 0) label = "Hari Ini";
+    if (i === -1) label = "Kemarin";
+    else if (i === 0) label = "Hari Ini";
     else if (i === 1) label = "Besok";
     else if (i === 2) label = "Lusa";
 
@@ -403,7 +403,7 @@ export async function computeMRPPlan(params: {
 
   // Allocation Algorithm:
   // - Overdue & Critical tasks MUST go to Today (Day 0)
-  // - Other tasks are distributed so daily workload does not surpass capacity
+  // - Other tasks are distributed so daily workload does not surpass capacity (from Today onwards)
   const sortedTasks = [...allAvailableTasks].sort((a, b) => {
     // 1. Overdue first
     if (a.isOverdue && !b.isOverdue) return -1;
@@ -418,7 +418,10 @@ export async function computeMRPPlan(params: {
     return cWeight[b.category] - cWeight[a.category];
   });
 
-  const dayKeys = Object.keys(daysMap).sort();
+  // Only allocate upcoming/current tasks to today or future days (exclude past dates like yesterday)
+  const futureDayKeys = Object.keys(daysMap)
+    .filter((k) => k >= todayKey)
+    .sort();
 
   for (const task of sortedTasks) {
     if (task.isOverdue) {
@@ -433,18 +436,25 @@ export async function computeMRPPlan(params: {
     let placed = false;
     const preferredDay = daysMap[task.dateKey];
 
-    if (preferredDay && preferredDay.totalMinutes + task.estimatedMinutes <= dailyCapacityMinutes) {
+    if (
+      preferredDay &&
+      task.dateKey >= todayKey &&
+      preferredDay.totalMinutes + task.estimatedMinutes <= dailyCapacityMinutes
+    ) {
       preferredDay.tasks.push(task);
       preferredDay.totalMinutes += task.estimatedMinutes;
       placed = true;
     }
 
-    // If preferred day is overloaded or doesn't exist, place in the earliest day with capacity
+    // If preferred day is overloaded or doesn't exist, place in the earliest future day with capacity
     if (!placed) {
-      for (const dKey of dayKeys) {
+      for (const dKey of futureDayKeys) {
         const dObj = daysMap[dKey];
         // Don't overfill days beyond capacity + 60 mins leeway
-        if (dObj.totalMinutes + task.estimatedMinutes <= dailyCapacityMinutes + 60 || dKey === dayKeys[dayKeys.length - 1]) {
+        if (
+          dObj.totalMinutes + task.estimatedMinutes <= dailyCapacityMinutes + 60 ||
+          dKey === futureDayKeys[futureDayKeys.length - 1]
+        ) {
           dObj.tasks.push({ ...task, dateKey: dKey });
           dObj.totalMinutes += task.estimatedMinutes;
           placed = true;
@@ -455,7 +465,7 @@ export async function computeMRPPlan(params: {
   }
 
   // Recalculate summary totals
-  for (const dKey of dayKeys) {
+  for (const dKey of Object.keys(daysMap)) {
     const d = daysMap[dKey];
     d.totalTasks = d.tasks.length;
     d.completedTasks = d.tasks.filter((t) => t.status === "completed").length;

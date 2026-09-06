@@ -9,12 +9,13 @@ import {
   CheckCircle2,
   AlertTriangle,
   ArrowRight,
-  ExternalLink,
   ChevronRight,
   Sparkles,
   Zap,
   Clock,
   Check,
+  X,
+  ExternalLink,
 } from "lucide-react";
 import { formatLocalDateKey, logActivity } from "@/lib/services/activity";
 import {
@@ -95,7 +96,7 @@ export function UnifiedSmartCalendarPlanner({
     };
   }, [user?.id, activeContracts, userProfile]);
 
-  // Days list for the interactive calendar strip (7 days)
+  // Days list for the interactive calendar strip (7 days: Kemarin (-1) to +5 ahead)
   const calendarDays = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -106,14 +107,16 @@ export function UnifiedSmartCalendarPlanner({
       "Jul", "Agu", "Sep", "Okt", "Nov", "Des",
     ];
 
-    for (let i = 0; i < 7; i++) {
+    // Offset: -1 (Kemarin), 0 (Hari Ini), 1 (Besok), 2 (Lusa), 3, 4, 5 => Total 7 days
+    for (let i = -1; i <= 5; i++) {
       const d = new Date(today);
       d.setDate(today.getDate() + i);
       const dKey = formatLocalDateKey(d);
       const dayWorkload = plannerData?.days[dKey];
 
       let displayLabel = DAY_NAMES[d.getDay()];
-      if (i === 0) displayLabel = "Hari Ini";
+      if (i === -1) displayLabel = "Kemarin";
+      else if (i === 0) displayLabel = "Hari Ini";
       else if (i === 1) displayLabel = "Besok";
       else if (i === 2) displayLabel = "Lusa";
 
@@ -123,30 +126,37 @@ export function UnifiedSmartCalendarPlanner({
           (t) => completedTaskIds.has(t.id) || t.status === "completed"
         ).length || 0;
       const hasOverdue = dayWorkload?.hasOverdue || false;
+      const hasStreakActivity = liveActiveDates.includes(dKey);
 
       days.push({
         date: d,
         dateKey: dKey,
+        offset: i,
         label: displayLabel,
         monthName: MONTH_NAMES[d.getMonth()],
         dateNum: d.getDate(),
+        isPast: i < 0,
         isToday: i === 0,
+        isFuture: i > 0,
         isSelected: dKey === selectedDateKey && viewMode === "day",
         totalTasks,
         completedCount,
         hasOverdue,
+        hasStreakActivity,
       });
     }
 
     return days;
-  }, [plannerData, selectedDateKey, viewMode, completedTaskIds]);
+  }, [plannerData, selectedDateKey, viewMode, completedTaskIds, liveActiveDates]);
 
-  // Grouped tasks for the week
+  // Grouped tasks for the week (only days from Today onwards for planning, plus Kemarin if tasks exist)
   const weekTasksByDay = useMemo(() => {
-    return calendarDays.map((d) => ({
-      day: d,
-      tasks: plannerData?.days[d.dateKey]?.tasks || [],
-    }));
+    return calendarDays
+      .filter((d) => d.offset >= 0 || (plannerData?.days[d.dateKey]?.tasks.length || 0) > 0)
+      .map((d) => ({
+        day: d,
+        tasks: plannerData?.days[d.dateKey]?.tasks || [],
+      }));
   }, [calendarDays, plannerData]);
 
   // Total tasks across the week
@@ -437,11 +447,14 @@ export function UnifiedSmartCalendarPlanner({
         )}
       </div>
 
-      {/* 3. 7-Day Calendar Strip */}
-      {/* Rules requested by user:
-          - If selected in day view: Streak Biru (primary blue border & ring)
-          - If has work (totalTasks > 0): Golden / Amber border & tint
-          - If no work (totalTasks === 0): Clean neutral, no text (gk ada kerja gk ada)
+      {/* 3. 7-Day Calendar Strip (Includes Kemarin, Hari Ini, Besok, Lusa, +3) */}
+      {/* COLOR RULES:
+          - Streak Aktif: Hijau (Emerald) border & tint + Checkmark
+          - Hari Belum Streak: Golden/Amber dashed border + pulse dot
+          - Ada Rencana Kerja (Mendatang): Golden/Amber solid border + count tugas
+          - Gk Streak (Kemarin Missed): Merah (Rose) border + Missed
+          - Gk Ada Kerja: Netral / Clean (no text)
+          - Terpilih: Streak Biru ring & focus
       */}
       <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
         {calendarDays.map((day) => {
@@ -452,31 +465,103 @@ export function UnifiedSmartCalendarPlanner({
           let cardClasses = "";
           let labelClasses = "";
           let numberClasses = "";
+          let statusElement: React.ReactNode = null;
+          let tooltipText = "";
 
-          if (isSelectedDay) {
-            // Streak Biru (active selected focus)
-            cardClasses =
-              "border-2 border-primary bg-primary/10 ring-2 ring-primary/30 shadow-xs";
-            labelClasses = "text-primary font-bold";
-            numberClasses = "text-primary font-black";
-          } else if (hasWork) {
-            // Golden / Amber border for days with scheduled work
-            cardClasses =
-              "border-2 border-amber-500/70 bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 shadow-xs";
-            labelClasses = "text-amber-600 dark:text-amber-400 font-bold";
-            numberClasses = "text-amber-700 dark:text-amber-200 font-black";
+          // Determine State
+          if (day.isPast) {
+            // KEMARIN (Audit Streak)
+            if (day.hasStreakActivity) {
+              // Streak aktif kemarin: HIJAU
+              cardClasses =
+                "border-2 border-emerald-500/70 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 shadow-xs";
+              labelClasses = "text-emerald-600 dark:text-emerald-400 font-bold";
+              numberClasses = "text-emerald-700 dark:text-emerald-200 font-extrabold";
+              statusElement = (
+                <span className="inline-flex items-center justify-center h-3.5 w-3.5 rounded-full bg-emerald-500/20 text-emerald-600 text-[8px] font-bold">
+                  <Check className="h-2.5 w-2.5 stroke-[3]" />
+                </span>
+              );
+              tooltipText = "Kemarin: Streak aktif tercatat (Hijau)";
+            } else {
+              // Tidak streak kemarin: MERAH
+              cardClasses =
+                "border-2 border-rose-500/40 bg-rose-500/10 text-rose-600 dark:text-rose-400 shadow-xs";
+              labelClasses = "text-rose-500 font-bold";
+              numberClasses = "text-rose-600 dark:text-rose-300 font-extrabold";
+              statusElement = (
+                <span className="text-[8px] font-bold text-rose-500 bg-rose-500/15 px-1 py-0.2 rounded-full">
+                  Missed
+                </span>
+              );
+              tooltipText = "Kemarin: Tidak ada streak (Merah)";
+            }
+          } else if (day.isToday) {
+            // HARI INI
+            if (day.hasStreakActivity) {
+              // Sudah streak hari ini: HIJAU
+              cardClasses =
+                "border-2 border-emerald-500 bg-emerald-500/15 text-emerald-700 dark:text-emerald-200 ring-2 ring-emerald-500/30 shadow-xs";
+              labelClasses = "text-emerald-600 dark:text-emerald-300 font-black";
+              numberClasses = "text-emerald-700 dark:text-emerald-100 font-black";
+              statusElement = (
+                <span className="inline-flex items-center gap-0.5 text-[8px] font-extrabold text-emerald-600 dark:text-emerald-300 bg-emerald-500/20 px-1 py-0.2 rounded-full">
+                  <Flame className="h-2.5 w-2.5 fill-emerald-600" /> Streak
+                </span>
+              );
+              tooltipText = "Hari ini: Streak sudah aktif (Hijau)!";
+            } else {
+              // Belum streak hari ini: GOLDEN / AMBER DASHED
+              cardClasses =
+                "border-2 border-dashed border-amber-500/90 bg-amber-500/10 text-amber-700 dark:text-amber-300 ring-2 ring-amber-500/20 shadow-xs";
+              labelClasses = "text-amber-600 dark:text-amber-400 font-extrabold";
+              numberClasses = "text-amber-700 dark:text-amber-200 font-black";
+              statusElement = (
+                <span className="inline-flex items-center gap-1 text-[8px] font-extrabold text-amber-600 dark:text-amber-400 bg-amber-500/20 px-1.5 py-0.2 rounded-full">
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" /> Belum
+                </span>
+              );
+              tooltipText = "Hari ini: Belum streak (Golden) - selesaikan tugas/kuis!";
+            }
           } else {
-            // No work: clean neutral, minimal
-            cardClasses =
-              "border border-border/40 bg-muted/15 text-muted-foreground/60 hover:bg-muted/30 hover:border-border/60";
-            labelClasses = "text-muted-foreground/60 font-medium";
-            numberClasses = "text-muted-foreground/70 font-semibold";
+            // HARI MENDATANG (Besok, Lusa, dst)
+            if (hasWork) {
+              // Ada rencana kerja: GOLDEN SOLID BORDER
+              cardClasses =
+                "border-2 border-amber-500/70 bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 shadow-xs";
+              labelClasses = "text-amber-600 dark:text-amber-400 font-bold";
+              numberClasses = "text-amber-700 dark:text-amber-200 font-black";
+              statusElement = isAllDone ? (
+                <span className="inline-flex items-center justify-center h-3.5 w-3.5 rounded-full bg-emerald-500/20 text-emerald-600 text-[8px] font-bold">
+                  <Check className="h-2.5 w-2.5" />
+                </span>
+              ) : (
+                <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/20 px-1.5 py-0.2 rounded-full">
+                  {day.totalTasks} tugas
+                </span>
+              );
+              tooltipText = `${day.label}: Ada ${day.totalTasks} target kerja (Golden)`;
+            } else {
+              // Gk ada kerja: NETRAL / CLEAN
+              cardClasses =
+                "border border-border/40 bg-muted/15 text-muted-foreground/50 hover:bg-muted/30 hover:border-border/60";
+              labelClasses = "text-muted-foreground/60 font-medium";
+              numberClasses = "text-muted-foreground/70 font-semibold";
+              statusElement = <span className="h-1 w-1 rounded-full bg-muted-foreground/20" />;
+              tooltipText = `${day.label}: Tanpa beban kerja`;
+            }
+          }
+
+          // Override ring for Selected Day (Streak Biru)
+          if (isSelectedDay) {
+            cardClasses += " ring-2 ring-primary border-primary shadow-sm";
           }
 
           return (
             <button
               key={day.dateKey}
               type="button"
+              title={tooltipText}
               onClick={() => {
                 setSelectedDateKey(day.dateKey);
                 setViewMode("day");
@@ -501,34 +586,35 @@ export function UnifiedSmartCalendarPlanner({
                 {day.dateNum}
               </span>
 
-              {/* Bottom Task Indicator */}
+              {/* Bottom Task / Streak Indicator */}
               <div className="h-4 flex items-center justify-center">
-                {hasWork ? (
-                  isAllDone ? (
-                    <span className="inline-flex items-center justify-center h-3.5 w-3.5 rounded-full bg-emerald-500/20 text-emerald-600 text-[8px] font-bold">
-                      <Check className="h-2.5 w-2.5" />
-                    </span>
-                  ) : day.hasOverdue ? (
-                    <span className="text-[8px] font-extrabold text-rose-600 bg-rose-500/20 px-1 py-0.2 rounded-full">
-                      ! Urgent
-                    </span>
-                  ) : isSelectedDay ? (
-                    <span className="text-[9px] font-bold text-primary bg-primary/20 px-1.5 py-0.2 rounded-full">
-                      {day.totalTasks} tugas
-                    </span>
-                  ) : (
-                    <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/20 px-1.5 py-0.2 rounded-full">
-                      {day.totalTasks} tugas
-                    </span>
-                  )
-                ) : (
-                  // Clean blank when no work (klo gk ada kerja gk ada)
-                  <span className="h-1 w-1 rounded-full bg-muted-foreground/20" />
-                )}
+                {statusElement}
               </div>
             </button>
           );
         })}
+      </div>
+
+      {/* Mini Color Legend for Freelancer Confidence */}
+      <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5 text-[10px] text-muted-foreground border-t border-border/30">
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="flex items-center gap-1">
+            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+            <span className="text-emerald-700 dark:text-emerald-300 font-semibold">Hijau = Streak Aktif</span>
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="h-2 w-2 rounded-full bg-amber-500" />
+            <span className="text-amber-700 dark:text-amber-300 font-semibold">Golden = Belum Streak / Ada Kerja</span>
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="h-2 w-2 rounded-full bg-rose-500" />
+            <span className="text-rose-600 dark:text-rose-400 font-semibold">Merah = Terlewat / Overdue</span>
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="h-2 w-2 rounded-full bg-primary" />
+            <span className="text-primary font-semibold">Biru = Terpilih</span>
+          </span>
+        </div>
       </div>
 
       {/* 4. AI Workload Strategist Insight Card */}
@@ -656,7 +742,7 @@ export function UnifiedSmartCalendarPlanner({
                 </div>
                 <p className="text-xs font-bold text-foreground">Tidak Ada Beban Tugas</p>
                 <p className="text-[11px] text-muted-foreground max-w-xs mx-auto">
-                  Jadwal hari ini kosong. Anda bisa mengasah skill lewat kuis atau menjelajahi tawaran proyek baru.
+                  Jadwal hari ini bebas dari tugas. Anda bisa mengasah skill lewat kuis atau menjelajahi tawaran proyek baru.
                 </p>
                 <div className="pt-1 flex items-center justify-center gap-3 text-xs">
                   <Link href="/freelancer/skills" className="font-bold text-primary hover:underline">
