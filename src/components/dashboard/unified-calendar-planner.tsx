@@ -10,7 +10,6 @@ import {
   AlertTriangle,
   ArrowRight,
   ChevronRight,
-  Sparkles,
   Zap,
   Clock,
   Check,
@@ -47,7 +46,6 @@ export function UnifiedSmartCalendarPlanner({
   const { user } = useAuth();
   const todayKey = useMemo(() => formatLocalDateKey(new Date()), []);
   const [selectedDateKey, setSelectedDateKey] = useState<string>(todayKey);
-  const [viewMode, setViewMode] = useState<"week" | "day">("week");
   const [plannerData, setPlannerData] = useState<MRPPlannerResult | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -138,7 +136,7 @@ export function UnifiedSmartCalendarPlanner({
         isPast: i < 0,
         isToday: i === 0,
         isFuture: i > 0,
-        isSelected: dKey === selectedDateKey && viewMode === "day",
+        isSelected: dKey === selectedDateKey,
         totalTasks,
         completedCount,
         hasOverdue,
@@ -147,35 +145,13 @@ export function UnifiedSmartCalendarPlanner({
     }
 
     return days;
-  }, [plannerData, selectedDateKey, viewMode, completedTaskIds, liveActiveDates]);
-
-  // Grouped tasks for the week (only days from Today onwards for planning, plus Kemarin if tasks exist)
-  const weekTasksByDay = useMemo(() => {
-    return calendarDays
-      .filter((d) => d.offset >= 0 || (plannerData?.days[d.dateKey]?.tasks.length || 0) > 0)
-      .map((d) => ({
-        day: d,
-        tasks: plannerData?.days[d.dateKey]?.tasks || [],
-      }));
-  }, [calendarDays, plannerData]);
-
-  // Total tasks across the week
-  const totalWeekTasks = useMemo(() => {
-    return weekTasksByDay.reduce((acc, curr) => acc + curr.tasks.length, 0);
-  }, [weekTasksByDay]);
-
-  const totalWeekCompleted = useMemo(() => {
-    return weekTasksByDay.reduce(
-      (acc, curr) =>
-        acc +
-        curr.tasks.filter(
-          (t) => completedTaskIds.has(t.id) || t.status === "completed"
-        ).length,
-      0
-    );
-  }, [weekTasksByDay, completedTaskIds]);
+  }, [plannerData, selectedDateKey, completedTaskIds, liveActiveDates]);
 
   // Selected Day Workload
+  const selectedDayObj = calendarDays.find((d) => d.dateKey === selectedDateKey);
+  const selectedDayLabel = selectedDayObj
+    ? `${selectedDayObj.label} (${selectedDayObj.dateNum} ${selectedDayObj.monthName})`
+    : "Hari Ini";
   const activeDayWorkload = plannerData?.days[selectedDateKey];
   const selectedDayTasks = activeDayWorkload?.tasks || [];
   const completedSelectedCount = selectedDayTasks.filter(
@@ -405,36 +381,7 @@ export function UnifiedSmartCalendarPlanner({
         </div>
       </div>
 
-      {/* 2. View Toggle (Semua Minggu Ini vs Hari Ini) */}
-      <div className="flex items-center gap-1 bg-muted/40 p-1 rounded-xl border border-border/50 w-fit">
-        <button
-          type="button"
-          onClick={() => setViewMode("week")}
-          className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-            viewMode === "week"
-              ? "bg-card text-foreground shadow-xs border border-border/60"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          Semua Minggu Ini ({totalWeekTasks})
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setSelectedDateKey(todayKey);
-            setViewMode("day");
-          }}
-          className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-            viewMode === "day" && selectedDateKey === todayKey
-              ? "bg-card text-foreground shadow-xs border border-border/60"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          Hari Ini ({plannerData?.days[todayKey]?.tasks.length || 0})
-        </button>
-      </div>
-
-      {/* 3. 7-Day Calendar Strip (Includes Kemarin, Hari Ini, Besok, Lusa, +3) */}
+      {/* 2. 7-Day Calendar Strip (Includes Kemarin, Hari Ini, Besok, Lusa, +3) */}
       {/* COLOR RULES:
           - Streak Aktif: Hijau (Emerald) border & tint + Checkmark
           - Hari Belum Streak: Golden/Amber dashed border + pulse dot
@@ -445,7 +392,7 @@ export function UnifiedSmartCalendarPlanner({
       */}
       <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
         {calendarDays.map((day) => {
-          const isSelectedDay = day.isSelected && viewMode === "day";
+          const isSelectedDay = day.isSelected;
           const hasWork = day.totalTasks > 0;
           const isAllDone = hasWork && day.completedCount === day.totalTasks;
 
@@ -551,7 +498,6 @@ export function UnifiedSmartCalendarPlanner({
               title={tooltipText}
               onClick={() => {
                 setSelectedDateKey(day.dateKey);
-                setViewMode("day");
               }}
               className={`relative flex flex-col items-center justify-between py-2 sm:py-2.5 px-1 rounded-2xl transition-all cursor-pointer select-none text-center ${cardClasses}`}
             >
@@ -582,170 +528,60 @@ export function UnifiedSmartCalendarPlanner({
         })}
       </div>
 
-      {/* Sleek Mini Status Legend (Single Line, Ultra Clean) */}
-      <div className="flex items-center justify-center gap-2.5 sm:gap-4 pt-1 text-[10px] text-muted-foreground/80 select-none border-t border-border/20">
+      {/* Sleek Mini Status Legend (Clean Single Line without separator dots) */}
+      <div className="flex items-center justify-center gap-3 sm:gap-4.5 pt-1 text-[10px] text-muted-foreground/80 select-none border-t border-border/20">
         <span className="inline-flex items-center gap-1.5 font-medium">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
           <span>Streak Aktif</span>
         </span>
-        <span className="text-muted-foreground/30">•</span>
         <span className="inline-flex items-center gap-1.5 font-medium">
           <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
           <span>Ada Kerja</span>
         </span>
-        <span className="text-muted-foreground/30">•</span>
         <span className="inline-flex items-center gap-1.5 font-medium">
           <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
           <span>Terlewat</span>
         </span>
-        <span className="text-muted-foreground/30">•</span>
         <span className="inline-flex items-center gap-1.5 font-medium">
           <span className="h-1.5 w-1.5 rounded-full bg-primary" />
           <span>Terpilih</span>
         </span>
       </div>
 
-      {/* 4. AI Workload Strategist Insight Card */}
-      {plannerData && (
-        <div
-          className={`rounded-2xl p-3 sm:p-3.5 border text-xs transition-all flex items-start gap-3 ${
-            plannerData.aiTone === "urgent"
-              ? "bg-rose-500/10 border-rose-500/30 text-rose-900 dark:text-rose-200"
-              : plannerData.aiTone === "relaxed"
-              ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-900 dark:text-emerald-200"
-              : "bg-gradient-to-r from-primary/10 via-card to-primary/5 border-primary/20 text-foreground"
-          }`}
-        >
-          <div className="pt-0.5 shrink-0">
-            {plannerData.aiTone === "urgent" ? (
-              <AlertTriangle className="h-4 w-4 text-rose-600 dark:text-rose-400 animate-bounce" />
-            ) : (
-              <Sparkles className="h-4 w-4 text-primary" />
-            )}
-          </div>
-          <div className="flex-1 space-y-1">
-            <div className="flex flex-wrap items-center justify-between gap-1">
-              <span className="font-bold font-heading text-xs">
-                {plannerData.aiTone === "urgent"
-                  ? "Prioritas Mendesak (Overdue Alert)"
-                  : "Rekomendasi AI Strategist"}
-              </span>
-              <span className="text-[10px] font-semibold opacity-75">
-                Kapasitas: {plannerData.dailyCapacityHours} Jam/Hari
-              </span>
-            </div>
-            <p className="text-[11px] leading-relaxed opacity-90">{plannerData.aiInsight}</p>
-          </div>
-        </div>
-      )}
-
-      {/* 5. Tasks List: Either Weekly Grouped or Day Focused */}
+      {/* Tasks List for the Clicked / Selected Date */}
       <div className="space-y-3 pt-1">
-        {viewMode === "week" ? (
-          // ================= WEEKLY SCHEDULE VIEW (Visible for whole week on home) =================
-          <div className="space-y-4">
-            <div className="flex items-center justify-between text-xs font-bold text-foreground">
-              <span className="font-heading flex items-center gap-1.5">
-                <span>Daftar Kerja 1 Minggu:</span>
-              </span>
-              <span className="text-[11px] font-semibold text-muted-foreground">
-                {totalWeekCompleted}/{totalWeekTasks} Selesai
-              </span>
+        <div className="flex items-center justify-between text-xs font-bold text-foreground">
+          <span className="font-heading">
+            Daftar Tugas ({selectedDayLabel}):
+          </span>
+          {selectedDayTasks.length > 0 && (
+            <span className="text-[11px] font-semibold text-muted-foreground">
+              {completedSelectedCount}/{selectedDayTasks.length} Selesai
+            </span>
+          )}
+        </div>
+
+        {selectedDayTasks.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-border/80 p-5 text-center bg-muted/10 space-y-2">
+            <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <CheckCircle2 className="h-4 w-4" />
             </div>
-
-            {totalWeekTasks === 0 ? (
-              <div className="rounded-2xl border border-dashed border-border/80 p-6 text-center bg-muted/10 space-y-2">
-                <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <CheckCircle2 className="h-4 w-4" />
-                </div>
-                <p className="text-xs font-bold text-foreground">Tidak Ada Beban Tugas Minggu Ini</p>
-                <p className="text-[11px] text-muted-foreground max-w-xs mx-auto">
-                  Semua target mingguan Anda telah beres. Tingkatkan XP Anda melalui kuis keahlian atau jelajahi tawaran proyek baru.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {weekTasksByDay.map(({ day, tasks }) => {
-                  if (tasks.length === 0) return null;
-                  const dayCompleted = tasks.filter(
-                    (t) => completedTaskIds.has(t.id) || t.status === "completed"
-                  ).length;
-
-                  return (
-                    <div
-                      key={day.dateKey}
-                      className="rounded-2xl border border-border/60 bg-muted/10 p-3 sm:p-3.5 space-y-2.5"
-                    >
-                      {/* Sub-header for each day with tasks */}
-                      <div className="flex items-center justify-between text-xs font-bold">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`h-2 w-2 rounded-full ${
-                              day.isToday ? "bg-primary animate-pulse" : "bg-amber-500"
-                            }`}
-                          />
-                          <span className="text-foreground font-heading">
-                            {day.label} ({day.dateNum} {day.monthName})
-                          </span>
-                          {day.isToday && (
-                            <span className="text-[9px] font-extrabold bg-primary/15 text-primary px-1.5 py-0.2 rounded-full">
-                              Hari Ini
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-[10px] text-muted-foreground font-semibold">
-                          {dayCompleted}/{tasks.length} Selesai
-                        </span>
-                      </div>
-
-                      {/* Day Tasks List */}
-                      <div className="space-y-2">
-                        {tasks.map((task) => renderTaskCard(task))}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+            <p className="text-xs font-bold text-foreground">Tidak Ada Beban Tugas</p>
+            <p className="text-[11px] text-muted-foreground max-w-xs mx-auto">
+              Jadwal {selectedDayObj?.label?.toLowerCase() || "hari ini"} bebas dari tugas. Anda bisa mengasah skill lewat kuis atau menjelajahi tawaran proyek baru.
+            </p>
+            <div className="pt-1 flex items-center justify-center gap-3 text-xs">
+              <Link href="/freelancer/skills" className="font-bold text-primary hover:underline">
+                Ikuti Kuis (+XP) →
+              </Link>
+              <Link href="/freelancer/explore" className="font-bold text-primary hover:underline">
+                Cari Proyek →
+              </Link>
+            </div>
           </div>
         ) : (
-          // ================= SINGLE DAY VIEW =================
-          <div className="space-y-3">
-            <div className="flex items-center justify-between text-xs font-bold text-foreground">
-              <span className="font-heading">
-                Daftar Tugas (
-                {calendarDays.find((d) => d.dateKey === selectedDateKey)?.label || "Hari Ini"}):
-              </span>
-              {selectedDayTasks.length > 0 && (
-                <span className="text-[11px] font-semibold text-muted-foreground">
-                  {completedSelectedCount}/{selectedDayTasks.length} Selesai
-                </span>
-              )}
-            </div>
-
-            {selectedDayTasks.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-border/80 p-6 text-center bg-muted/10 space-y-2">
-                <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <CheckCircle2 className="h-4 w-4" />
-                </div>
-                <p className="text-xs font-bold text-foreground">Tidak Ada Beban Tugas</p>
-                <p className="text-[11px] text-muted-foreground max-w-xs mx-auto">
-                  Jadwal hari ini bebas dari tugas. Anda bisa mengasah skill lewat kuis atau menjelajahi tawaran proyek baru.
-                </p>
-                <div className="pt-1 flex items-center justify-center gap-3 text-xs">
-                  <Link href="/freelancer/skills" className="font-bold text-primary hover:underline">
-                    Ikuti Kuis (+XP) →
-                  </Link>
-                  <Link href="/freelancer/explore" className="font-bold text-primary hover:underline">
-                    Cari Proyek →
-                  </Link>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {selectedDayTasks.map((task) => renderTaskCard(task))}
-              </div>
-            )}
+          <div className="space-y-2">
+            {selectedDayTasks.map((task) => renderTaskCard(task))}
           </div>
         )}
       </div>
