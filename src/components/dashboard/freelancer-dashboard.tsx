@@ -23,7 +23,6 @@ import {
   BookOpen,
   Check,
   Flame,
-  Wallet,
 } from "lucide-react";
 import Link from "next/link";
 import Grainient from "@/components/ui/Grainient";
@@ -653,59 +652,70 @@ export function FreelancerDashboard() {
             </p>
           </div>
 
-          {/* Quick Metrics Cluster on Hero Right (Frosted Glass Cards) */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3 shrink-0">
-            {/* Stat 1: Streak */}
-            <div className="flex items-center gap-3 rounded-2xl bg-white/10 hover:bg-white/15 backdrop-blur-md border border-white/15 p-3 text-white transition-all shadow-sm">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/25 text-amber-400 border border-amber-400/30 shrink-0">
-                <Flame className="h-4 w-4 fill-amber-400" />
+          {/* Jalur Karir Talenta (Integrated in Hero Header to eliminate duplicate streak/saldo cards) */}
+          <div className="w-full lg:w-[420px] rounded-2xl bg-white/10 hover:bg-white/15 backdrop-blur-md border border-white/20 p-4 sm:p-5 text-white shadow-xl space-y-3 shrink-0 transition-all">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-400/20 text-amber-300 border border-amber-400/30 shrink-0 shadow-xs">
+                  <Award className="h-4 w-4 text-amber-300" />
+                </div>
+                <div className="min-w-0">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-amber-300 block leading-tight">
+                    Jalur Karir Talenta
+                  </span>
+                  <h3 className="text-xs sm:text-sm font-bold text-white truncate leading-tight mt-0.5">
+                    Level {currentLevel} • {currentLevel === 0 ? "Starter" : currentLevel === 1 ? "Creator" : "Verified Pro"}
+                  </h3>
+                </div>
               </div>
-              <div className="min-w-0">
-                <div className="text-sm sm:text-base font-bold text-white leading-tight">
-                  {streakDays} Hari
-                </div>
-                <div className="text-[10px] text-slate-300 font-medium truncate">
-                  Streak Aktif
-                </div>
+              <span className="text-xs font-extrabold text-white bg-white/15 px-2.5 py-1 rounded-xl border border-white/15 font-heading shrink-0 shadow-xs">
+                {currentXP.toLocaleString("id-ID")} <span className="text-[10px] font-normal text-slate-300">/ {nextLevelXP.toLocaleString("id-ID")} XP</span>
+              </span>
+            </div>
+
+            {/* XP Progress Bar */}
+            <div className="space-y-1">
+              <div className="flex items-center justify-between text-[11px] font-semibold text-slate-200">
+                <span>Progres Menuju Level {currentLevel + 1}</span>
+                <span className="text-amber-300 font-bold">{xpPercentage}%</span>
+              </div>
+              <div className="h-2 w-full rounded-full bg-black/35 overflow-hidden border border-white/10 p-0.5">
+                <div
+                  className="h-full bg-gradient-to-r from-amber-400 via-emerald-400 to-blue-400 rounded-full transition-all duration-500 shadow-xs"
+                  style={{ width: `${xpPercentage}%` }}
+                />
               </div>
             </div>
 
-            {/* Stat 2: Active Work / Proposals */}
-            <Link
-              href="/freelancer/my-work"
-              className="group flex items-center gap-3 rounded-2xl bg-white/10 hover:bg-white/15 backdrop-blur-md border border-white/15 p-3 text-white transition-all shadow-sm hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500/25 text-blue-400 border border-blue-400/30 shrink-0 group-hover:bg-blue-500/35 transition-colors">
-                <Briefcase className="h-4 w-4" />
+            {/* 3-Pillar XP Accumulation Breakdown Pills */}
+            <div className="grid grid-cols-3 gap-1.5 pt-0.5 text-[10px]">
+              <div className="rounded-xl bg-white/10 border border-white/15 px-2 py-1.5 text-center">
+                <span className="text-blue-300 block font-bold leading-none">{xpBreakdown.workXP.toLocaleString("id-ID")} XP</span>
+                <span className="text-[9px] text-slate-300 mt-0.5 block">💼 Kerja</span>
               </div>
-              <div className="min-w-0">
-                <div className="text-sm sm:text-base font-bold text-white leading-tight group-hover:text-blue-200 transition-colors">
-                  {timelineItems.length > 0 ? `${timelineItems.length} Kontrak` : "0 Kontrak"}
-                </div>
-                <div className="text-[10px] text-slate-300 font-medium truncate">
-                  {submittedProposals.length > 0 ? `${submittedProposals.length} Proposal` : "Pekerjaan Aktif"}
-                </div>
+              <div className="rounded-xl bg-white/10 border border-white/15 px-2 py-1.5 text-center">
+                <span className="text-violet-300 block font-bold leading-none">{xpBreakdown.quizXP.toLocaleString("id-ID")} XP</span>
+                <span className="text-[9px] text-slate-300 mt-0.5 block">🧪 Kuis</span>
               </div>
-            </Link>
+              <div className="rounded-xl bg-white/10 border border-white/15 px-2 py-1.5 text-center">
+                <span className="text-emerald-300 block font-bold leading-none">{xpBreakdown.learningXP.toLocaleString("id-ID")} XP</span>
+                <span className="text-[9px] text-slate-300 mt-0.5 block">📖 Belajar</span>
+              </div>
+            </div>
 
-            {/* Stat 3: Available Balance */}
-            <Link
-              href="/freelancer/earnings"
-              className="col-span-2 sm:col-span-1 group flex items-center gap-3 rounded-2xl bg-white/10 hover:bg-white/15 backdrop-blur-md border border-white/15 p-3 text-white transition-all shadow-sm hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/25 text-emerald-400 border border-emerald-400/30 shrink-0 group-hover:bg-emerald-500/35 transition-colors">
-                <Wallet className="h-4 w-4" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="text-xs sm:text-sm font-bold text-white leading-tight truncate group-hover:text-emerald-200 transition-colors">
-                  {formatMoney(earnings?.availableBalance ?? 0, "IDR")}
-                </div>
-                <div className="text-[10px] text-slate-300 font-medium flex items-center justify-between gap-1">
-                  <span>Saldo Rekber</span>
-                  <ArrowUpRight className="h-2.5 w-2.5 opacity-70 group-hover:opacity-100 transition-opacity shrink-0" />
-                </div>
-              </div>
-            </Link>
+            {/* Footer hint & Earn XP button */}
+            <div className="flex items-center justify-between gap-3 pt-1 border-t border-white/15">
+              <p className="text-[11px] text-slate-200 leading-tight flex-1">
+                Tinggal <strong className="text-white font-bold">{Math.max(0, nextLevelXP - currentXP).toLocaleString("id-ID")} XP</strong> ke Level {currentLevel + 1}
+              </p>
+              <Link
+                href="/freelancer/skills"
+                className="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-500 via-primary to-indigo-500 hover:brightness-110 px-3.5 py-1.5 text-[11px] font-bold text-white shadow-md shadow-primary/30 border border-white/20 transition-all active:scale-95 cursor-pointer"
+              >
+                <Zap className="h-3 w-3 fill-white" />
+                <span>Earn XP</span>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -1352,63 +1362,6 @@ export function FreelancerDashboard() {
 
           {/* 2. AI Profile & Career Suggestions Box */}
           <AIProfileSuggestions userProfile={user} />
-
-          {/* 3. Level & Career Progression Road */}
-          <div className="rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/5 via-card to-card p-4 sm:p-5 shadow-xs space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Award className="h-4 w-4 text-primary" />
-                <span className="text-xs font-bold uppercase tracking-wider text-primary">
-                  Jalur Karir Talenta
-                </span>
-              </div>
-              <span className="text-xs font-bold text-foreground font-heading">
-                {currentXP.toLocaleString("id-ID")} / {nextLevelXP.toLocaleString("id-ID")} XP
-              </span>
-            </div>
-
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-xs font-semibold">
-                <span className="text-foreground">Level {currentLevel} {currentLevel === 0 ? "Starter" : currentLevel === 1 ? "Creator" : "Verified Pro"}</span>
-                <span className="text-muted-foreground text-[11px]">Level {currentLevel + 1}</span>
-              </div>
-              <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-primary to-indigo-600 rounded-full transition-all duration-500"
-                  style={{ width: `${xpPercentage}%` }}
-                />
-              </div>
-
-              {/* 3-Pillar XP Accumulation Breakdown Pills */}
-              <div className="grid grid-cols-3 gap-1.5 pt-1 text-[10px]">
-                <div className="rounded-lg bg-blue-500/10 border border-blue-500/20 px-2 py-1 text-center">
-                  <span className="text-blue-600 block font-bold leading-none">{xpBreakdown.workXP.toLocaleString("id-ID")} XP</span>
-                  <span className="text-[9px] text-muted-foreground mt-0.5 block">💼 Kerja</span>
-                </div>
-                <div className="rounded-lg bg-violet-500/10 border border-violet-500/20 px-2 py-1 text-center">
-                  <span className="text-violet-600 block font-bold leading-none">{xpBreakdown.quizXP.toLocaleString("id-ID")} XP</span>
-                  <span className="text-[9px] text-muted-foreground mt-0.5 block">🧪 Kuis</span>
-                </div>
-                <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 text-center">
-                  <span className="text-emerald-600 block font-bold leading-none">{xpBreakdown.learningXP.toLocaleString("id-ID")} XP</span>
-                  <span className="text-[9px] text-muted-foreground mt-0.5 block">📖 Belajar</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between gap-3 pt-0.5">
-              <p className="text-[11px] text-muted-foreground leading-tight flex-1">
-                Tinggal <strong className="text-foreground">{Math.max(0, nextLevelXP - currentXP).toLocaleString("id-ID")} XP lagi</strong> menuju Level {currentLevel + 1}.
-              </p>
-              <Link
-                href="/freelancer/skills"
-                className="shrink-0 inline-flex items-center gap-1 rounded-xl bg-primary px-3 py-1.5 text-[11px] font-bold text-white shadow-xs hover:bg-primary/90 transition-all hover:scale-105 active:scale-95"
-              >
-                <Zap className="h-3 w-3" />
-                Earn XP
-              </Link>
-            </div>
-          </div>
         </div>
       </div>
 
