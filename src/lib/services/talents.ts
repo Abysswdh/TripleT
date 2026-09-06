@@ -16,7 +16,7 @@ export interface TalentRecord {
   name: string;
   title: string;
   avatar: string;
-  rating: number;
+  rating: number | string;
   reviewsCount: number;
   hourlyRate: string; // Backward-compatible alias for startingPrice
   hourlyRateNumeric: number;
@@ -154,8 +154,8 @@ export async function getTalents(filters?: TalentFilterOptions): Promise<TalentR
       title: item.headline || "Digital Specialist",
       avatar: (user.avatar_url && !user.avatar_url.includes("photo-1534528741775")) ? user.avatar_url : "/images/default-avatar.svg",
       coverImage: item.cover_image || "https://images.unsplash.com/photo-1557683316-973673baf926?w=1200&auto=format&fit=crop&q=80",
-      rating: Number(item.rating) || 5.0,
-      reviewsCount: item.reviews_count || 0,
+      rating: (Number(item.reviews_count) > 0 && Number(item.rating) > 0) ? Number(Number(item.rating).toFixed(1)) : "-",
+      reviewsCount: Number(item.reviews_count) || 0,
       hourlyRate: formattedPrice,
       hourlyRateNumeric: rateNum,
       startingPrice: formattedPrice,
@@ -202,7 +202,11 @@ export async function getTalents(filters?: TalentFilterOptions): Promise<TalentR
   // Sorting
   if (filters?.sortBy) {
     if (filters.sortBy === "rating") {
-      results.sort((a, b) => b.rating - a.rating);
+      results.sort((a, b) => {
+        const aScore = a.reviewsCount > 0 && a.rating !== "-" ? Number(a.rating) : 0;
+        const bScore = b.reviewsCount > 0 && b.rating !== "-" ? Number(b.rating) : 0;
+        return bScore - aScore;
+      });
     } else if (filters.sortBy === "reviews") {
       results.sort((a, b) => b.reviewsCount - a.reviewsCount);
     } else if (filters.sortBy === "rate_asc") {

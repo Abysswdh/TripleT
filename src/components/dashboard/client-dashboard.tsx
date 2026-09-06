@@ -40,7 +40,7 @@ interface FeaturedTalent {
   location?: string;
   level: "Verified Pro" | "Top Rated" | "Rising Star" | "Level 2 Seller";
   category: string;
-  rating: number;
+  rating: number | string;
   reviewsCount: number;
   completedProjects?: number;
   startingPrice: string;
@@ -61,7 +61,7 @@ interface ProposalApplicant {
   name: string;
   avatar: string;
   role: string;
-  rating: number;
+  rating: number | string;
   reviewsCount: number;
   bidAmount: string;
   deliveryDays: number;
@@ -881,13 +881,21 @@ export function ClientDashboard() {
 
                     {/* Rating & Stats Strip */}
                     <div className="flex items-center justify-between text-xs py-1.5 border-y border-border/40">
-                      <div className="flex items-center gap-1">
-                        <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
-                        <span className="font-bold text-foreground">{tal.rating}</span>
-                        <span className="text-muted-foreground text-[11px]">({tal.reviewsCount})</span>
-                      </div>
+                      {tal.reviewsCount > 0 && tal.rating !== "-" && Number(tal.rating) > 0 ? (
+                        <div className="flex items-center gap-1">
+                          <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
+                          <span className="font-bold text-foreground">{typeof tal.rating === "number" ? tal.rating.toFixed(1) : tal.rating}</span>
+                          <span className="text-muted-foreground text-[11px]">({tal.reviewsCount})</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1 text-muted-foreground">
+                          <Star className="h-3.5 w-3.5 text-muted-foreground/50" />
+                          <span className="font-semibold text-foreground">-</span>
+                          <span className="text-muted-foreground text-[11px]">({tal.reviewsCount || 0})</span>
+                        </div>
+                      )}
                       <span className="text-[11px] text-muted-foreground font-medium">
-                        {tal.completedProjects || 30}+ Selesai
+                        {tal.completedProjects || 0}+ Selesai
                       </span>
                     </div>
 
@@ -1208,10 +1216,17 @@ export function ClientDashboard() {
                             <span className="text-xs font-bold text-primary block">{app.bidAmount}</span>
                             <span className="text-[11px] text-muted-foreground">{app.deliveryDays} hari kerja</span>
                           </div>
-                          <div className="flex items-center gap-1 text-amber-500 text-xs font-semibold">
-                            <Star className="h-3.5 w-3.5 fill-amber-500" />
-                            <span>{app.rating}</span>
-                          </div>
+                          {app.reviewsCount > 0 && app.rating !== "-" && Number(app.rating) > 0 ? (
+                            <div className="flex items-center gap-1 text-amber-500 text-xs font-semibold">
+                              <Star className="h-3.5 w-3.5 fill-amber-500" />
+                              <span>{typeof app.rating === "number" ? app.rating.toFixed(1) : app.rating}</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1 text-muted-foreground text-xs font-medium">
+                              <Star className="h-3.5 w-3.5 text-muted-foreground/50" />
+                              <span>-</span>
+                            </div>
+                          )}
                         </div>
                       </div>
 

@@ -10,7 +10,7 @@ interface TalentMatch {
   name: string;
   role: string;
   avatar: string;
-  rating: number;
+  rating: number | string;
   reviewsCount: number;
   hourlyRate: string;
   skills: string[];
@@ -134,11 +134,19 @@ export default function TalentPage() {
               </div>
 
               <div className="mt-3 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1 text-amber-500 font-semibold">
-                  <Star className="h-3.5 w-3.5 fill-amber-500" />
-                  <span>{talent.rating}</span>
-                  <span className="text-muted-foreground">({talent.reviewsCount})</span>
-                </div>
+                {talent.reviewsCount > 0 && talent.rating !== "-" && Number(talent.rating) > 0 ? (
+                  <div className="flex items-center gap-1 text-amber-500 font-semibold">
+                    <Star className="h-3.5 w-3.5 fill-amber-500" />
+                    <span>{typeof talent.rating === "number" ? talent.rating.toFixed(1) : talent.rating}</span>
+                    <span className="text-muted-foreground">({talent.reviewsCount})</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1 text-muted-foreground font-medium">
+                    <Star className="h-3.5 w-3.5 text-muted-foreground/50" />
+                    <span>-</span>
+                    <span className="text-muted-foreground">({talent.reviewsCount || 0})</span>
+                  </div>
+                )}
                 <span className="font-semibold text-primary">{talent.hourlyRate}</span>
               </div>
 

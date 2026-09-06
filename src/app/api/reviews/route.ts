@@ -67,6 +67,15 @@ export async function POST(req: Request) {
           updated_at: new Date().toISOString(),
         })
         .eq("user_id", revieweeId);
+    } else {
+      await adminClient
+        .from("freelancer_profiles")
+        .update({
+          rating: 0,
+          reviews_count: 0,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("user_id", revieweeId);
     }
 
     return NextResponse.json({ success: true, data: reviewData });

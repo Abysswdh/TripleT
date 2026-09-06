@@ -153,7 +153,9 @@ function ClientTalentContent() {
         if (sortBy === "rate_low") return (a.hourlyRateNumeric || 0) - (b.hourlyRateNumeric || 0);
         if (sortBy === "rate_high") return (b.hourlyRateNumeric || 0) - (a.hourlyRateNumeric || 0);
         if (sortBy === "name") return a.name.localeCompare(b.name);
-        return b.rating - a.rating; // default highest rating
+        const aScore = a.reviewsCount > 0 && a.rating !== "-" ? Number(a.rating) : 0;
+        const bScore = b.reviewsCount > 0 && b.rating !== "-" ? Number(b.rating) : 0;
+        return bScore - aScore; // default highest rating
       });
   }, [talents, searchQuery, selectedCategory, selectedLevel, selectedRateTier, sortBy, user?.id]);
 
@@ -341,11 +343,19 @@ function ClientTalentContent() {
 
                 {/* Rating & Starting Price */}
                 <div className="flex items-center justify-between text-xs py-1 border-y border-border/40">
-                  <div className="flex items-center gap-1 text-amber-500 font-bold">
-                    <Star className="h-3.5 w-3.5 fill-amber-500" />
-                    <span>{talent.rating}</span>
-                    <span className="text-muted-foreground font-normal">({talent.reviewsCount})</span>
-                  </div>
+                  {talent.reviewsCount > 0 && talent.rating !== "-" && Number(talent.rating) > 0 ? (
+                    <div className="flex items-center gap-1 text-amber-500 font-bold">
+                      <Star className="h-3.5 w-3.5 fill-amber-500" />
+                      <span>{typeof talent.rating === "number" ? talent.rating.toFixed(1) : talent.rating}</span>
+                      <span className="text-muted-foreground font-normal">({talent.reviewsCount})</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1 text-muted-foreground font-medium">
+                      <Star className="h-3.5 w-3.5 text-muted-foreground/50" />
+                      <span>-</span>
+                      <span className="text-muted-foreground font-normal">({talent.reviewsCount || 0})</span>
+                    </div>
+                  )}
                   <span className="font-extrabold text-foreground">
                     {talent.hourlyRate?.startsWith("Rp") || talent.hourlyRate?.startsWith("Mulai")
                       ? talent.hourlyRate

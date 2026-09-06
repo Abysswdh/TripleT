@@ -64,7 +64,7 @@ export interface ClientProfileData {
   projectsPosted: number;
   activeProjectsCount: number;
   hireRate: string;
-  rating: number;
+  rating: number | string;
   reviewsCount: number;
   about: string[];
   hiringInterests: string[];
@@ -103,7 +103,7 @@ export function ClientProfileView({ clientId, isOwner = true }: ClientProfileVie
     projectsPosted: 0,
     activeProjectsCount: 0,
     hireRate: "100%",
-    rating: 5.0,
+    rating: "-",
     reviewsCount: 0,
     about: meta.bio ? [meta.bio] : [
       "Perusahaan pemberi kerja terdaftar di ekosistem TripleT."
@@ -293,7 +293,7 @@ export function ClientProfileView({ clientId, isOwner = true }: ClientProfileVie
           hireRate: hireRateText,
           rating: reviewsList.length > 0
             ? Number((reviewsList.reduce((a, b) => a + b.rating, 0) / reviewsList.length).toFixed(1))
-            : 5.0,
+            : "-",
           reviewsCount: reviewsList.length,
           about: (isActualOwner && meta.bio) ? [meta.bio] : (u.bio ? [String(u.bio)] : [
             "Perusahaan pemberi kerja terdaftar di ekosistem TripleT. Mengutamakan kolaborasi profesional, scope kerja terdefinisi jelas, dan pencairan milestone tepat waktu."
@@ -423,8 +423,8 @@ export function ClientProfileView({ clientId, isOwner = true }: ClientProfileVie
 
               {/* Stat 2: Rating */}
               <div className="rounded-2xl border border-border/80 bg-card p-4 text-center space-y-1 shadow-xs hover:border-primary/30 transition-colors">
-                <div className="mx-auto h-7 w-7 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center">
-                  <Star className="h-4 w-4 fill-amber-500" />
+                <div className={`mx-auto h-7 w-7 rounded-lg ${profile.rating !== "-" && profile.reviewsCount > 0 ? "bg-amber-500/10 text-amber-500" : "bg-muted text-muted-foreground"} flex items-center justify-center`}>
+                  <Star className={`h-4 w-4 ${profile.rating !== "-" && profile.reviewsCount > 0 ? "fill-amber-500" : "text-muted-foreground"}`} />
                 </div>
                 <div className="text-lg font-bold text-foreground">{profile.rating}</div>
                 <div className="text-[11px] text-muted-foreground font-medium">

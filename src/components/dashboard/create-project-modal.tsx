@@ -1625,11 +1625,19 @@ export function CreateProjectModal({
                           <div className="min-w-0">
                             <h4 className="text-sm font-bold text-foreground truncate">{talent.name}</h4>
                             <p className="text-xs text-muted-foreground truncate">{talent.role}</p>
-                            <div className="flex items-center gap-1 text-xs font-semibold text-amber-500 mt-0.5">
-                              <Star className="h-3.5 w-3.5 fill-amber-500" />
-                              <span>{talent.rating}</span>
-                              <span className="text-muted-foreground font-normal">({talent.reviewsCount})</span>
-                            </div>
+                            {talent.reviewsCount > 0 && Number(talent.rating) > 0 ? (
+                              <div className="flex items-center gap-1 text-xs font-semibold text-amber-500 mt-0.5">
+                                <Star className="h-3.5 w-3.5 fill-amber-500" />
+                                <span>{typeof talent.rating === "number" ? talent.rating.toFixed(1) : talent.rating}</span>
+                                <span className="text-muted-foreground font-normal">({talent.reviewsCount})</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground mt-0.5">
+                                <Star className="h-3.5 w-3.5 text-muted-foreground/50" />
+                                <span>-</span>
+                                <span className="text-muted-foreground font-normal">({talent.reviewsCount || 0})</span>
+                              </div>
+                            )}
                           </div>
                         </div>
 

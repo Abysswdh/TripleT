@@ -109,6 +109,14 @@ export async function submitContractReview(
               reviews_count: reviewsCount,
             })
             .eq("user_id", params.revieweeId);
+        } else {
+          await supabase
+            .from("freelancer_profiles")
+            .update({
+              rating: 0,
+              reviews_count: 0,
+            })
+            .eq("user_id", params.revieweeId);
         }
       } catch (profErr) {
         console.warn("[reviews] Note: freelancer_profiles stats synced via DB trigger:", profErr);

@@ -68,7 +68,8 @@ export interface ProjectRecord {
     avatarUrl?: string;
     location?: string;
     headline?: string;
-    rating?: number;
+    rating?: number | string;
+    reviewsCount?: number;
     completedProjects?: number;
     skills?: string[];
   };
@@ -273,6 +274,11 @@ function formatProjectRecord(p: any): ProjectRecord {
     ? flUser?.freelancer_profile[0]
     : flUser?.freelancer_profile;
 
+  const revCount = Number(flProf?.reviews_count) || 0;
+  const rawRating = Number(flProf?.rating) || 0;
+  const hasReviews = revCount > 0 && rawRating > 0;
+  const rating = hasReviews ? Number(rawRating.toFixed(1)) : "-";
+
   const freelancer = flUser
     ? {
         id: flUser.id,
@@ -280,7 +286,8 @@ function formatProjectRecord(p: any): ProjectRecord {
         avatarUrl: flUser.avatar_url,
         location: flUser.location || "Indonesia",
         headline: flProf?.headline || "Verified Talent",
-        rating: Number(flProf?.rating) || 5.0,
+        rating,
+        reviewsCount: revCount,
         completedProjects: Number(flProf?.completed_projects) || 0,
         skills: flProf?.skills || [],
       }

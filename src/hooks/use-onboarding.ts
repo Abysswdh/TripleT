@@ -342,7 +342,7 @@ export function useOnboarding() {
             organization: eduText,
             cover_image: userBanner,
             completed_projects: 0,
-            rating: 5.0,
+            rating: 0,
             reviews_count: 0,
           },
           { onConflict: "user_id" }
@@ -388,7 +388,7 @@ export function useOnboarding() {
                 organization: "Profesional",
                 cover_image: userBanner,
                 completed_projects: 0,
-                rating: 5.0,
+                rating: 0,
                 reviews_count: 0,
               },
               { onConflict: "user_id" }

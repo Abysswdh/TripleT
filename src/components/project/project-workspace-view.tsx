@@ -1885,12 +1885,19 @@ export function ProjectWorkspaceView() {
                           <p className="text-xs text-muted-foreground">{applicant.freelancerTitle}</p>
 
                           <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1.5">
-                            <span className="flex items-center gap-1 text-amber-500 font-bold">
-                              <Star className="h-3 w-3 fill-amber-500" />
-                              {applicant.freelancerRating.toFixed(1)}
-                            </span>
+                            {applicant.freelancerReviewsCount > 0 && applicant.freelancerRating !== "-" && Number(applicant.freelancerRating) > 0 ? (
+                              <span className="flex items-center gap-1 text-amber-500 font-bold">
+                                <Star className="h-3 w-3 fill-amber-500" />
+                                {typeof applicant.freelancerRating === "number" ? applicant.freelancerRating.toFixed(1) : applicant.freelancerRating}
+                              </span>
+                            ) : (
+                              <span className="flex items-center gap-1 text-muted-foreground font-medium">
+                                <Star className="h-3 w-3 text-muted-foreground/50" />
+                                -
+                              </span>
+                            )}
                             <span>•</span>
-                            <span>{applicant.freelancerReviewsCount} Proyek Selesai</span>
+                            <span>{applicant.freelancerReviewsCount} Review</span>
                           </div>
 
                           {/* Skills */}
@@ -2393,13 +2400,23 @@ export function ProjectWorkspaceView() {
                           <p className="text-xs text-muted-foreground truncate">
                             {project.freelancer.headline}
                           </p>
-                          <div className="flex items-center gap-2 text-xs text-amber-500 font-semibold mt-1">
-                            <Star className="h-3 w-3 fill-amber-500" />
-                            {project.freelancer.rating?.toFixed(1) || "5.0"}
-                            <span className="text-muted-foreground font-normal">
-                              • {project.freelancer.completedProjects || 0} proyek
-                            </span>
-                          </div>
+                          {project.freelancer.rating && project.freelancer.rating !== "-" && Number(project.freelancer.rating) > 0 ? (
+                            <div className="flex items-center gap-2 text-xs text-amber-500 font-semibold mt-1">
+                              <Star className="h-3 w-3 fill-amber-500" />
+                              {typeof project.freelancer.rating === "number" ? project.freelancer.rating.toFixed(1) : project.freelancer.rating}
+                              <span className="text-muted-foreground font-normal">
+                                • {project.freelancer.completedProjects || 0} proyek
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium mt-1">
+                              <Star className="h-3 w-3 text-muted-foreground/50" />
+                              -
+                              <span className="text-muted-foreground font-normal">
+                                • {project.freelancer.completedProjects || 0} proyek
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div className="flex gap-2">

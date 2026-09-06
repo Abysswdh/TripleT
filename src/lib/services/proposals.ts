@@ -9,7 +9,7 @@ export interface ProposalItem {
   freelancerName: string;
   freelancerAvatar: string;
   freelancerTitle: string;
-  freelancerRating: number;
+  freelancerRating: number | string;
   freelancerReviewsCount: number;
   freelancerSkills: string[];
   bidAmount: number;
@@ -232,8 +232,8 @@ export async function getProposalsForProject(projectId: string): Promise<Proposa
       freelancerName: flUser.full_name || "Specialist Freelancer",
       freelancerAvatar: (flUser.avatar_url && !flUser.avatar_url.includes("photo-1534528741775")) ? flUser.avatar_url : "/images/default-avatar.svg",
       freelancerTitle: flProf.headline || "Verified Specialist",
-      freelancerRating: Number(flProf.rating) || 5.0,
-      freelancerReviewsCount: flProf.reviews_count || 0,
+      freelancerRating: (Number(flProf.reviews_count) > 0 && Number(flProf.rating) > 0) ? Number(Number(flProf.rating).toFixed(1)) : "-",
+      freelancerReviewsCount: Number(flProf.reviews_count) || 0,
       freelancerSkills: p.skills?.length ? p.skills : (flProf.skills || []),
       bidAmount: p.bid_amount,
       bidDisplay: p.bid_display || `Rp ${p.bid_amount?.toLocaleString("id-ID")}`,
