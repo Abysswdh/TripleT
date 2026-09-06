@@ -406,45 +406,32 @@ export function UnifiedSmartCalendarPlanner({
       </div>
 
       {/* 2. View Toggle (Semua Minggu Ini vs Hari Ini) */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="inline-flex items-center gap-1 bg-muted/40 p-1 rounded-xl border border-border/50">
-          <button
-            type="button"
-            onClick={() => setViewMode("week")}
-            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              viewMode === "week"
-                ? "bg-card text-foreground shadow-xs border border-border/60"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Semua Minggu Ini ({totalWeekTasks})
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedDateKey(todayKey);
-              setViewMode("day");
-            }}
-            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              viewMode === "day" && selectedDateKey === todayKey
-                ? "bg-card text-foreground shadow-xs border border-border/60"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Hari Ini ({plannerData?.days[todayKey]?.tasks.length || 0})
-          </button>
-        </div>
-
-        {viewMode === "day" && (
-          <button
-            type="button"
-            onClick={() => setViewMode("week")}
-            className="text-xs font-bold text-primary hover:underline inline-flex items-center gap-1"
-          >
-            <span>Lihat Seluruh Minggu</span>
-            <ChevronRight className="h-3 w-3" />
-          </button>
-        )}
+      <div className="flex items-center gap-1 bg-muted/40 p-1 rounded-xl border border-border/50 w-fit">
+        <button
+          type="button"
+          onClick={() => setViewMode("week")}
+          className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            viewMode === "week"
+              ? "bg-card text-foreground shadow-xs border border-border/60"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Semua Minggu Ini ({totalWeekTasks})
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setSelectedDateKey(todayKey);
+            setViewMode("day");
+          }}
+          className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            viewMode === "day" && selectedDateKey === todayKey
+              ? "bg-card text-foreground shadow-xs border border-border/60"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Hari Ini ({plannerData?.days[todayKey]?.tasks.length || 0})
+        </button>
       </div>
 
       {/* 3. 7-Day Calendar Strip (Includes Kemarin, Hari Ini, Besok, Lusa, +3) */}
