@@ -154,10 +154,17 @@ export async function computeMRPPlan(params: {
     }
   }
 
-  // 3. Check Profile Completion Gaps (KTP, portfolio, avatar, headline)
+  // 3. Stagger Profile Completion Gaps (KTP, portfolio, avatar) across sequential days
   const profileTasks: ScheduledTaskItem[] = [];
   const profile = params.userProfile || {};
   const authUser = params.userAuth || {};
+
+  // Compute date keys for Day 0 (today), Day 1, Day 2, etc.
+  const getDateKeyAtOffset = (offsetDays: number) => {
+    const d = new Date(today);
+    d.setDate(today.getDate() + offsetDays);
+    return formatLocalDateKey(d);
+  };
 
   const isKtpVerified = authUser?.is_verified || profile?.is_verified;
   if (!isKtpVerified) {
@@ -166,11 +173,11 @@ export async function computeMRPPlan(params: {
       title: "Verifikasi Identitas & KTP",
       description: "Tingkatkan kepercayaan klien & buka badge 'Verified Talent'.",
       category: "profile",
-      dateKey: todayKey,
+      dateKey: getDateKeyAtOffset(0), // Day 0: Hari Ini
       status: "pending",
       isOverdue: false,
       daysLate: 0,
-      priority: "medium",
+      priority: "high",
       estimatedMinutes: 15,
       xpReward: 100,
       actionType: "link",
@@ -185,7 +192,7 @@ export async function computeMRPPlan(params: {
       title: "Tambahkan Tautan Portofolio",
       description: "Klien UMKM 3x lebih sering memilih talenta dengan portofolio terhubung.",
       category: "profile",
-      dateKey: todayKey,
+      dateKey: getDateKeyAtOffset(1), // Day 1: Besok
       status: "pending",
       isOverdue: false,
       daysLate: 0,
@@ -204,7 +211,7 @@ export async function computeMRPPlan(params: {
       title: "Unggah Foto Profil Profesional",
       description: "Foto ramah dan jelas meningkatkan daya pikat proposal Anda.",
       category: "profile",
-      dateKey: todayKey,
+      dateKey: getDateKeyAtOffset(3), // Day 3
       status: "pending",
       isOverdue: false,
       daysLate: 0,
@@ -216,7 +223,7 @@ export async function computeMRPPlan(params: {
     });
   }
 
-  // 4. Check Skill Verification / Quiz Gaps
+  // 4. Check Skill Verification / Quiz Gaps (Scheduled for Day 2: Lusa)
   const quizTasks: ScheduledTaskItem[] = [];
   const verifiedSkills = profile?.verified_skills || [];
   if (verifiedSkills.length === 0) {
@@ -225,7 +232,7 @@ export async function computeMRPPlan(params: {
       title: "Uji Kompetensi Kuis Keahlian",
       description: "Selesaikan 1 kuis singkat (5 menit) untuk melipatgandakan peluang lolos seleksi.",
       category: "skill_quiz",
-      dateKey: todayKey,
+      dateKey: getDateKeyAtOffset(2), // Day 2: Lusa
       status: "pending",
       isOverdue: false,
       daysLate: 0,
@@ -234,6 +241,25 @@ export async function computeMRPPlan(params: {
       xpReward: 150,
       actionType: "quiz",
       actionUrl: "/freelancer/skills",
+    });
+  }
+
+  // Optional: Add weekly discovery goals for later days if contract work is still light
+  if (activeContracts.length === 0) {
+    quizTasks.push({
+      id: "explore-task-market",
+      title: "Eksplorasi Proyek & Ajukan Tawaran",
+      description: "Lihat tawaran proyek UMKM terverifikasi dan kirim minimal 1 proposal terarah.",
+      category: "skill_quiz",
+      dateKey: getDateKeyAtOffset(4), // Day 4
+      status: "pending",
+      isOverdue: false,
+      daysLate: 0,
+      priority: "low",
+      estimatedMinutes: 25,
+      xpReward: 80,
+      actionType: "link",
+      actionUrl: "/freelancer/explore",
     });
   }
 
