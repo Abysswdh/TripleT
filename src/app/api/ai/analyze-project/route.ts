@@ -33,7 +33,7 @@ Deskripsi: "${description || "-"}"
 
 Klasifikasikan ke format JSON (hanya kembalikan JSON murni tanpa markdown):
 {
-  "category": "Desain Grafis & Branding" | "Foto, Video & Kreatif" | "Tugas Lapangan & On-Site" | "Web & Digital Engineering" | "Penulisan & Virtual Admin" | "Pemasaran & Bisnis UMKM",
+  "category": "Desain & Branding" | "Foto & Video Kreatif" | "Tugas Lokal / On-Site" | "Web & IT Engineering" | "Penulisan & Admin" | "Marketing & Promosi",
   "difficulty": "Starter" | "Standard" | "Enterprise",
   "experienceLevel": "Junior" | "Intermediate" | "Senior",
   "suggestedSkills": ["skill1", "skill2", "skill3"],

@@ -1,3 +1,5 @@
+import { canonicalizeProjectCategory } from "@/lib/constants/categories";
+
 export interface AIAnalysisResponse {
   category: string;
   difficulty: "Starter" | "Standard" | "Enterprise";
@@ -11,6 +13,12 @@ export interface AIAnalysisResponse {
 }
 
 const VALID_CATEGORIES = [
+  "Desain & Branding",
+  "Foto & Video Kreatif",
+  "Tugas Lokal / On-Site",
+  "Web & IT Engineering",
+  "Penulisan & Admin",
+  "Marketing & Promosi",
   "Desain Grafis & Branding",
   "Foto, Video & Kreatif",
   "Tugas Lapangan & On-Site",
@@ -61,7 +69,7 @@ export function analyzeProjectLocally(title: string, description: string = ""): 
   if (isDesign) {
     const isFullBranding = hasAny(["full brand", "identitas brand", "brand guideline", "packaging 5", "rebranding"]);
     return {
-      category: "Desain Grafis & Branding",
+      category: "Desain & Branding",
       difficulty: isFullBranding ? "Standard" : "Starter",
       experienceLevel: isFullBranding ? "Intermediate" : "Junior",
       suggestedSkills: isFullBranding
@@ -88,7 +96,7 @@ export function analyzeProjectLocally(title: string, description: string = ""): 
 
   if (isEnterpriseTech) {
     return {
-      category: "Web & Digital Engineering",
+      category: "Web & IT Engineering",
       difficulty: "Enterprise",
       experienceLevel: "Senior",
       suggestedSkills: ["Next.js", "TypeScript", "PostgreSQL", "React", "REST API", "Tailwind CSS"],
@@ -113,7 +121,7 @@ export function analyzeProjectLocally(title: string, description: string = ""): 
   if (isWebDev) {
     const isMediumWeb = hasAny(["company profile", "profil bisnis", "toko online", "woocommerce", "dashboard"]);
     return {
-      category: "Web & Digital Engineering",
+      category: "Web & IT Engineering",
       difficulty: isMediumWeb ? "Standard" : "Starter",
       experienceLevel: isMediumWeb ? "Intermediate" : "Junior",
       suggestedSkills: isMediumWeb ? ["WordPress", "React", "Tailwind CSS", "HTML/CSS"] : ["HTML/CSS", "WordPress", "Landing Page"],
@@ -144,7 +152,7 @@ export function analyzeProjectLocally(title: string, description: string = ""): 
   if (isFieldTask) {
     const isLargeSurvey = hasAny(["banyak titik", "10 lokasi", "survey lengkap", "riset lapangan"]);
     return {
-      category: "Tugas Lapangan & On-Site",
+      category: "Tugas Lokal / On-Site",
       difficulty: isLargeSurvey ? "Standard" : "Starter",
       experienceLevel: isLargeSurvey ? "Intermediate" : "Junior",
       suggestedSkills: ["Fotografi Smartphone", "Survei Lapangan", "Komunikasi Lokal", "Verifikasi Alamat", "Mobilitas Cepat"],
@@ -174,7 +182,7 @@ export function analyzeProjectLocally(title: string, description: string = ""): 
   if (isVideoOrPhoto) {
     const isBigVideo = hasAny(["iklan tv", "dokumenter", "cinematic 4k", "banyak video", "paket bulanan"]);
     return {
-      category: "Foto, Video & Kreatif",
+      category: "Foto & Video Kreatif",
       difficulty: isBigVideo ? "Standard" : "Starter",
       experienceLevel: isBigVideo ? "Intermediate" : "Junior",
       suggestedSkills: ["CapCut", "Premiere Pro", "Video Editing", "Color Grading", "Product Photo"],
@@ -203,7 +211,7 @@ export function analyzeProjectLocally(title: string, description: string = ""): 
   if (isWritingOrAdmin) {
     const isBigWriting = hasAny(["10 artikel", "skripsi", "e-book", "riset mendalam"]);
     return {
-      category: "Penulisan & Virtual Admin",
+      category: "Penulisan & Admin",
       difficulty: isBigWriting ? "Standard" : "Starter",
       experienceLevel: isBigWriting ? "Intermediate" : "Junior",
       suggestedSkills: ["Copywriting", "SEO Content", "Microsoft Excel", "Google Sheets", "Data Entry", "Penerjemahan"],
@@ -230,7 +238,7 @@ export function analyzeProjectLocally(title: string, description: string = ""): 
 
   if (isMarketing) {
     return {
-      category: "Pemasaran & Bisnis UMKM",
+      category: "Marketing & Promosi",
       difficulty: "Standard",
       experienceLevel: "Intermediate",
       suggestedSkills: ["Meta Ads", "Instagram Marketing", "Google Ads", "Analisis Pasar", "Canva"],
@@ -251,7 +259,7 @@ export function analyzeProjectLocally(title: string, description: string = ""): 
 
   // Default Universal Fallback
   return {
-    category: "Desain Grafis & Branding",
+    category: "Desain & Branding",
     difficulty: "Starter",
     experienceLevel: "Junior",
     suggestedSkills: ["Canva", "Kreatif", "Tepat Waktu"],
@@ -280,6 +288,7 @@ export async function analyzeProjectBrief(
 ): Promise<AIAnalysisResponse> {
   // 1. Instant client-side analysis
   const localResult = analyzeProjectLocally(title, description);
+  localResult.category = canonicalizeProjectCategory(localResult.category);
 
   // If title is too short, return local immediately
   if (!title.trim() || title.trim().length < 4) {
@@ -297,6 +306,7 @@ export async function analyzeProjectBrief(
     if (res.ok) {
       const data = await res.json();
       if (validateAIResponse(data)) {
+        data.category = canonicalizeProjectCategory(data.category);
         return data;
       }
     }

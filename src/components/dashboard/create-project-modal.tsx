@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import { analyzeProjectBrief } from "@/lib/services/ai-project-analyzer";
+import { canonicalizeProjectCategory } from "@/lib/constants/categories";
 import { createClient } from "@/lib/supabase/client";
 import logoWithoutText from "@/assets/logo_wo_text.svg";
 
@@ -328,7 +329,8 @@ export function CreateProjectModal({
 
       if (analysis) {
         // Step 1 Updates
-        setCategory(analysis.category);
+        const canonicalCat = canonicalizeProjectCategory(analysis.category);
+        setCategory(canonicalCat);
         setDifficulty(analysis.difficulty);
 
         // Step 2 Objectives Update if standard
@@ -350,7 +352,7 @@ export function CreateProjectModal({
         // Step 5 Timeline Updates
         if (analysis.suggestedDurationDays) {
           setDurationDays(analysis.suggestedDurationDays.toString());
-          setGanttTasks(computeSprintTasks(analysis.category, analysis.suggestedDurationDays));
+          setGanttTasks(computeSprintTasks(canonicalCat, analysis.suggestedDurationDays));
         }
 
         // Step 6 Budget Updates
@@ -397,7 +399,7 @@ export function CreateProjectModal({
           setTitle(initialData.title);
           executeAiAutoTuning(initialData.title);
         }
-        if (initialData.category !== undefined) setCategory(initialData.category);
+        if (initialData.category !== undefined) setCategory(canonicalizeProjectCategory(initialData.category));
         if (initialData.description !== undefined) setDescription(initialData.description);
         if (initialData.skills !== undefined && initialData.skills.length > 0) setSelectedSkills(initialData.skills);
         if (initialData.budget !== undefined) setBudget(initialData.budget);
@@ -406,7 +408,7 @@ export function CreateProjectModal({
       }
       // Initialize Gantt tasks
       const days = parseInt(initialData?.durationDays || durationDays || "3", 10);
-      setGanttTasks(computeSprintTasks(initialData?.category || category, days));
+      setGanttTasks(computeSprintTasks(canonicalizeProjectCategory(initialData?.category || category), days));
     }
   }, [isOpen, initialData]);
 
@@ -879,7 +881,7 @@ export function CreateProjectModal({
                 <div className="grid grid-cols-2 gap-2.5">
                   {TOP_CATEGORIES.map((cat) => {
                     const Icon = cat.icon;
-                    const isSelected = category === cat.id || category.includes(cat.label);
+                    const isSelected = category === cat.id || canonicalizeProjectCategory(category) === cat.id;
 
                     return (
                       <div
@@ -906,14 +908,6 @@ export function CreateProjectModal({
                     );
                   })}
                 </div>
-
-                {/* If selected category is outside top 6, show a badge */}
-                {!TOP_CATEGORIES.some((c) => c.id === category) && (
-                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-primary/10 border border-primary/20 text-xs">
-                    <span className="text-muted-foreground">Kategori Kustom Terpilih:</span>
-                    <span className="font-bold text-primary">{category}</span>
-                  </div>
-                )}
               </div>
 
               {/* Enlarged Scale & Recruitment Mode Grid */}

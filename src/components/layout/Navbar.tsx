@@ -23,7 +23,8 @@ import {
   Menu,
   X,
   ArrowLeftRight,
-  User
+  User,
+  Calendar
 } from "lucide-react";
 import { NotificationDropdown } from "@/components/layout/NotificationDropdown";
 
@@ -275,6 +276,7 @@ export function Navbar() {
 
   const freelancerLinks: NavLink[] = [
     { href: "/freelancer/dashboard", label: t("nav.overview", "Overview"), icon: LayoutDashboard },
+    { href: "/freelancer/calendar", label: t("nav.calendar", "Kalender Kerja"), icon: Calendar },
     { href: "/freelancer/explore", label: t("nav.exploreQuests", "Explore Projects"), icon: Compass },
     { href: "/freelancer/my-work", label: t("nav.myWork", "My Work"), icon: Briefcase },
     { href: "/freelancer/skills", label: t("nav.skills", "Skills"), icon: Award },

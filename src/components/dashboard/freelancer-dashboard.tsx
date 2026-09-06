@@ -33,7 +33,8 @@ import { getSavedQuizResults, fetchUserQuizResults, SKILL_QUIZZES, type QuizAtte
 import { getFreelancerEarnings, type EarningsSummary } from "@/lib/services/earnings";
 import { getFreelancerProposals, type FreelancerProposalItem } from "@/lib/services/proposals";
 import { formatRelativeTime } from "@/lib/utils";
-import { DoableStreakTracker } from "@/components/dashboard/doable-streak-tracker";
+import { UnifiedSmartCalendarPlanner } from "@/components/dashboard/unified-calendar-planner";
+import { AlertTriangle } from "lucide-react";
 
 interface QuestOpportunity {
   id: string;
@@ -104,6 +105,7 @@ export function FreelancerDashboard() {
   const [timelineItems, setTimelineItems] = useState<TimelineActionItem[]>(initialTimelineItems);
   const [dailyMissions, setDailyMissions] = useState<DailyMission[]>(initialMissions);
   const [submittedProposals, setSubmittedProposals] = useState<FreelancerProposalItem[]>([]);
+  const [rawContracts, setRawContracts] = useState<any[]>([]);
 
   // Submit Modal State
   const [submitModalOpen, setSubmitModalOpen] = useState(false);
@@ -155,28 +157,39 @@ export function FreelancerDashboard() {
         if (liveContracts && liveContracts.length > 0) {
           // Only active contracts that are not completed appear in the Pekerjaan Saya dashboard timeline
           const activeContracts = liveContracts.filter((c) => c.status === "active");
+          setRawContracts(activeContracts);
 
           const mappedTimeline: TimelineActionItem[] = activeContracts.flatMap((c) =>
             c.milestones
               .filter((m) => m.status !== "completed")
-              .map((m, idx) => ({
-                id: m.id,
-                projectTitle: c.projectTitle,
-                clientName: c.clientName,
-                milestoneTitle: m.title,
-                milestoneNumber: idx + 1,
-                totalMilestones: c.milestones.length || 3,
-                amount: m.amount || Math.round(c.totalAmount / (c.milestones.length || 1)),
-                currency: "IDR" as const,
-                dueDate: m.dueDate || "3 hari lagi",
-                urgency: (m.status === "submitted" ? "review" : "normal") as "review" | "normal" | "urgent",
-                progress: m.status === "submitted" ? 100 : c.progress || 35,
-                tasksChecklist: [
-                  { id: `${m.id}-1`, title: "Setup arsitektur dan komponen", done: m.status === "submitted" },
-                  { id: `${m.id}-2`, title: "Integrasi API & logic", done: m.status === "submitted" },
-                  { id: `${m.id}-3`, title: "Testing dan penyerahan", done: false }
-                ],
-              }))
+              .map((m, idx) => {
+                let isOverdue = false;
+                if (m.dueDate) {
+                  const d = new Date(m.dueDate);
+                  d.setHours(0, 0, 0, 0);
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  if (d < today) isOverdue = true;
+                }
+                return {
+                  id: m.id,
+                  projectTitle: c.projectTitle,
+                  clientName: c.clientName,
+                  milestoneTitle: m.title,
+                  milestoneNumber: idx + 1,
+                  totalMilestones: c.milestones.length || 3,
+                  amount: m.amount || Math.round(c.totalAmount / (c.milestones.length || 1)),
+                  currency: "IDR" as const,
+                  dueDate: isOverdue ? "⚠️ Terlambat" : (m.dueDate || "3 hari lagi"),
+                  urgency: (m.status === "submitted" ? "review" : isOverdue ? "urgent" : "normal") as "review" | "normal" | "urgent",
+                  progress: m.status === "submitted" ? 100 : c.progress || 35,
+                  tasksChecklist: [
+                    { id: `${m.id}-1`, title: "Setup arsitektur dan komponen", done: m.status === "submitted" },
+                    { id: `${m.id}-2`, title: "Integrasi API & logic", done: m.status === "submitted" },
+                    { id: `${m.id}-3`, title: "Testing dan penyerahan", done: false }
+                  ],
+                };
+              })
           );
           setTimelineItems(mappedTimeline);
 
@@ -644,7 +657,7 @@ export function FreelancerDashboard() {
                     <div
                       key={item.id}
                       className={`rounded-3xl border p-5 sm:p-6 shadow-sm transition-all relative overflow-hidden ${isUrgent
-                          ? "border-amber-500/40 bg-gradient-to-br from-amber-500/5 via-card to-card hover:border-amber-500/60"
+                          ? "border-rose-500/50 bg-gradient-to-br from-rose-500/10 via-card to-card hover:border-rose-500/70 ring-1 ring-rose-500/20 shadow-xs shadow-rose-500/10"
                           : isReview
                             ? "border-emerald-500/30 bg-emerald-500/5 hover:border-emerald-500/50"
                             : "border-border/70 bg-card hover:border-primary/40"
@@ -655,13 +668,13 @@ export function FreelancerDashboard() {
                         <div className="flex items-center gap-2">
                           <span
                             className={`rounded-lg px-2.5 py-1 text-xs font-bold inline-flex items-center gap-1.5 ${isUrgent
-                                ? "bg-amber-500/15 text-amber-700 dark:text-amber-300"
+                                ? "bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 animate-pulse font-extrabold"
                                 : isReview
                                   ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
                                   : "bg-primary/10 text-primary"
                               }`}
                           >
-                            <Clock className="h-3.5 w-3.5" />
+                            {isUrgent ? <AlertTriangle className="h-3.5 w-3.5" /> : <Clock className="h-3.5 w-3.5" />}
                             <span>{item.dueDate}</span>
                           </span>
 
@@ -1069,113 +1082,17 @@ export function FreelancerDashboard() {
         {/* RIGHT COLUMN: STICKY GUIDE (Weekly Streak Tracker, Misi Harian, Level)    */}
         {/* ========================================================================= */}
         <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-20">
-          {/* 1. Doable Streak & Activity Tracker (Seminggu dulu + Expand Sebulan) */}
-          <DoableStreakTracker
+          {/* 1. Unified Smart Calendar & MRP Workload Planner (Tugas Hari Ini + Streak + Kalender Harian) */}
+          <UnifiedSmartCalendarPlanner
             streakDays={streakDays}
             activeDates={heatmapData.activeDates}
             totalContributions={totalContributions}
-            isOwner={true}
-            userCreatedAt={user?.created_at}
+            activeContracts={rawContracts}
+            userProfile={user}
+            onOpenSubmitMilestone={(target) => {
+              handleOpenSubmit(target as any);
+            }}
           />
-          {/* 2. Misi Harian / Daily Quest Checklist */}
-          <div id="misi-harian-section" className="rounded-3xl border border-border/70 bg-card p-5 sm:p-6 shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-border/40 pb-3">
-              <div className="flex items-center gap-2">
-                <Target className="h-4 w-4 text-primary" />
-                <h3 className="text-sm font-bold text-foreground font-heading">Misi Harian</h3>
-              </div>
-              {dailyMissions.length > 0 && (
-                <span className="text-xs font-semibold text-primary bg-primary/10 px-2.5 py-0.5 rounded-full">
-                  {completedMissionsCount}/{dailyMissions.length} Selesai
-                </span>
-              )}
-            </div>
-
-            {dailyMissions.length === 0 ? (
-              <div className="text-center py-6 px-3 space-y-2 rounded-2xl bg-muted/20 border border-border/50">
-                <div className="h-10 w-10 rounded-2xl bg-muted text-muted-foreground flex items-center justify-center mx-auto">
-                  <Briefcase className="h-5 w-5" />
-                </div>
-                <h4 className="text-xs font-bold text-foreground">Tidak Ada Misi Kontrak Aktif</h4>
-                <p className="text-[11px] text-muted-foreground leading-relaxed max-w-xs mx-auto">
-                  Misi harian hanya muncul ketika Anda memiliki kontrak aktif dengan klien dan terdapat tugas atau penyerahan milestone yang harus dikerjakan hari ini.
-                </p>
-                <Link
-                  href="/freelancer/explore"
-                  className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline pt-1"
-                >
-                  <span>Cari Proyek & Ajukan Proposal</span>
-                  <ChevronRight className="h-3 w-3" />
-                </Link>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {dailyMissions.map((mission) => (
-                  <div
-                    key={mission.id}
-                    className={`p-3.5 rounded-2xl border transition-all flex items-start gap-3 ${mission.completed
-                        ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-800 dark:text-emerald-300"
-                        : "bg-muted/20 border-border/60 hover:bg-muted/40"
-                      }`}
-                  >
-                    <div className="pt-0.5 shrink-0">
-                      {mission.completed ? (
-                        <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                      ) : (
-                        <CircleDot className="h-4 w-4 text-muted-foreground" />
-                      )}
-                    </div>
-
-                    <div className="flex-1 min-w-0 space-y-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <h4
-                          className={`text-xs font-bold truncate ${mission.completed ? "line-through opacity-70" : "text-foreground"
-                            }`}
-                        >
-                          {mission.title}
-                        </h4>
-                        <span className="text-[10px] font-semibold text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded-md shrink-0 flex items-center gap-1">
-                          <Zap className="h-3 w-3" />
-                          +{mission.xpReward} XP
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-muted-foreground leading-relaxed">
-                        {mission.description}
-                      </p>
-
-                      {!mission.completed && mission.actionType === "checkin" && (
-                        <button
-                          onClick={() => {
-                            const tl = timelineItems.find((i) => i.tasksChecklist.some((t) => t.id === mission.actionTarget));
-                            if (tl && mission.actionTarget) {
-                              toggleTaskCheck(tl.id, mission.actionTarget);
-                            }
-                          }}
-                          className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
-                        >
-                          <Check className="h-3 w-3" />
-                          <span>Tandai Task Selesai (+50 XP)</span>
-                        </button>
-                      )}
-
-                      {!mission.completed && mission.actionType === "submit" && (
-                        <button
-                          onClick={() => {
-                            const target = timelineItems.find((i) => i.id === mission.actionTarget);
-                            if (target) handleOpenSubmit(target);
-                          }}
-                          className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
-                        >
-                          <span>Serahkan Milestone (+150 XP)</span>
-                          <ChevronRight className="h-3 w-3" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
 
           {/* 3. Level & Career Progression Road */}
           <div className="rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/5 via-card to-card p-5 sm:p-6 shadow-sm space-y-4">

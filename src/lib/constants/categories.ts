@@ -261,3 +261,111 @@ export function matchCategory(
 
   return false;
 }
+
+/**
+ * Normalizes any category string (from AI, search, or legacy forms)
+ * strictly into one of the 6 official primary UI categories.
+ */
+export function canonicalizeProjectCategory(raw?: string | null): string {
+  if (!raw) return "Desain & Branding";
+  const str = raw.trim().toLowerCase();
+
+  if (
+    str.includes("desain") ||
+    str.includes("design") ||
+    str.includes("grafis") ||
+    str.includes("brand") ||
+    str.includes("logo") ||
+    str.includes("poster") ||
+    str.includes("kemasan") ||
+    str.includes("packaging") ||
+    str.includes("banner") ||
+    str.includes("feed") ||
+    str.includes("ui") ||
+    str.includes("ux") ||
+    str.includes("figma") ||
+    str.includes("canva")
+  ) {
+    return "Desain & Branding";
+  }
+
+  if (
+    str.includes("foto") ||
+    str.includes("photo") ||
+    str.includes("video") ||
+    str.includes("reels") ||
+    str.includes("tiktok") ||
+    str.includes("editing") ||
+    str.includes("kreatif") ||
+    str.includes("capcut") ||
+    str.includes("premiere") ||
+    str.includes("podcast") ||
+    str.includes("audio")
+  ) {
+    return "Foto & Video Kreatif";
+  }
+
+  if (
+    str.includes("tugas") ||
+    str.includes("on-site") ||
+    str.includes("onsite") ||
+    str.includes("lokal") ||
+    str.includes("lapangan") ||
+    str.includes("survei") ||
+    str.includes("survey") ||
+    str.includes("lokasi") ||
+    str.includes("verifikasi")
+  ) {
+    return "Tugas Lokal / On-Site";
+  }
+
+  if (
+    str.includes("web") ||
+    str.includes("it") ||
+    str.includes("engineering") ||
+    str.includes("app") ||
+    str.includes("aplikasi") ||
+    str.includes("coding") ||
+    str.includes("code") ||
+    str.includes("software") ||
+    str.includes("frontend") ||
+    str.includes("backend") ||
+    str.includes("fullstack") ||
+    str.includes("next") ||
+    str.includes("react") ||
+    str.includes("digital engineering")
+  ) {
+    return "Web & IT Engineering";
+  }
+
+  if (
+    str.includes("tulis") ||
+    str.includes("penulisan") ||
+    str.includes("admin") ||
+    str.includes("copywriting") ||
+    str.includes("data entry") ||
+    str.includes("excel") ||
+    str.includes("sheets") ||
+    str.includes("transkrip") ||
+    str.includes("artikel") ||
+    str.includes("virtual admin")
+  ) {
+    return "Penulisan & Admin";
+  }
+
+  if (
+    str.includes("market") ||
+    str.includes("promosi") ||
+    str.includes("pemasaran") ||
+    str.includes("ads") ||
+    str.includes("sosmed") ||
+    str.includes("social") ||
+    str.includes("bisnis") ||
+    str.includes("umkm")
+  ) {
+    return "Marketing & Promosi";
+  }
+
+  return "Desain & Branding";
+}
+
