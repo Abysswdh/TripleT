@@ -394,7 +394,7 @@ export function Navbar() {
                 </Link>
                 <Link
                   href="/register"
-                  className="rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/90 hover:scale-105 hover:shadow-lg transition-all"
+                  className="rounded-xl bg-gradient-to-r from-blue-600 via-primary to-indigo-600 px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/35 hover:brightness-110 hover:scale-105 active:scale-95 transition-all border border-white/10"
                 >
                   {t("nav.getStarted", "Get Started")}
                 </Link>

@@ -343,7 +343,7 @@ export default function FreelancerEarningsPage() {
               <button
                 type="button"
                 onClick={handleOpenPayout}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground shadow-xs hover:bg-primary/95 active:scale-95 transition-all cursor-pointer"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-600 via-primary to-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/35 hover:brightness-110 active:scale-95 transition-all cursor-pointer border border-white/10"
               >
                 <ArrowUpRight className="h-3.5 w-3.5" />
                 <span>Tarik Sekarang</span>
@@ -580,7 +580,7 @@ export default function FreelancerEarningsPage() {
                 <button
                   type="button"
                   onClick={() => setIsPayoutModalOpen(false)}
-                  className="w-full rounded-xl bg-primary py-3 text-xs font-bold text-primary-foreground shadow-md hover:bg-primary/95 transition-all cursor-pointer"
+                  className="w-full rounded-xl bg-gradient-to-r from-blue-600 via-primary to-indigo-600 py-3 text-xs font-bold text-white shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/35 hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer border border-white/10"
                 >
                   Tutup & Cek Riwayat Saldo
                 </button>
@@ -783,7 +783,7 @@ export default function FreelancerEarningsPage() {
                     <button
                       type="submit"
                       disabled={!isFormValid || isSubmitting}
-                      className="flex-1 rounded-xl bg-primary py-3 text-xs font-bold text-primary-foreground shadow-md shadow-primary/25 hover:bg-primary/95 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-1.5"
+                      className="flex-1 rounded-xl bg-gradient-to-r from-blue-600 via-primary to-indigo-600 py-3 text-xs font-bold text-white shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/35 hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-1.5 active:scale-[0.98] border border-white/10"
                     >
                       {isSubmitting ? (
                         <>

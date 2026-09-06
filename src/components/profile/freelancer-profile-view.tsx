@@ -1202,7 +1202,7 @@ export function FreelancerProfileView({
                   <div className="flex items-center gap-2 pt-2">
                     <Link
                       href="/freelancer/settings?tab=profile"
-                      className="flex-1 inline-flex items-center justify-center gap-2 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs py-3 shadow-md shadow-primary/20 transition-all hover:scale-[1.02]"
+                      className="flex-1 inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 via-primary to-indigo-600 hover:brightness-110 text-white font-bold text-xs py-3 shadow-md shadow-primary/25 transition-all hover:scale-[1.02] active:scale-[0.98] border border-white/10"
                     >
                       <Edit3 className="h-3.5 w-3.5" />
                       <span>Edit Profil</span>
@@ -1229,7 +1229,7 @@ export function FreelancerProfileView({
                   <div className="flex items-center gap-2 pt-2">
                     <button
                       onClick={() => setIsHireModalOpen(true)}
-                      className="flex-1 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs py-3 shadow-md shadow-primary/20 transition-all hover:scale-[1.02]"
+                      className="flex-1 rounded-2xl bg-gradient-to-r from-blue-600 via-primary to-indigo-600 hover:brightness-110 text-white font-bold text-xs py-3 shadow-md shadow-primary/25 transition-all hover:scale-[1.02] active:scale-[0.98] border border-white/10"
                     >
                       Hire Me
                     </button>
