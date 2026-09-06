@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 import logoWithText from "@/assets/logo_with_text.svg";
 import logoWoText from "@/assets/logo_wo_text.svg";
+import logoWithBothText from "@/assets/logo_with_both_text.svg";
 import {
   ArrowRight,
   Users,
@@ -375,6 +376,30 @@ export default function LandingPage() {
 
         {/* Hero Content (z-20) */}
         <div className="relative z-20 mx-auto max-w-5xl">
+          {/* Hero Brand Badge with Logo */}
+          <motion.div
+            initial={{ opacity: 0, y: -16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-white/95 backdrop-blur-md border border-blue-200/90 shadow-md shadow-blue-500/10 mb-8 hover:border-blue-400 hover:shadow-blue-500/20 transition-all group"
+          >
+            <Image
+              src={logoWoText}
+              alt="Doable! Logo Mark"
+              width={22}
+              height={22}
+              className="h-5 w-5 object-contain group-hover:rotate-12 transition-transform duration-300"
+            />
+            <span className="text-xs sm:text-sm font-extrabold text-slate-800 tracking-wide flex items-center gap-2">
+              DOABLE!
+              <span className="text-slate-300">•</span>
+              <span className="text-blue-600 font-semibold">All About Freelancing</span>
+            </span>
+            <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5">
+              Integrated Workspace
+            </span>
+          </motion.div>
+
           {/* H1 Heading - Wider Container */}
           <h1 className="text-3xl sm:text-5xl lg:text-[54px] font-extrabold leading-tight sm:leading-[1.35] lg:leading-[1.45] tracking-tight text-[#111827] max-w-4xl lg:max-w-5xl mx-auto">
             Misi Kami: Menjembatani Kesenjangan Antara Keterampilan &amp; Kesempatan.
@@ -410,15 +435,23 @@ export default function LandingPage() {
           custom={0}
           className="text-center max-w-3xl mx-auto mb-16"
         >
-          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 flex items-center justify-center flex-wrap gap-x-4 gap-y-2">
-            <span>Kenalan dengan</span>
-            <Image
-              src={logoWithText}
-              alt="Doable!"
-              height={80}
-              className="inline-block h-14 sm:h-16 md:h-20 w-auto object-contain"
-            />
-          </h2>
+          <div className="flex flex-col items-center justify-center gap-3">
+            <span className="text-xs font-bold uppercase tracking-widest text-blue-600 bg-blue-50 border border-blue-200/60 px-3.5 py-1.5 rounded-full">
+              Platform Overview
+            </span>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <span>Kenalan dengan</span>
+              <Image
+                src={logoWithBothText}
+                alt="Doable! All About Freelancing"
+                height={72}
+                width={Math.round(72 * (1557 / 557))}
+                style={{ height: "72px", width: "auto" }}
+                className="h-14 sm:h-16 md:h-20 w-auto object-contain drop-shadow-sm"
+                priority
+              />
+            </h2>
+          </div>
           <p className="mt-4 text-slate-600 leading-relaxed text-sm sm:text-base">
             Platform digital terintegrasi yang mempertemukan freelancer berbakat dengan klien yang membutuhkan, dilengkapi workspace kolaboratif dan sistem portofolio tervalidasi.
           </p>
@@ -1182,6 +1215,10 @@ export default function LandingPage() {
           custom={0}
           className="text-center max-w-3xl mx-auto mb-14"
         >
+          <div className="inline-flex items-center gap-2 mb-3 bg-blue-50 border border-blue-200/60 px-3.5 py-1.5 rounded-full text-xs font-bold text-blue-700">
+            <Image src={logoWoText} alt="Doable!" width={16} height={16} className="h-4 w-4 object-contain" />
+            <span>Doable! Digital Workspace Ecosystem</span>
+          </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
             Doable!: Gabungan Fiverr &amp; Notion dalam Satu Digital Space
           </h2>
@@ -1423,10 +1460,16 @@ export default function LandingPage() {
             className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xl mb-12"
           >
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100">
-              <div>
-                <h3 className="text-xl font-extrabold text-slate-900 mt-1">
-                  Auto-Generated Gantt &amp; Task Breakdown
-                </h3>
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center shrink-0">
+                  <Image src={logoWoText} alt="Doable!" width={22} height={22} className="h-5 w-5 object-contain" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-extrabold text-slate-900">
+                    Auto-Generated Gantt &amp; Task Breakdown
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">Doable! Smart Project Execution</p>
+                </div>
               </div>
 
               {/* Category Selector Buttons */}
@@ -1704,6 +1747,7 @@ export default function LandingPage() {
       {/* ========================================================================= */}
       <section id="sdg-impact" className="py-24 bg-[#0F172A] text-white scroll-mt-20">
         <div className="max-w-7xl mx-auto px-6 lg:px-12">
+          {/* Section Header with UN SDG Badge & Wheel */}
           <motion.div
             initial="hidden"
             whileInView="visible"
@@ -1712,16 +1756,29 @@ export default function LandingPage() {
             custom={0}
             className="text-center max-w-3xl mx-auto mb-16"
           >
+            <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-slate-800/90 border border-slate-700/80 shadow-md mb-6">
+              <Image
+                src="/images/sdg/sdg_wheel.svg"
+                alt="UN Sustainable Development Goals Wheel"
+                width={26}
+                height={26}
+                className="h-6 w-6 object-contain"
+              />
+              <span className="text-xs font-extrabold tracking-wider text-sky-400 uppercase">
+                United Nations Sustainable Development Goals
+              </span>
+            </div>
+
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
-              Mendukung SDG 8 &amp; SDG 9 untuk Indonesia
+              Mendukung Komitmen SDG 8 &amp; SDG 9 untuk Indonesia
             </h2>
             <p className="mt-4 text-slate-400 leading-relaxed text-sm sm:text-base">
-              Doable! berkomitmen mendorong pertumbuhan ekonomi inklusif dan pengembangan infrastruktur talenta digital modern.
+              Doable! berkomitmen mendorong pertumbuhan ekonomi inklusif dan pengembangan infrastruktur talenta digital modern yang siap bersaing secara global.
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 mb-16">
-            {/* SDG 8 Card with Fade-Up */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 mb-12">
+            {/* SDG 8 Card with Official Logo Tile & Fade-Up */}
             <motion.div
               initial="hidden"
               whileInView="visible"
@@ -1731,24 +1788,48 @@ export default function LandingPage() {
               className="rounded-3xl border border-slate-800 bg-slate-900/90 p-6 sm:p-8 shadow-xl hover:border-rose-500/50 transition-all hover:-translate-y-1 flex flex-col justify-between group"
             >
               <div>
-                <div className="flex items-center justify-between gap-3 mb-5">
-                  <div className="h-11 px-3.5 w-auto whitespace-nowrap rounded-xl bg-rose-500/20 border border-rose-500/30 text-rose-400 flex items-center justify-center font-black text-sm shrink-0 shadow-inner">
-                    SDG 8
+                <div className="flex items-start gap-4 mb-6">
+                  {/* Official SDG 8 Logo Tile */}
+                  <Image
+                    src="/images/sdg/sdg_8_decent_work.svg"
+                    alt="SDG 8: Decent Work and Economic Growth Logo"
+                    width={88}
+                    height={88}
+                    className="h-20 w-20 sm:h-22 sm:w-22 rounded-2xl shadow-lg border border-rose-400/30 shrink-0 group-hover:scale-105 transition-transform"
+                  />
+                  <div className="space-y-1.5 pt-1">
+                    <span className="text-[11px] font-bold text-rose-400 uppercase tracking-wider bg-rose-500/10 px-2.5 py-1 rounded-lg border border-rose-500/20 inline-block">
+                      UN GLOBAL GOAL 8
+                    </span>
+                    <h3 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight group-hover:text-rose-300 transition-colors">
+                      Pekerjaan Layak &amp; Pertumbuhan Ekonomi
+                    </h3>
                   </div>
-                  <span className="text-[11px] font-bold text-rose-400/90 uppercase tracking-wider bg-rose-500/10 px-2.5 py-1 rounded-lg border border-rose-500/20 text-right">
-                    DECENT WORK &amp; ECONOMIC GROWTH
-                  </span>
                 </div>
-                <h3 className="text-xl sm:text-2xl font-extrabold text-white mb-2.5 tracking-tight group-hover:text-rose-300 transition-colors">
-                  Pekerjaan Layak &amp; Pertumbuhan Ekonomi
-                </h3>
-                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
+
+                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal mb-5">
                   Menciptakan peluang kerja berbasis teknologi yang inklusif, memberi jalur karir nyata dan terstruktur bagi generasi muda agar keluar dari keterjebakan pekerjaan informal tanpa jaminan.
                 </p>
+
+                {/* Target Indicators */}
+                <div className="space-y-2 border-t border-slate-800/80 pt-4 text-xs text-slate-300">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-rose-400 shrink-0" />
+                    <span><strong className="text-white">Target 8.5:</strong> Akses pekerjaan penuh, produktif, dan kompensasi yang adil bagi semua talenta.</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-rose-400 shrink-0" />
+                    <span><strong className="text-white">Target 8.6:</strong> Menekan tingkat pengangguran pemuda (NEET) lewat simulasi Dummy Projects.</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-rose-400 shrink-0" />
+                    <span><strong className="text-white">Target 8.8:</strong> Perlindungan hak kerja mandiri dengan smart escrow &amp; milestone transparan.</span>
+                  </div>
+                </div>
               </div>
             </motion.div>
 
-            {/* SDG 9 Card with Fade-Up */}
+            {/* SDG 9 Card with Official Logo Tile & Fade-Up */}
             <motion.div
               initial="hidden"
               whileInView="visible"
@@ -1758,25 +1839,76 @@ export default function LandingPage() {
               className="rounded-3xl border border-slate-800 bg-slate-900/90 p-6 sm:p-8 shadow-xl hover:border-amber-500/50 transition-all hover:-translate-y-1 flex flex-col justify-between group"
             >
               <div>
-                <div className="flex items-center justify-between gap-3 mb-5">
-                  <div className="h-11 px-3.5 w-auto whitespace-nowrap rounded-xl bg-amber-500/20 border border-amber-500/30 text-amber-400 flex items-center justify-center font-black text-sm shrink-0 shadow-inner">
-                    SDG 9
+                <div className="flex items-start gap-4 mb-6">
+                  {/* Official SDG 9 Logo Tile */}
+                  <Image
+                    src="/images/sdg/sdg_9_industry_innovation.svg"
+                    alt="SDG 9: Industry, Innovation and Infrastructure Logo"
+                    width={88}
+                    height={88}
+                    className="h-20 w-20 sm:h-22 sm:w-22 rounded-2xl shadow-lg border border-amber-400/30 shrink-0 group-hover:scale-105 transition-transform"
+                  />
+                  <div className="space-y-1.5 pt-1">
+                    <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20 inline-block">
+                      UN GLOBAL GOAL 9
+                    </span>
+                    <h3 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight group-hover:text-amber-300 transition-colors">
+                      Industri, Inovasi &amp; Infrastruktur Digital
+                    </h3>
                   </div>
-                  <span className="text-[11px] font-bold text-amber-400/90 uppercase tracking-wider bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20 text-right">
-                    INDUSTRY, INNOVATION &amp; INFRASTRUCTURE
-                  </span>
                 </div>
-                <h3 className="text-xl sm:text-2xl font-extrabold text-white mb-2.5 tracking-tight group-hover:text-amber-300 transition-colors">
-                  Industri, Inovasi &amp; Infrastruktur Digital
-                </h3>
-                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
+
+                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal mb-5">
                   Mengembangkan sistem digital modern yang menghubungkan klien dan freelancer, serta membangun infrastruktur talenta digital yang kompetitif dan siap kerja di tingkat global.
                 </p>
+
+                {/* Target Indicators */}
+                <div className="space-y-2 border-t border-slate-800/80 pt-4 text-xs text-slate-300">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-amber-400 shrink-0" />
+                    <span><strong className="text-white">Target 9.c:</strong> Memperluas akses talenta lokal terhadap ekosistem teknologi internet berdaya saing.</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-amber-400 shrink-0" />
+                    <span><strong className="text-white">Target 9.1:</strong> Membangun infrastruktur digital terintegrasi (timeline Gantt, chat, file sharing).</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-amber-400 shrink-0" />
+                    <span><strong className="text-white">Target 9.b:</strong> Mendukung inovasi domestik yang memampukan UMKM bertransformasi secara digital.</span>
+                  </div>
+                </div>
               </div>
             </motion.div>
           </div>
 
-          {/* Final Call to Action Box with Fade-Up */}
+          {/* Master SDGs Commitment Banner */}
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-40px" }}
+            variants={fadeUpVariants}
+            custom={0.25}
+            className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 mb-16 flex flex-col sm:flex-row items-center justify-between gap-4"
+          >
+            <div className="flex items-center gap-3">
+              <Image
+                src="/images/sdg/sdg_wheel.svg"
+                alt="SDG 17 Goals Wheel"
+                width={38}
+                height={38}
+                className="h-9 w-9 object-contain shrink-0"
+              />
+              <div>
+                <p className="text-xs font-bold text-white">Komitmen Berkelanjutan Menuju Indonesia Emas 2045</p>
+                <p className="text-[11px] text-slate-400">Doable! mengintegrasikan prinsip-prinsip pembangunan berkelanjutan PBB dalam setiap aspek platform.</p>
+              </div>
+            </div>
+            <span className="text-[11px] font-bold text-sky-400 bg-sky-500/10 border border-sky-500/20 px-3 py-1 rounded-full shrink-0">
+              Agenda 2030 Aligned
+            </span>
+          </motion.div>
+
+          {/* Final Call to Action Box with Logo and Fade-Up */}
           <motion.div
             initial="hidden"
             whileInView="visible"
@@ -1785,6 +1917,20 @@ export default function LandingPage() {
             custom={0.3}
             className="rounded-3xl bg-gradient-to-r from-blue-600 to-indigo-600 p-8 sm:p-12 text-center shadow-2xl relative overflow-hidden"
           >
+            {/* Embedded Logo with Tagline */}
+            <div className="flex justify-center mb-6">
+              <div className="inline-flex items-center justify-center p-2.5 sm:p-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 shadow-inner hover:scale-105 transition-transform">
+                <Image
+                  src={logoWithBothText}
+                  alt="Doable! - All About Freelancing"
+                  height={56}
+                  width={Math.round(56 * (1557 / 557))}
+                  style={{ height: "56px", width: "auto" }}
+                  className="object-contain brightness-0 invert"
+                />
+              </div>
+            </div>
+
             <h3 className="text-2xl sm:text-4xl font-extrabold text-white max-w-2xl mx-auto leading-tight">
               Siap Memulai Langkah Pertama Anda Bersama Doable!?
             </h3>
@@ -1812,16 +1958,29 @@ export default function LandingPage() {
           {/* Left Brand & Mission Copy */}
           <div className="max-w-md space-y-3">
             <Image
-              src={logoWithText}
-              alt="Doable! Logo"
-              height={42}
-              width={Math.round(42 * (1650 / 580))}
-              style={{ height: "42px", width: "auto" }}
+              src={logoWithBothText}
+              alt="Doable! - All About Freelancing"
+              height={48}
+              width={Math.round(48 * (1557 / 557))}
+              style={{ height: "48px", width: "auto" }}
               className="object-contain block select-none"
             />
             <p className="text-xs text-slate-500 leading-relaxed font-normal">
               &copy; {new Date().getFullYear()} Doable! Indonesia. Bridging skills &amp; opportunities through integrated digital workspace.
             </p>
+            {/* SDG Alignment Endorsement */}
+            <div className="flex items-center gap-2.5 pt-1">
+              <Image
+                src="/images/sdg/sdg_wheel.svg"
+                alt="UN Sustainable Development Goals"
+                width={22}
+                height={22}
+                className="h-5 w-5 object-contain shrink-0"
+              />
+              <span className="text-xs font-semibold text-slate-500">
+                Mendukung Agenda UN Sustainable Development Goals (SDG 8 &amp; SDG 9)
+              </span>
+            </div>
           </div>
 
           {/* Right Navigation & Legal Links */}

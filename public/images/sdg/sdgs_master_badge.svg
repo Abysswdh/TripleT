@@ -1,0 +1,27 @@
+<svg viewBox="0 0 720 180" width="720" height="180" xmlns="http://www.w3.org/2000/svg">
+  <rect width="720" height="180" rx="32" fill="#0F172A" stroke="#334155" stroke-width="2"/>
+  <!-- SDG Wheel on Left -->
+  <g transform="translate(18, 15) scale(0.5)">
+    <path d="M 151.41 15.01 A 135 135 0 0 1 197.45 23.61 L 178.82 73.23 A 82 82 0 0 0 150.86 68.00 Z" fill="#E5243B" />
+    <path d="M 200.08 24.63 A 135 135 0 0 1 239.90 49.29 L 204.61 88.83 A 82 82 0 0 0 180.42 73.85 Z" fill="#DDA63A" />
+    <path d="M 241.99 51.19 A 135 135 0 0 1 270.21 88.56 L 223.02 112.68 A 82 82 0 0 0 205.87 89.98 Z" fill="#4C9F38" />
+    <path d="M 271.47 91.09 A 135 135 0 0 1 284.29 136.14 L 231.57 141.58 A 82 82 0 0 0 223.78 114.22 Z" fill="#C5192D" />
+    <path d="M 284.55 138.95 A 135 135 0 0 1 280.23 185.58 L 229.10 171.61 A 82 82 0 0 0 231.72 143.29 Z" fill="#FF3A21" />
+    <path d="M 279.45 188.30 A 135 135 0 0 1 258.58 230.22 L 215.95 198.73 A 82 82 0 0 0 228.63 173.27 Z" fill="#26BDE2" />
+    <path d="M 256.87 232.48 A 135 135 0 0 1 222.27 264.03 L 193.90 219.26 A 82 82 0 0 0 214.92 200.10 Z" fill="#FCC30B" />
+    <path d="M 219.86 265.52 A 135 135 0 0 1 176.19 282.43 L 165.91 230.44 A 82 82 0 0 0 192.44 220.17 Z" fill="#A21942" />
+    <path d="M 173.42 282.95 A 135 135 0 0 1 126.58 282.95 L 135.78 230.76 A 82 82 0 0 0 164.22 230.76 Z" fill="#FD6925" />
+    <path d="M 123.81 282.43 A 135 135 0 0 1 80.14 265.52 L 107.56 220.17 A 82 82 0 0 0 134.09 230.44 Z" fill="#DD1367" />
+    <path d="M 77.73 264.03 A 135 135 0 0 1 43.13 232.48 L 85.08 200.10 A 82 82 0 0 0 106.10 219.26 Z" fill="#FD9D24" />
+    <path d="M 41.42 230.22 A 135 135 0 0 1 20.55 188.30 L 71.37 173.27 A 82 82 0 0 0 84.05 198.73 Z" fill="#BF8B2E" />
+    <path d="M 19.77 185.58 A 135 135 0 0 1 15.45 138.95 L 68.28 143.29 A 82 82 0 0 0 70.90 171.61 Z" fill="#3F7E44" />
+    <path d="M 15.71 136.14 A 135 135 0 0 1 28.53 91.09 L 76.22 114.22 A 82 82 0 0 0 68.43 141.58 Z" fill="#0A97D9" />
+    <path d="M 29.79 88.56 A 135 135 0 0 1 58.01 51.19 L 94.13 89.98 A 82 82 0 0 0 76.98 112.68 Z" fill="#56C02B" />
+    <path d="M 60.10 49.29 A 135 135 0 0 1 99.92 24.63 L 119.58 73.85 A 82 82 0 0 0 95.39 88.83 Z" fill="#00689D" />
+    <path d="M 102.55 23.61 A 135 135 0 0 1 148.59 15.01 L 149.14 68.00 A 82 82 0 0 0 121.18 73.23 Z" fill="#19486A" />
+  </g>
+  <!-- Text on Right -->
+  <text x="180" y="66" fill="#38BDF8" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="14" letter-spacing="2.5">UNITED NATIONS GLOBAL GOALS</text>
+  <text x="180" y="104" fill="#FFFFFF" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="28" letter-spacing="-0.5">SUSTAINABLE DEVELOPMENT GOALS</text>
+  <text x="180" y="136" fill="#94A3B8" font-family="system-ui, -apple-system, sans-serif" font-weight="600" font-size="15">Komitmen Doable! untuk Indonesia Emas 2045 &amp; Agenda 2030</text>
+</svg>

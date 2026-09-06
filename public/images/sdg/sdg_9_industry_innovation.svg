@@ -1,0 +1,44 @@
+<svg viewBox="0 0 400 400" width="400" height="400" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="400" rx="44" fill="#FD6925"/>
+  <rect width="400" height="400" rx="44" fill="url(#grad9)" opacity="0.15"/>
+  <defs>
+    <linearGradient id="grad9" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Header Text -->
+  <text x="36" y="74" fill="#ffffff" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="52" letter-spacing="-1">9</text>
+  <text x="76" y="48" fill="#ffffff" font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="19" letter-spacing="0.5">INDUSTRI, INOVASI &amp;</text>
+  <text x="76" y="72" fill="#ffffff" font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="19" letter-spacing="0.5">INFRASTRUKTUR</text>
+  <text x="76" y="93" fill="#ffffff" opacity="0.8" font-family="system-ui, -apple-system, sans-serif" font-weight="600" font-size="12" letter-spacing="1">INDUSTRY, INNOVATION &amp; INFRASTRUCTURE</text>
+
+  <!-- Official Icon Pictogram (Gear & Lightbulb / Infrastructure bridge) -->
+  <g transform="translate(60, 120)" fill="#ffffff">
+    <!-- Gear center & teeth -->
+    <circle cx="95" cy="95" r="42" fill="none" stroke="#ffffff" stroke-width="20"/>
+    <circle cx="95" cy="95" r="16" fill="#FD6925"/>
+    <!-- Gear teeth -->
+    <rect x="85" y="32" width="20" height="18" rx="4" />
+    <rect x="85" y="140" width="20" height="18" rx="4" />
+    <rect x="32" y="85" width="18" height="20" rx="4" />
+    <rect x="140" y="85" width="18" height="20" rx="4" />
+    <rect x="48" y="48" width="18" height="18" rx="4" transform="rotate(45 57 57)" />
+    <rect x="124" y="124" width="18" height="18" rx="4" transform="rotate(45 133 133)" />
+    <rect x="124" y="48" width="18" height="18" rx="4" transform="rotate(-45 133 57)" />
+    <rect x="48" y="124" width="18" height="18" rx="4" transform="rotate(-45 57 133)" />
+    
+    <!-- Innovation Tower & Rays -->
+    <path d="M 185 220 L 225 105 L 265 220 Z" fill="none" stroke="#ffffff" stroke-width="16" stroke-linejoin="round"/>
+    <line x1="195" y1="180" x2="255" y2="180" stroke="#ffffff" stroke-width="12"/>
+    <line x1="205" y1="145" x2="245" y2="145" stroke="#ffffff" stroke-width="12"/>
+    <circle cx="225" cy="92" r="14" fill="#ffffff"/>
+    <!-- Signal Rays -->
+    <path d="M 195 72 A 40 40 0 0 1 255 72" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round"/>
+    <path d="M 180 54 A 60 60 0 0 1 270 54" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round"/>
+    
+    <!-- Bottom infrastructure foundation -->
+    <rect x="10" y="232" width="265" height="18" rx="9" />
+  </g>
+</svg>

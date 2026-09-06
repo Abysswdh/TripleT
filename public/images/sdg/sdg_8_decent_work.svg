@@ -1,0 +1,30 @@
+<svg viewBox="0 0 400 400" width="400" height="400" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="400" rx="44" fill="#A21942"/>
+  <!-- Subtle inner gradient highlight -->
+  <rect width="400" height="400" rx="44" fill="url(#grad8)" opacity="0.15"/>
+  <defs>
+    <linearGradient id="grad8" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Header Text -->
+  <text x="36" y="74" fill="#ffffff" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="52" letter-spacing="-1">8</text>
+  <text x="76" y="48" fill="#ffffff" font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="19" letter-spacing="0.5">PEKERJAAN LAYAK &amp;</text>
+  <text x="76" y="72" fill="#ffffff" font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="19" letter-spacing="0.5">PERTUMBUHAN EKONOMI</text>
+  <text x="76" y="93" fill="#ffffff" opacity="0.8" font-family="system-ui, -apple-system, sans-serif" font-weight="600" font-size="12" letter-spacing="1">DECENT WORK &amp; ECONOMIC GROWTH</text>
+
+  <!-- Official Icon Pictogram (Trending upward growth arrow & gears/economic line) -->
+  <g transform="translate(60, 130)" fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Stylized Growth Line & Arrow -->
+    <path d="M 20 180 L 95 105 L 155 145 L 235 45" stroke="#ffffff" stroke-width="26"/>
+    <!-- Arrowhead -->
+    <path d="M 185 45 L 245 45 L 245 105" fill="#ffffff" stroke="#ffffff" stroke-width="20"/>
+    <!-- Supporting pillars / bar chart silhouette underneath -->
+    <rect x="25" y="195" width="35" height="45" rx="6" fill="#ffffff" stroke="none"/>
+    <rect x="85" y="145" width="35" height="95" rx="6" fill="#ffffff" stroke="none"/>
+    <rect x="145" y="170" width="35" height="70" rx="6" fill="#ffffff" stroke="none"/>
+    <rect x="205" y="105" width="35" height="135" rx="6" fill="#ffffff" stroke="none"/>
+  </g>
+</svg>
