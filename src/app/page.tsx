@@ -173,6 +173,7 @@ export default function LandingPage() {
   // Dummy Projects Data
   const dummyBriefs = [
     {
+      id: "d0000000-0000-0000-0000-000000000001",
       title: "Desain Brand Identity Kopi Artisan 'KopiSenja'",
       category: "Branding & Logo",
       level: "Beginner Friendly",
@@ -182,6 +183,7 @@ export default function LandingPage() {
       status: "Tersedia untuk Dikerjakan",
     },
     {
+      id: "d0000000-0000-0000-0000-000000000002",
       title: "UI/UX Mobile App Marketplace Sayur Organik",
       category: "UI/UX Design",
       level: "Intermediate Brief",
@@ -191,6 +193,7 @@ export default function LandingPage() {
       status: "Tersedia untuk Dikerjakan",
     },
     {
+      id: "d0000000-0000-0000-0000-000000000003",
       title: "Video Reel Promosi Instagram Produk Skincare",
       category: "Content & Video",
       level: "Beginner Friendly",
@@ -1687,10 +1690,11 @@ export default function LandingPage() {
                     Status: <strong className="text-slate-800">{dummyBriefs[selectedDummyBrief].status}</strong>
                   </span>
                   <Link
-                    href="/register"
-                    className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800"
+                    href={`/freelancer/explore/${dummyBriefs[selectedDummyBrief].id}`}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg border border-blue-200 transition-colors"
                   >
-                    Mulai Kerjakan Brief ini →
+                    <span>Mulai Kerjakan Brief ini</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
                   </Link>
                 </div>
               </div>

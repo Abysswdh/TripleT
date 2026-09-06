@@ -26,6 +26,7 @@ import {
   Banknote,
   Layers,
   FolderGit2,
+  Sparkles,
 } from "lucide-react";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import { getClientProjects, type ProjectRecord } from "@/lib/services/projects";
@@ -67,6 +68,7 @@ export interface TalentProfile {
     tags: string[];
     isFeatured?: boolean;
     isPlatformContract?: boolean;
+    isFromDummy?: boolean;
     amountDisplay?: string;
     completedAt?: string;
     rating?: number;
@@ -626,6 +628,7 @@ export function FreelancerProfileView({
                 image: String(p.image_url || "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop&q=80"),
                 tags: Array.isArray(p.tags) && p.tags.length > 0 ? (p.tags as string[]) : ["PORTFOLIO"],
                 isFeatured: Boolean(p.is_featured),
+                isFromDummy: Boolean(p.is_from_dummy),
               }));
             }
           } catch (e) {
@@ -708,6 +711,7 @@ export function FreelancerProfileView({
                     tags: requiredSkills,
                     isFeatured: index === 0,
                     isPlatformContract: true,
+                    isFromDummy: Boolean(proj?.is_dummy),
                     amountDisplay: String(c.amount_display || (c.total_amount ? `Rp ${Number(c.total_amount).toLocaleString("id-ID")}` : "Rp 0")),
                     completedAt: c.completed_at ? new Date(c.completed_at).toLocaleDateString("id-ID", { month: "short", year: "numeric" }) : undefined,
                     rating: contractRating,
@@ -1529,12 +1533,17 @@ export function FreelancerProfileView({
                         <span className="text-[10px] font-bold tracking-wider text-primary uppercase">
                           {featuredProject.category}
                         </span>
-                        {featuredProject.isPlatformContract && (
+                        {featuredProject.isFromDummy ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-full">
+                            <Sparkles className="h-3 w-3 text-indigo-500" />
+                            Simulasi Portofolio 0-to-1
+                          </span>
+                        ) : featuredProject.isPlatformContract ? (
                           <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
                             <CheckCircle2 className="h-3 w-3" />
                             Proyek Klien Selesai
                           </span>
-                        )}
+                        ) : null}
                         {featuredProject.rating !== undefined && (
                           <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-500 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full shadow-xs">
                             <Star className="h-3 w-3 fill-amber-400 text-amber-500" />
@@ -1629,12 +1638,17 @@ export function FreelancerProfileView({
                             <span className="text-[10px] font-bold tracking-wider text-primary uppercase">
                               {proj.category}
                             </span>
-                            {proj.isPlatformContract && (
+                            {proj.isFromDummy ? (
+                              <span className="inline-flex items-center gap-1 text-[9px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-1.5 py-0.5 rounded-full">
+                                <Sparkles className="h-2.5 w-2.5 text-indigo-500" />
+                                Simulasi
+                              </span>
+                            ) : proj.isPlatformContract ? (
                               <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-full">
                                 <CheckCircle2 className="h-2.5 w-2.5" />
                                 Selesai
                               </span>
-                            )}
+                            ) : null}
                             {proj.rating !== undefined && (
                               <span className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-500 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded-full shadow-xs">
                                 <Star className="h-2.5 w-2.5 fill-amber-400 text-amber-500" />

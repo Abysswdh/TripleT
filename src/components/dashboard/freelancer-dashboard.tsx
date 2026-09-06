@@ -497,12 +497,15 @@ export function FreelancerDashboard() {
   // Filtered Quests (sembunyikan proyek milik sendiri dari mode freelancer)
   const filteredQuests = useMemo(() => {
     return quests.filter((quest) => {
-      if (user && quest.ownerId && quest.ownerId === user.id) {
+      if (user && quest.ownerId && quest.ownerId === user.id && !quest.isSimulated) {
         return false;
       }
 
       const matchesCategory =
-        selectedCategory === "Semua" || quest.category === selectedCategory;
+        selectedCategory === "Semua" ||
+        (selectedCategory === "Simulasi Portofolio"
+          ? quest.isSimulated
+          : quest.category === selectedCategory || (quest.isSimulated && selectedCategory === "Simulasi Portofolio"));
 
       return matchesCategory;
     });
@@ -924,10 +927,17 @@ export function FreelancerDashboard() {
                           </span>
                         </div>
 
-                        {user && quest.ownerId === user.id ? (
+                        {user && quest.ownerId === user.id && !quest.isSimulated ? (
                           <span className="rounded-xl bg-muted/80 px-3.5 py-1.5 text-xs font-semibold text-muted-foreground border border-border/50 select-none">
                             Proyek Anda Sendiri
                           </span>
+                        ) : quest.isSimulated ? (
+                          <Link
+                            href={`/freelancer/explore/${quest.id}`}
+                            className="inline-flex items-center gap-1 rounded-xl bg-indigo-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-indigo-700 transition-colors"
+                          >
+                            <span>Mulai Simulasi</span>
+                          </Link>
                         ) : submittedProposals.some((p) => p.projectId === quest.id) ? (
                           <Link
                             href={`/freelancer/explore/${quest.id}`}

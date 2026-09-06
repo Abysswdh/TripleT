@@ -779,18 +779,54 @@ export function ProjectWorkspaceView() {
       });
 
       if (res.success) {
-        setMilestones((prev) =>
-          prev.map((m) =>
-            m.id === activeSubmitId
-              ? {
+        if (res.autoApproved) {
+          setMilestones((prev) => {
+            const idx = prev.findIndex((m) => m.id === activeSubmitId);
+            if (idx === -1) return prev;
+            return prev.map((m, i) => {
+              if (i === idx) {
+                return {
                   ...m,
-                  isSubmittedForReview: true,
+                  status: "Completed",
+                  isSubmittedForReview: false,
                   deliverableFileUrl: finalUrl,
                   deliverableNote: finalNote,
-                }
-              : m
-          )
-        );
+                };
+              }
+              if (i === idx + 1 && m.status === "Locked") {
+                return { ...m, status: "In Progress" };
+              }
+              return m;
+            });
+          });
+
+          if (res.allCompleted) {
+            setProject((p) => (p ? { ...p, status: "Completed" } : null));
+          }
+
+          // Reload comments to show Academy verification feedback
+          fetchProjectMilestoneComments(projectId).then((commentsMap) => {
+            setMilestones((prev) =>
+              prev.map((ms) => ({
+                ...ms,
+                comments: commentsMap[ms.id] || ms.comments,
+              }))
+            );
+          });
+        } else {
+          setMilestones((prev) =>
+            prev.map((m) =>
+              m.id === activeSubmitId
+                ? {
+                    ...m,
+                    isSubmittedForReview: true,
+                    deliverableFileUrl: finalUrl,
+                    deliverableNote: finalNote,
+                  }
+                : m
+            )
+          );
+        }
 
         setSubmitSuccess(true);
 
@@ -1419,6 +1455,12 @@ export function ProjectWorkspaceView() {
                   <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-muted text-muted-foreground border border-border">
                     Skala {project.difficulty}
                   </span>
+                  {project.isDummy && (
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 inline-flex items-center gap-1">
+                      <Sparkles className="h-3 w-3 text-indigo-500" />
+                      <span>Simulasi Portofolio 0-to-1</span>
+                    </span>
+                  )}
                 </div>
 
                 <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground leading-snug">

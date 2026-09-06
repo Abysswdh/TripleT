@@ -32,6 +32,7 @@ export interface ContractItem {
   startedAt: string;
   completedAt?: string;
   milestones: ContractMilestoneItem[];
+  isDummy?: boolean;
 }
 
 /**
@@ -103,6 +104,140 @@ export async function getClientContracts(userId?: string): Promise<ContractItem[
 }
 
 /**
+ * Start instant simulation for a dummy project (without client approval needed)
+ */
+export async function startDummyProjectSimulation(
+  projectId: string,
+  freelancerId?: string
+): Promise<{ success: boolean; contractId?: string; error?: string }> {
+  const supabase = createClient();
+  let targetUserId = freelancerId;
+
+  if (!targetUserId) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    targetUserId = user?.id;
+  }
+
+  if (!targetUserId) {
+    return { success: false, error: "Silakan masuk (login) terlebih dahulu untuk memulai simulasi." };
+  }
+
+  // 1. Fetch project and verify
+  const { data: proj, error: projErr } = await supabase
+    .from("projects")
+    .select("*, milestones(*)")
+    .eq("id", projectId)
+    .maybeSingle();
+
+  if (projErr || !proj) {
+    return { success: false, error: "Proyek simulasi tidak ditemukan." };
+  }
+
+  // 2. Check if the user already has an active or completed contract for this project
+  const { data: existingContract } = await supabase
+    .from("contracts")
+    .select("id, status")
+    .eq("project_id", projectId)
+    .eq("freelancer_id", targetUserId)
+    .maybeSingle();
+
+  if (existingContract) {
+    return { success: true, contractId: existingContract.id };
+  }
+
+  // 3. Create active simulation contract
+  const academyClientId = proj.owner_id || "a0000000-0000-0000-0000-000000000001";
+  const now = new Date().toISOString();
+
+  const { data: newContract, error: contractErr } = await supabase
+    .from("contracts")
+    .insert({
+      project_id: projectId,
+      client_id: academyClientId,
+      freelancer_id: targetUserId,
+      total_amount: proj.budget_numeric || 0,
+      amount_display: proj.budget_display || "Rp 0 (Simulasi)",
+      status: "active",
+      progress: 0,
+      started_at: now,
+    })
+    .select()
+    .single();
+
+  if (contractErr || !newContract) {
+    console.error("Error creating simulation contract:", contractErr);
+    return { success: false, error: contractErr?.message || "Gagal membuat sesi simulasi." };
+  }
+
+  // 4. Update project freelancer_id & status if needed
+  await supabase
+    .from("projects")
+    .update({
+      freelancer_id: targetUserId,
+      status: "in_progress",
+    })
+    .eq("id", projectId);
+
+  // 5. Seed contract_milestones from project milestones
+  const msList = (proj.milestones || []).sort(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0)
+  );
+
+  if (msList.length > 0) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const cmInserts = msList.map((m: any, idx: number) => ({
+      contract_id: newContract.id,
+      milestone_id: m.id,
+      title: m.title,
+      amount: m.amount || 0,
+      status: idx === 0 ? "in_progress" : "locked",
+      sort_order: m.sort_order || idx,
+    }));
+
+    await supabase.from("contract_milestones").insert(cmInserts);
+
+    // Ensure first milestone in milestones table is in_progress
+    if (msList[0]?.id) {
+      await supabase.from("milestones").update({ status: "in_progress" }).eq("id", msList[0].id);
+    }
+  }
+
+  // 6. Log activity for streak / heatmap
+  logActivity("milestone_delivered", {
+    project_id: projectId,
+    contract_id: newContract.id,
+    action: "simulation_started",
+    xp_earned: 50,
+  });
+
+  // 7. Welcome comment in milestone 1 chat
+  if (msList.length > 0 && msList[0]?.id) {
+    await supabase.from("milestone_comments").insert({
+      project_id: projectId,
+      milestone_id: msList[0].id,
+      author_name: "Doable! Sandbox Academy",
+      role: "client",
+      content: `Selamat datang di Simulasi Portofolio Mandiri Doable! 🚀\nBrief proyek '${proj.title}' telah aktif. Silakan ikuti instruksi sprint dan serahkan deliverable Anda begitu selesai untuk validasi otomatis dan pencantuman ke Portofolio Profil Publik Anda.`,
+    });
+  }
+
+  // 8. Notification
+  await createNotification({
+    userId: targetUserId,
+    type: "contract",
+    title: "Simulasi Proyek Dimulai 🚀",
+    message: `Sesi simulasi '${proj.title}' Anda telah aktif. Selesaikan milestone untuk menambahkan proyek ini ke portofolio!`,
+    linkUrl: `/freelancer/projects/${projectId}`,
+    roleTarget: "freelancer",
+  });
+
+  return { success: true, contractId: newContract.id };
+}
+
+/**
  * Submit milestone deliverable (by freelancer)
  */
 export async function submitMilestoneDeliverable(params: {
@@ -112,7 +247,7 @@ export async function submitMilestoneDeliverable(params: {
   deliverableUrl?: string;
   fileUrl?: string;
   deliverableNote?: string;
-}): Promise<{ success: boolean; error?: string }> {
+}): Promise<{ success: boolean; autoApproved?: boolean; allCompleted?: boolean; error?: string }> {
   const supabase = createClient();
   const now = new Date().toISOString();
   const url = params.deliverableUrl || params.fileUrl || "";
@@ -133,6 +268,8 @@ export async function submitMilestoneDeliverable(params: {
 
   // 2. Update contract_milestones table (by id or milestone_id)
   const targetId = params.contractMilestoneId || params.milestoneId;
+  let updatedContractId: string | undefined;
+
   if (targetId) {
     const { data: updatedCm, error } = await supabase
       .from("contract_milestones")
@@ -149,6 +286,9 @@ export async function submitMilestoneDeliverable(params: {
 
     if (error) {
       console.error("Error updating contract_milestones deliverable:", error);
+    }
+    if (updatedCm?.contract_id) {
+      updatedContractId = updatedCm.contract_id;
     }
 
     // Sync to milestones table if milestoneId was not passed explicitly
@@ -177,21 +317,183 @@ export async function submitMilestoneDeliverable(params: {
     });
   }
 
-  // 4. Log activity for heatmap & streak + award 150 Work XP
-  logActivity("milestone_delivered", {
-    milestone_id: params.milestoneId || targetId,
-    xp_earned: 150,
-  });
-
-  // 5. Trigger notification for client to review deliverable
+  // 4. Check if this is a dummy simulation project
   if (params.projectId) {
-    try {
-      const { data: proj } = await supabase
-        .from("projects")
-        .select("owner_id, title")
-        .eq("id", params.projectId)
-        .maybeSingle();
+    const { data: proj } = await supabase
+      .from("projects")
+      .select("id, owner_id, title, category, description, required_skills, is_dummy, banner_url")
+      .eq("id", params.projectId)
+      .maybeSingle();
 
+    if (proj?.is_dummy) {
+      // Auto-approve this simulation milestone!
+      if (params.milestoneId) {
+        await supabase
+          .from("milestones")
+          .update({
+            status: "completed",
+            is_submitted_for_review: false,
+          })
+          .eq("id", params.milestoneId);
+      }
+      if (targetId) {
+        await supabase
+          .from("contract_milestones")
+          .update({
+            status: "completed",
+            completed_at: now,
+            is_submitted_for_review: false,
+          })
+          .or(`id.eq.${targetId},milestone_id.eq.${targetId}`);
+      }
+
+      // Unlock next milestone in milestones table
+      const { data: allMilestones } = await supabase
+        .from("milestones")
+        .select("*")
+        .eq("project_id", params.projectId)
+        .order("sort_order", { ascending: true });
+
+      if (allMilestones) {
+        const curIdx = allMilestones.findIndex((m) => m.id === params.milestoneId || m.id === targetId);
+        if (curIdx !== -1 && curIdx + 1 < allMilestones.length) {
+          const nextMs = allMilestones[curIdx + 1];
+          await supabase.from("milestones").update({ status: "in_progress" }).eq("id", nextMs.id);
+          await supabase.from("contract_milestones").update({ status: "in_progress" }).eq("milestone_id", nextMs.id);
+        }
+      }
+
+      // Check if all milestones are completed
+      const { data: remainingPending } = await supabase
+        .from("milestones")
+        .select("id")
+        .eq("project_id", params.projectId)
+        .neq("status", "completed");
+
+      const isAllCompleted = !remainingPending || remainingPending.length === 0;
+
+      let targetContractId = updatedContractId;
+      if (!targetContractId) {
+        const { data: cRow } = await supabase
+          .from("contracts")
+          .select("id, freelancer_id")
+          .eq("project_id", params.projectId)
+          .maybeSingle();
+        targetContractId = cRow?.id;
+      }
+
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      const freelancerUserId = currentUser?.id;
+
+      if (isAllCompleted) {
+        // Mark contract completed
+        if (targetContractId) {
+          await supabase
+            .from("contracts")
+            .update({ status: "completed", progress: 100, completed_at: now })
+            .eq("id", targetContractId);
+        }
+
+        // Mark project completed
+        await supabase
+          .from("projects")
+          .update({ status: "completed" })
+          .eq("id", params.projectId);
+
+        // Update freelancer profile completed_projects count & insert into portfolio_projects
+        if (freelancerUserId) {
+          const { count } = await supabase
+            .from("contracts")
+            .select("id", { count: "exact", head: true })
+            .eq("freelancer_id", freelancerUserId)
+            .eq("status", "completed");
+
+          await supabase
+            .from("freelancer_profiles")
+            .update({ completed_projects: Math.max(1, count || 1) })
+            .eq("user_id", freelancerUserId);
+
+          // Check if already in portfolio_projects to prevent duplicate
+          const { data: existingPort } = await supabase
+            .from("portfolio_projects")
+            .select("id")
+            .eq("user_id", freelancerUserId)
+            .eq("title", proj.title)
+            .maybeSingle();
+
+          if (!existingPort) {
+            await supabase.from("portfolio_projects").insert({
+              user_id: freelancerUserId,
+              contract_id: targetContractId || null,
+              title: proj.title,
+              category: proj.category || "Simulasi Portofolio",
+              description: proj.description || "Hasil pengerjaan proyek simulasi terverifikasi di platform TripleT.",
+              image_url: proj.banner_url || "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop&q=80",
+              tags: Array.isArray(proj.required_skills) && proj.required_skills.length > 0 ? proj.required_skills : ["Simulasi 0-to-1", "Portofolio Terverifikasi"],
+              is_featured: true,
+              is_from_dummy: true,
+            });
+          }
+
+          // Activity log + XP
+          logActivity("contract_completed", {
+            project_id: params.projectId,
+            contract_id: targetContractId,
+            action: "simulation_completed",
+            xp_earned: 300,
+          });
+
+          // Notification
+          await createNotification({
+            userId: freelancerUserId,
+            type: "badge",
+            title: "Simulasi Selesai & Masuk Portofolio! 🏆",
+            message: `Selamat! Proyek simulasi '${proj.title}' telah selesai dan otomatis tampil di showcase Portofolio Profil Publik Anda!`,
+            linkUrl: "/freelancer/profile",
+            roleTarget: "freelancer",
+          });
+        }
+
+        // Comment in milestone chat
+        await supabase.from("milestone_comments").insert({
+          project_id: params.projectId,
+          milestone_id: params.milestoneId || targetId,
+          author_name: "Doable! Sandbox Academy",
+          role: "client",
+          content: `[SIMULASI SELESAI & TERVERIFIKASI 🏆]: Luar biasa! Seluruh milestone proyek simulasi '${proj.title}' telah berhasil diselesaikan. Proyek ini resmi terverifikasi dan otomatis ditambahkan ke showcase Portofolio Profil Publik Anda!`,
+        });
+
+        return { success: true, autoApproved: true, allCompleted: true };
+      } else {
+        // Milestone auto-approved, next unlocked
+        await supabase.from("milestone_comments").insert({
+          project_id: params.projectId,
+          milestone_id: params.milestoneId || targetId,
+          author_name: "Doable! Sandbox Academy",
+          role: "client",
+          content: `[MILESTONE TERVERIFIKASI ✅]: Deliverable milestone ini telah otomatis divalidasi oleh sistem Doable! Sandbox Academy. Milestone diselesaikan dan fase berikutnya telah dibuka!`,
+        });
+
+        logActivity("milestone_delivered", {
+          project_id: params.projectId,
+          milestone_id: params.milestoneId || targetId,
+          action: "simulation_milestone_completed",
+          xp_earned: 150,
+        });
+
+        return { success: true, autoApproved: true, allCompleted: false };
+      }
+    }
+
+    // Normal client project flow
+    // 5. Log activity for heatmap & streak + award 150 Work XP
+    logActivity("milestone_delivered", {
+      milestone_id: params.milestoneId || targetId,
+      xp_earned: 150,
+    });
+
+    // 6. Trigger notification for client to review deliverable
+    try {
       if (proj?.owner_id) {
         await createNotification({
           userId: proj.owner_id,
@@ -537,5 +839,6 @@ function formatContract(raw: any): ContractItem {
     startedAt: raw.started_at || raw.created_at,
     completedAt: raw.completed_at,
     milestones: msList,
+    isDummy: Boolean(proj.is_dummy),
   };
 }

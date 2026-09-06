@@ -29,9 +29,10 @@ interface Quest {
   difficulty: "Entry" | "Intermediate" | "Expert";
   description: string;
   deadline: string;
+  isDummy?: boolean;
 }
 
-const CATEGORIES = ["Semua", "Web Development", "Backend & API Engineering", "UI/UX & Product Design", "AI & Machine Learning", "Mobile App Development"];
+const CATEGORIES = ["Semua", "Simulasi Portofolio", "Web Development", "Backend & API Engineering", "UI/UX & Product Design", "AI & Machine Learning", "Mobile App Development"];
 
 function FreelancerExploreQuestsContent() {
   const { user } = useAuth();
@@ -86,7 +87,7 @@ function FreelancerExploreQuestsContent() {
           id: p.id,
           ownerId: p.ownerId || p.owner?.id,
           title: p.title,
-          clientName: p.owner?.fullName || "Klien Terverifikasi",
+          clientName: p.isDummy ? "Doable! Sandbox Academy" : (p.owner?.fullName || "Klien Terverifikasi"),
           category: p.category,
           budget: p.budget,
           budgetType: "Fixed",
@@ -97,6 +98,7 @@ function FreelancerExploreQuestsContent() {
           difficulty: p.difficulty === "Enterprise" ? "Expert" : p.difficulty === "Standard" ? "Intermediate" : "Entry",
           description: p.description,
           deadline: p.dueDate,
+          isDummy: Boolean(p.isDummy),
         }));
         setQuests(mapped);
       }
@@ -116,8 +118,8 @@ function FreelancerExploreQuestsContent() {
   }, [user?.id]);
 
   const filteredQuests = quests.filter((quest) => {
-    // Sembunyikan proyek milik sendiri dari mode freelancer
-    if (user && quest.ownerId && quest.ownerId === user.id) {
+    // Sembunyikan proyek milik sendiri dari mode freelancer (kecuali dummy project)
+    if (user && quest.ownerId && quest.ownerId === user.id && !quest.isDummy) {
       return false;
     }
 
@@ -125,7 +127,10 @@ function FreelancerExploreQuestsContent() {
       quest.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       quest.skills.some((s) => s.toLowerCase().includes(searchQuery.toLowerCase()));
     const matchesCategory =
-      selectedCategory === "Semua" || quest.category.toLowerCase().includes(selectedCategory.toLowerCase());
+      selectedCategory === "Semua" ||
+      (selectedCategory === "Simulasi Portofolio"
+        ? quest.isDummy
+        : quest.category.toLowerCase().includes(selectedCategory.toLowerCase()));
     return matchesSearch && matchesCategory;
   });
 
@@ -199,14 +204,25 @@ function FreelancerExploreQuestsContent() {
           filteredQuests.map((quest) => (
             <div
               key={quest.id}
-              className="group flex flex-col justify-between rounded-3xl border border-border/70 bg-card p-6 shadow-xs transition-all hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5"
+              className={`group flex flex-col justify-between rounded-3xl border p-6 shadow-xs transition-all hover:shadow-md hover:-translate-y-0.5 ${
+                quest.isDummy
+                  ? "border-indigo-500/40 bg-gradient-to-br from-indigo-500/5 via-card to-card hover:border-indigo-500/60"
+                  : "border-border/70 bg-card hover:border-primary/40"
+              }`}
             >
               <div className="space-y-3.5">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">
-                      {quest.category}
-                    </span>
+                    {quest.isDummy ? (
+                      <span className="rounded-lg bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 px-2.5 py-1 text-xs font-bold inline-flex items-center gap-1">
+                        <Sparkles className="h-3 w-3 text-indigo-500" />
+                        Simulasi Portofolio
+                      </span>
+                    ) : (
+                      <span className="rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">
+                        {quest.category}
+                      </span>
+                    )}
                     {submittedProjectIds.has(quest.id) && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300">
                         <CheckCircle2 className="h-3 w-3 text-amber-500" />
@@ -234,14 +250,18 @@ function FreelancerExploreQuestsContent() {
 
                 <div className="space-y-2 border-t border-border/40 pt-3 text-xs text-muted-foreground">
                   <div className="flex items-center justify-between">
-                    <span className="text-base font-black text-foreground font-heading">{quest.budget}</span>
+                    <span className="text-base font-black text-foreground font-heading">
+                      {quest.isDummy ? "+300 XP Portofolio" : quest.budget}
+                    </span>
                     <span className="rounded-md bg-muted px-2 py-0.5 text-[11px] font-semibold text-foreground">
                       Tingkat: {quest.difficulty}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-[11px]">
                     <span>Klien: <strong className="text-foreground">{quest.clientName}</strong></span>
-                    <span className="font-semibold text-primary">{quest.proposalsCount} Proposal</span>
+                    <span className="font-semibold text-primary">
+                      {quest.isDummy ? "Akses Mandiri" : `${quest.proposalsCount} Proposal`}
+                    </span>
                   </div>
                 </div>
 
@@ -258,10 +278,18 @@ function FreelancerExploreQuestsContent() {
               </div>
 
               <div className="mt-5 pt-4 border-t border-border/40">
-                {user && quest.ownerId === user.id ? (
+                {user && quest.ownerId === user.id && !quest.isDummy ? (
                   <div className="w-full inline-flex items-center justify-center gap-1.5 rounded-2xl bg-muted/80 py-2.5 text-xs font-semibold text-muted-foreground border border-border/60 select-none cursor-not-allowed">
                     <span>Proyek Anda Sendiri</span>
                   </div>
+                ) : quest.isDummy ? (
+                  <Link
+                    href={`/freelancer/explore/${quest.id}`}
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-indigo-600 hover:bg-indigo-700 py-2.5 text-xs font-bold text-white shadow-sm shadow-indigo-600/20 active:scale-[0.99] transition-all"
+                  >
+                    <span>Mulai Simulasi Mandiri</span>
+                    <ArrowUpRight className="h-4 w-4" />
+                  </Link>
                 ) : submittedProjectIds.has(quest.id) ? (
                   <Link
                     href={`/freelancer/explore/${quest.id}`}

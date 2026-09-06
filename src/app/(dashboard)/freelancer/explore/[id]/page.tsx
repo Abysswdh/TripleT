@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -25,12 +25,15 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { createClient } from "@/lib/supabase/client";
 import { getProjectById, type ProjectRecord } from "@/lib/services/projects";
 import { submitProposal, getUserProposalForProject, type FreelancerProposalItem } from "@/lib/services/proposals";
+import { startDummyProjectSimulation } from "@/lib/services/contracts";
 import { formatRelativeTime } from "@/lib/utils";
 
 export default function FreelancerProjectDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const { user } = useAuth();
   const projectId = typeof params?.id === "string" ? params.id : "";
 
@@ -46,6 +49,8 @@ export default function FreelancerProjectDetailPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [activePreset, setActivePreset] = useState<number | null>(1.0);
   const [existingProposal, setExistingProposal] = useState<FreelancerProposalItem | null>(null);
+  const [existingSimulationContractId, setExistingSimulationContractId] = useState<string | null>(null);
+  const [isStartingSimulation, setIsStartingSimulation] = useState(false);
 
   // Check if current user already submitted proposal for this project
   useEffect(() => {
@@ -74,6 +79,25 @@ export default function FreelancerProjectDetailPage() {
           setBidNumeric(res.budgetNumeric);
           setActivePreset(1.0);
         }
+
+        // Check if simulation contract already exists for this user & project
+        if (res.isDummy && user?.id) {
+          try {
+            const supabase = createClient();
+            const { data: cRow } = await supabase
+              .from("contracts")
+              .select("id, status")
+              .eq("project_id", projectId)
+              .eq("freelancer_id", user.id)
+              .maybeSingle();
+
+            if (cRow) {
+              setExistingSimulationContractId(cRow.id);
+            }
+          } catch (cErr) {
+            console.warn("Notice checking simulation contract in loadData:", cErr);
+          }
+        }
       }
 
       try {
@@ -89,6 +113,28 @@ export default function FreelancerProjectDetailPage() {
     }
     loadData();
   }, [projectId, user?.id]);
+
+  const handleStartSimulation = async () => {
+    if (!user) {
+      router.push(`/login?redirect=/freelancer/explore/${projectId}`);
+      return;
+    }
+    setIsStartingSimulation(true);
+    setSubmitError(null);
+    try {
+      const res = await startDummyProjectSimulation(projectId, user.id);
+      if (res.success) {
+        router.push(`/freelancer/projects/${projectId}`);
+      } else {
+        setSubmitError(res.error || "Gagal memulai sesi simulasi.");
+      }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      setSubmitError(err?.message || "Terjadi kesalahan saat memulai simulasi.");
+    } finally {
+      setIsStartingSimulation(false);
+    }
+  };
 
   // Calculations
   const platformFeeRate = 0.05; // 5% Platform Fee
@@ -220,7 +266,18 @@ export default function FreelancerProjectDetailPage() {
         </Link>
 
         <div className="flex items-center gap-2">
-          {existingProposal ? (
+          {project.isDummy ? (
+            <>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-500/15 border border-indigo-500/30 px-3 py-1 text-xs font-bold text-indigo-700 dark:text-indigo-300">
+                <Sparkles className="h-3.5 w-3.5 text-indigo-500" />
+                <span>Simulasi Portofolio 0-to-1</span>
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 text-xs font-bold text-emerald-600">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                <span>Akses Mandiri Instan</span>
+              </span>
+            </>
+          ) : existingProposal ? (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 px-3 py-1 text-xs font-bold text-amber-700 dark:text-amber-300">
               <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
               <span>Proposal Anda: {existingProposal.status === "pending" ? "Menunggu Review" : existingProposal.status === "accepted" ? "Diterima" : "Terkirim"}</span>
@@ -231,17 +288,27 @@ export default function FreelancerProjectDetailPage() {
               <span>Status: Terbuka</span>
             </span>
           )}
-          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 text-xs font-bold text-emerald-600">
-            <ShieldCheck className="h-3.5 w-3.5" />
-            <span>Garansi Escrow 100%</span>
-          </span>
+          {!project.isDummy && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 text-xs font-bold text-emerald-600">
+              <ShieldCheck className="h-3.5 w-3.5" />
+              <span>Garansi Escrow 100%</span>
+            </span>
+          )}
         </div>
       </div>
 
       {/* Main Hero Header */}
-      <div className="rounded-3xl border border-border/80 bg-gradient-to-br from-card via-card/90 to-primary/5 p-6 sm:p-8 shadow-xs space-y-4">
+      <div className={`rounded-3xl border p-6 sm:p-8 shadow-xs space-y-4 ${
+        project.isDummy
+          ? "border-indigo-500/30 bg-gradient-to-br from-indigo-500/10 via-card to-card"
+          : "border-border/80 bg-gradient-to-br from-card via-card/90 to-primary/5"
+      }`}>
         <div className="flex flex-wrap items-center gap-2.5">
-          <span className="rounded-lg bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+          <span className={`rounded-lg px-3 py-1 text-xs font-bold ${
+            project.isDummy
+              ? "bg-indigo-500/20 text-indigo-700 dark:text-indigo-300"
+              : "bg-primary/10 text-primary"
+          }`}>
             {project.category}
           </span>
           <span className="rounded-lg bg-muted px-2.5 py-1 text-xs font-semibold text-muted-foreground">
@@ -249,7 +316,7 @@ export default function FreelancerProjectDetailPage() {
           </span>
           <span className="text-xs text-muted-foreground flex items-center gap-1">
             <Clock className="h-3.5 w-3.5" />
-            Diposting {project.postedDate}
+            {project.isDummy ? "Sesi Terbuka Sepanjang Waktu" : `Diposting ${project.postedDate}`}
           </span>
         </div>
 
@@ -259,20 +326,32 @@ export default function FreelancerProjectDetailPage() {
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2 border-t border-border/50">
           <div>
-            <span className="text-[11px] text-muted-foreground block">Estimasi Budget Klien</span>
-            <p className="text-base sm:text-lg font-black text-foreground">{project.budget}</p>
+            <span className="text-[11px] text-muted-foreground block">
+              {project.isDummy ? "Reward XP Selesai" : "Estimasi Budget Klien"}
+            </span>
+            <p className="text-base sm:text-lg font-black text-foreground">
+              {project.isDummy ? "+300 XP Portofolio" : project.budget}
+            </p>
           </div>
           <div>
             <span className="text-[11px] text-muted-foreground block">Target Waktu Pengerjaan</span>
             <p className="text-base sm:text-lg font-bold text-foreground">{project.dueDate}</p>
           </div>
           <div>
-            <span className="text-[11px] text-muted-foreground block">Pelamar / Proposal</span>
-            <p className="text-base sm:text-lg font-bold text-foreground">{project.proposalsCount} Diajukan</p>
+            <span className="text-[11px] text-muted-foreground block">
+              {project.isDummy ? "Akses Seleksi" : "Pelamar / Proposal"}
+            </span>
+            <p className="text-base sm:text-lg font-bold text-foreground">
+              {project.isDummy ? "Akses Langsung" : `${project.proposalsCount} Diajukan`}
+            </p>
           </div>
           <div>
-            <span className="text-[11px] text-muted-foreground block">Klien</span>
-            <p className="text-sm font-bold text-foreground truncate">{project.owner?.fullName || "Klien Terverifikasi"}</p>
+            <span className="text-[11px] text-muted-foreground block">
+              {project.isDummy ? "Penyelenggara Brief" : "Klien"}
+            </span>
+            <p className="text-sm font-bold text-foreground truncate">
+              {project.isDummy ? "Doable! Sandbox Academy" : (project.owner?.fullName || "Klien Terverifikasi")}
+            </p>
           </div>
         </div>
       </div>
@@ -456,7 +535,109 @@ export default function FreelancerProjectDetailPage() {
         {/* ========================================================================= */}
         <div className="lg:col-span-5 sticky top-20">
           <div className="rounded-3xl border border-border/80 bg-card p-6 sm:p-7 shadow-xl space-y-6">
-            {existingProposal ? (
+            {project.isDummy ? (
+              <div className="space-y-6 animate-in fade-in duration-300">
+                <div className="border-b border-border/60 pb-4 space-y-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-500/15 border border-indigo-500/30 px-3 py-1 text-xs font-bold text-indigo-700 dark:text-indigo-300">
+                      <Sparkles className="h-3.5 w-3.5 text-indigo-500" />
+                      <span>Sandbox Academy</span>
+                    </span>
+                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                      Akses Terbuka Instan
+                    </span>
+                  </div>
+
+                  <h2 className="text-xl font-bold text-foreground font-heading">
+                    Mulai Simulasi Mandiri 0-to-1
+                  </h2>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Brief proyek simulasi ini dirancang khusus untuk membangun portofolio awal Anda. Anda tidak perlu mengajukan proposal atau menunggu persetujuan klien. Langsung kerjakan milestone di workspace terintegrasi!
+                  </p>
+                </div>
+
+                {/* Simulation Key Highlights Card */}
+                <div className="rounded-2xl bg-indigo-500/5 border border-indigo-500/20 p-4 space-y-3">
+                  <span className="text-xs font-bold text-indigo-700 dark:text-indigo-300 block">
+                    Keuntungan Simulasi Portofolio:
+                  </span>
+                  <div className="space-y-2 text-xs text-muted-foreground">
+                    <div className="flex items-start gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-indigo-600 shrink-0 mt-0.5" />
+                      <span><strong>Workspace Siap Pakai:</strong> Instruksi task breakdown &amp; timeline otomatis.</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-indigo-600 shrink-0 mt-0.5" />
+                      <span><strong>Validasi Instan:</strong> Deliverable diverifikasi langsung oleh sistem evaluasi.</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-indigo-600 shrink-0 mt-0.5" />
+                      <span><strong>Otomatis ke Portofolio:</strong> Hasil akhir langsung tampil di profil publik Anda.</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-indigo-600 shrink-0 mt-0.5" />
+                      <span><strong>+300 XP Work Experience:</strong> Menaikkan level reputasi profil Anda.</span>
+                    </div>
+                  </div>
+                </div>
+
+                {submitError && (
+                  <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-3.5 text-xs text-destructive flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                    <span>{submitError}</span>
+                  </div>
+                )}
+
+                {/* CTAs */}
+                <div className="pt-2 space-y-3">
+                  {existingSimulationContractId ? (
+                    <Link
+                      href={`/freelancer/projects/${project.id}`}
+                      className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-indigo-600 hover:bg-indigo-700 py-3.5 text-xs font-bold text-white shadow-lg shadow-indigo-600/20 active:scale-[0.99] transition-all"
+                    >
+                      <Zap className="h-4 w-4" />
+                      <span>Lanjutkan Simulasi di Workspace</span>
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  ) : !user ? (
+                    <Link
+                      href={`/login?redirect=/freelancer/explore/${project.id}`}
+                      className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-indigo-600 hover:bg-indigo-700 py-3.5 text-xs font-bold text-white shadow-lg shadow-indigo-600/20 active:scale-[0.99] transition-all"
+                    >
+                      <span>Masuk untuk Mulai Simulasi</span>
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleStartSimulation}
+                      disabled={isStartingSimulation}
+                      className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-indigo-600 hover:bg-indigo-700 py-3.5 text-xs font-bold text-white shadow-lg shadow-indigo-600/20 active:scale-[0.99] transition-all disabled:opacity-50 cursor-pointer"
+                    >
+                      {isStartingSimulation ? (
+                        <>
+                          <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <span>Menyiapkan Workspace Simulasi...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-4 w-4" />
+                          <span>Mulai Simulasi Mandiri Sekarang</span>
+                          <ArrowRight className="h-4 w-4" />
+                        </>
+                      )}
+                    </button>
+                  )}
+
+                  <Link
+                    href="/freelancer/explore"
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-border py-2.5 text-xs font-semibold text-muted-foreground hover:bg-muted transition-colors"
+                  >
+                    <span>Lihat Brief Simulasi Lainnya</span>
+                  </Link>
+                </div>
+              </div>
+            ) : existingProposal ? (
               <div className="space-y-6 animate-in fade-in duration-300">
                 {/* Header with status badge */}
                 <div className="border-b border-border/60 pb-4 space-y-2">
