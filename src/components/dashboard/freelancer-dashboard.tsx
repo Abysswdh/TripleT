@@ -554,10 +554,87 @@ export function FreelancerDashboard() {
         </div>
       </div>
 
-      {/* Main 2-Column Split: Left Scrollable Feed (Col 7) vs Right Sticky Guide (Col 5) */}
+      {/* Main 2-Column Split: Left Sticky Guide (Col 5) vs Right Scrollable Feed (Col 7) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* ========================================================================= */}
-        {/* LEFT COLUMN: SCROLLABLE FEED (Pekerjaan Saya, Proyek, Keahlian, Pendapatan)*/}
+        {/* LEFT COLUMN: STICKY GUIDE (Plan Anda, Rekomendasi AI, Jalur Karir Talenta)*/}
+        {/* ========================================================================= */}
+        <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-20 lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto pr-1">
+          {/* 1. Unified Smart Calendar & MRP Workload Planner (Tugas Hari Ini + Streak + Kalender Harian) */}
+          <UnifiedSmartCalendarPlanner
+            streakDays={streakDays}
+            activeDates={heatmapData.activeDates}
+            totalContributions={totalContributions}
+            activeContracts={rawContracts}
+            userProfile={user}
+            onOpenSubmitMilestone={(target) => {
+              handleOpenSubmit(target as any);
+            }}
+          />
+
+          {/* 2. AI Profile & Career Suggestions Box */}
+          <AIProfileSuggestions userProfile={user} />
+
+          {/* 3. Level & Career Progression Road */}
+          <div className="rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/5 via-card to-card p-5 sm:p-6 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Award className="h-4 w-4 text-primary" />
+                <span className="text-xs font-bold uppercase tracking-wider text-primary">
+                  Jalur Karir Talenta
+                </span>
+              </div>
+              <span className="text-xs font-bold text-foreground font-heading">
+                {currentXP.toLocaleString("id-ID")} / {nextLevelXP.toLocaleString("id-ID")} XP
+              </span>
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-xs font-semibold">
+                <span className="text-foreground">Level {currentLevel} {currentLevel === 0 ? "Starter" : currentLevel === 1 ? "Creator" : "Verified Pro"}</span>
+                <span className="text-muted-foreground">Level {currentLevel + 1} {currentLevel === 0 ? "Creator" : "Verified Pro"}</span>
+              </div>
+              <div className="h-2.5 w-full rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-primary to-indigo-600 rounded-full transition-all duration-500"
+                  style={{ width: `${xpPercentage}%` }}
+                />
+              </div>
+
+              {/* 3-Pillar XP Accumulation Breakdown Pills */}
+              <div className="grid grid-cols-3 gap-1.5 pt-1.5 text-[10px]">
+                <div className="rounded-lg bg-blue-500/10 border border-blue-500/20 px-2 py-1 text-center">
+                  <span className="text-blue-600 block font-bold leading-none">{xpBreakdown.workXP.toLocaleString("id-ID")} XP</span>
+                  <span className="text-[9px] text-muted-foreground mt-0.5 block">💼 Pekerjaan</span>
+                </div>
+                <div className="rounded-lg bg-violet-500/10 border border-violet-500/20 px-2 py-1 text-center">
+                  <span className="text-violet-600 block font-bold leading-none">{xpBreakdown.quizXP.toLocaleString("id-ID")} XP</span>
+                  <span className="text-[9px] text-muted-foreground mt-0.5 block">🧪 Kuis</span>
+                </div>
+                <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 text-center">
+                  <span className="text-emerald-600 block font-bold leading-none">{xpBreakdown.learningXP.toLocaleString("id-ID")} XP</span>
+                  <span className="text-[9px] text-muted-foreground mt-0.5 block">📖 Belajar</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-[11px] text-muted-foreground leading-relaxed flex-1">
+                Tinggal <strong className="text-foreground">{Math.max(0, nextLevelXP - currentXP).toLocaleString("id-ID")} XP lagi</strong> untuk membuka <strong>Level {currentLevel + 1}</strong> dan meningkatkan prioritas rekomendasi di pencarian klien UMKM.
+              </p>
+              <Link
+                href="/freelancer/skills"
+                className="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-2 text-[11px] font-bold text-white shadow-md shadow-primary/20 hover:bg-primary/90 transition-all hover:scale-105 active:scale-95"
+              >
+                <Zap className="h-3.5 w-3.5" />
+                Earn XP
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* ========================================================================= */}
+        {/* RIGHT COLUMN: SCROLLABLE FEED (Pekerjaan Saya, Proyek, Keahlian, Pendapatan)*/}
         {/* ========================================================================= */}
         <div className="lg:col-span-7 space-y-8">
           {/* 1. PEKERJAAN SAYA (Paling Atas) */}
@@ -1077,83 +1154,6 @@ export function FreelancerDashboard() {
               </div>
             </Link>
           </section>
-        </div>
-
-        {/* ========================================================================= */}
-        {/* RIGHT COLUMN: STICKY GUIDE (Weekly Streak Tracker, Misi Harian, Level)    */}
-        {/* ========================================================================= */}
-        <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-20">
-          {/* 1. Unified Smart Calendar & MRP Workload Planner (Tugas Hari Ini + Streak + Kalender Harian) */}
-          <UnifiedSmartCalendarPlanner
-            streakDays={streakDays}
-            activeDates={heatmapData.activeDates}
-            totalContributions={totalContributions}
-            activeContracts={rawContracts}
-            userProfile={user}
-            onOpenSubmitMilestone={(target) => {
-              handleOpenSubmit(target as any);
-            }}
-          />
-
-          {/* 2. AI Profile & Career Suggestions Box */}
-          <AIProfileSuggestions userProfile={user} />
-
-          {/* 3. Level & Career Progression Road */}
-          <div className="rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/5 via-card to-card p-5 sm:p-6 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Award className="h-4 w-4 text-primary" />
-                <span className="text-xs font-bold uppercase tracking-wider text-primary">
-                  Jalur Karir Talenta
-                </span>
-              </div>
-              <span className="text-xs font-bold text-foreground font-heading">
-                {currentXP.toLocaleString("id-ID")} / {nextLevelXP.toLocaleString("id-ID")} XP
-              </span>
-            </div>
-
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-xs font-semibold">
-                <span className="text-foreground">Level {currentLevel} {currentLevel === 0 ? "Starter" : currentLevel === 1 ? "Creator" : "Verified Pro"}</span>
-                <span className="text-muted-foreground">Level {currentLevel + 1} {currentLevel === 0 ? "Creator" : "Verified Pro"}</span>
-              </div>
-              <div className="h-2.5 w-full rounded-full bg-muted overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-primary to-indigo-600 rounded-full transition-all duration-500"
-                  style={{ width: `${xpPercentage}%` }}
-                />
-              </div>
-
-              {/* 3-Pillar XP Accumulation Breakdown Pills */}
-              <div className="grid grid-cols-3 gap-1.5 pt-1.5 text-[10px]">
-                <div className="rounded-lg bg-blue-500/10 border border-blue-500/20 px-2 py-1 text-center">
-                  <span className="text-blue-600 block font-bold leading-none">{xpBreakdown.workXP.toLocaleString("id-ID")} XP</span>
-                  <span className="text-[9px] text-muted-foreground mt-0.5 block">💼 Pekerjaan</span>
-                </div>
-                <div className="rounded-lg bg-violet-500/10 border border-violet-500/20 px-2 py-1 text-center">
-                  <span className="text-violet-600 block font-bold leading-none">{xpBreakdown.quizXP.toLocaleString("id-ID")} XP</span>
-                  <span className="text-[9px] text-muted-foreground mt-0.5 block">🧪 Kuis</span>
-                </div>
-                <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 text-center">
-                  <span className="text-emerald-600 block font-bold leading-none">{xpBreakdown.learningXP.toLocaleString("id-ID")} XP</span>
-                  <span className="text-[9px] text-muted-foreground mt-0.5 block">📖 Belajar</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-[11px] text-muted-foreground leading-relaxed flex-1">
-                Tinggal <strong className="text-foreground">{Math.max(0, nextLevelXP - currentXP).toLocaleString("id-ID")} XP lagi</strong> untuk membuka <strong>Level {currentLevel + 1}</strong> dan meningkatkan prioritas rekomendasi di pencarian klien UMKM.
-              </p>
-              <Link
-                href="/freelancer/skills"
-                className="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-2 text-[11px] font-bold text-white shadow-md shadow-primary/20 hover:bg-primary/90 transition-all hover:scale-105 active:scale-95"
-              >
-                <Zap className="h-3.5 w-3.5" />
-                Earn XP
-              </Link>
-            </div>
-          </div>
         </div>
       </div>
 
