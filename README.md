@@ -1,6 +1,6 @@
 <div align="center">
   
-  # 🚀 Doable!
+  <img src="public/images/logo_with_text.svg" alt="Doable!" width="280" />
   ### All-in-one freelance ecosystem yang menyatukan marketplace, project management, dan learning platform dalam satu tempat.
   
   [![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-Visit_Site-success?style=for-the-badge)](https://triple-t-lime.vercel.app/)
