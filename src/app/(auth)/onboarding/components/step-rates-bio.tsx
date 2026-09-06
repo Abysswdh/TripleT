@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ClientBudgetPref, ExperienceLevel, OnboardingData, WeeklyAvailability } from "@/hooks/use-onboarding";
-import { ArrowLeft, Loader2, ShieldCheck, Sparkles, TrendingUp, Lightbulb } from "lucide-react";
+import { ArrowLeft, Loader2, ShieldCheck, Check, TrendingUp, Lightbulb } from "lucide-react";
 
 interface StepRatesBioProps {
   data: OnboardingData;
@@ -414,7 +414,7 @@ export function StepRatesBio({
             </>
           ) : (
             <>
-              <Sparkles className="h-4 w-4" />
+              <Check className="h-4 w-4 stroke-[2.5]" />
               <span>Selesaikan Profil</span>
             </>
           )}

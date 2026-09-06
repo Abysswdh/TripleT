@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { Loader2, Sparkles } from "lucide-react";
+import { Loader2, Check } from "lucide-react";
 import logoWithText from "@/assets/logo_with_text.svg";
 import logoWithoutText from "@/assets/logo_wo_text.svg";
 import { useAuth } from "@/hooks/use-auth";
@@ -251,7 +251,7 @@ function OnboardingContent() {
             </Link>
 
             <span className="rounded-full bg-white/10 backdrop-blur-md px-2.5 sm:px-3 py-0.5 sm:py-1 text-[11px] sm:text-xs font-bold text-white/90 border border-white/15 flex items-center gap-1.5 shadow-xs select-none">
-              <Sparkles className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-blue-300" />
+              <Check className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-blue-300" />
               <span>{isFreelancer ? "Onboarding Freelancer" : "Onboarding Klien"}</span>
             </span>
           </div>
