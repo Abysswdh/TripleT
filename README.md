@@ -100,7 +100,7 @@ Yang membedakan Doable! dari platform freelance lainnya adalah integrasi menyelu
   <img src="public/images/screenshots/landing.png" alt="Landing Page" width="800"/>
   <p><em>Landing Page - Halaman utama yang memperkenalkan Doable! dengan animasi interaktif dan overview fitur platform</em></p>
   
-  <img src="public/images/screenshots/onboarding.png" alt="Onboarding" width="800"/>
+  <img src="public/images/screenshots/onboarding.jpeg" alt="Onboarding" width="800"/>
   <p><em>Onboarding - Proses guided setup dengan video welcome dan pemilihan role (klien/freelancer)</em></p>
   
   <img src="public/images/screenshots/dashboard.png" alt="Dashboard" width="800"/>
