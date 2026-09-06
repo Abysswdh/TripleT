@@ -639,17 +639,10 @@ export function FreelancerDashboard() {
         <div className="absolute inset-0 z-[1] bg-black/45 backdrop-blur-[1px] pointer-events-none" />
 
         <div className="relative z-20 flex flex-col lg:flex-row lg:items-center justify-between gap-6 w-full">
-          <div className="space-y-2 max-w-xl">
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 px-2.5 py-0.5 text-[11px] font-medium text-slate-200">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Dashboard Talenta</span>
-            </div>
+          <div className="max-w-xl">
             <h1 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-normal tracking-tight leading-normal text-white drop-shadow-sm">
               Selamat datang kembali, {freelancerName}!
             </h1>
-            <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-normal">
-              Pantau alur pekerjaan aktifmu, selesaikan misi harian untuk menjaga konsistensi streak, dan bangun portofolio profesionalmu.
-            </p>
           </div>
 
           {/* Jalur Karir Talenta (Integrated in Hero Header to eliminate duplicate streak/saldo cards) */}
