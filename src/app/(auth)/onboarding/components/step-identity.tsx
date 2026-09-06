@@ -267,14 +267,14 @@ export function StepIdentity({ data, onUpdate, onNext, onPrev }: StepIdentityPro
   };
 
   return (
-    <div className="flex h-full flex-col justify-between">
-      {/* Form Content: Compact & Unscrollable */}
-      <div className="my-auto space-y-3 sm:space-y-3.5">
+    <div className="flex flex-1 flex-col justify-between min-h-0">
+      {/* Form Content: Compact & Scrollable */}
+      <div className="my-auto space-y-3 sm:space-y-3.5 py-1">
         {/* Row 1: Full Name & Username in 2 Columns */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
           {/* Full Name */}
           <div>
-            <label htmlFor="fullName" className="mb-1.5 block text-xs sm:text-sm font-bold text-foreground">
+            <label htmlFor="fullName" className="mb-1 block text-xs sm:text-sm font-bold text-foreground">
               {isFreelancer ? "Nama Lengkap / Panggilan" : "Nama PIC / Penanggung Jawab"}
             </label>
             <div className="relative">
@@ -292,7 +292,7 @@ export function StepIdentity({ data, onUpdate, onNext, onPrev }: StepIdentityPro
 
           {/* Username */}
           <div>
-            <label htmlFor="username" className="mb-1.5 block text-xs sm:text-sm font-bold text-foreground">
+            <label htmlFor="username" className="mb-1 block text-xs sm:text-sm font-bold text-foreground">
               {isFreelancer ? "Username Freelancer" : "Username Akun Bisnis"}
             </label>
             <div className="relative">
@@ -316,7 +316,7 @@ export function StepIdentity({ data, onUpdate, onNext, onPrev }: StepIdentityPro
         {/* Row 2: Headline / Spesialisasi Profesional (Freelancer Only) */}
         {isFreelancer && (
           <div>
-            <label htmlFor="headline" className="mb-1.5 block text-xs sm:text-sm font-bold text-foreground">
+            <label htmlFor="headline" className="mb-1 block text-xs sm:text-sm font-bold text-foreground">
               Spesialisasi / Headline Profesional
             </label>
             <div className="relative">
@@ -330,7 +330,7 @@ export function StepIdentity({ data, onUpdate, onNext, onPrev }: StepIdentityPro
                 className="h-10 sm:h-11 w-full rounded-xl border border-border bg-card pl-10 pr-3 text-xs sm:text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-xs"
               />
             </div>
-            <p className="text-[10px] text-muted-foreground mt-1 ml-1">
+            <p className="text-[10px] text-muted-foreground mt-0.5 ml-1">
               Fokus keahlian yang akan tampil di kartu profil dan pencarian talenta klien UMKM.
             </p>
           </div>
@@ -338,10 +338,10 @@ export function StepIdentity({ data, onUpdate, onNext, onPrev }: StepIdentityPro
 
         {/* Row 3: 2-Tier Location Selector */}
         <div>
-          <label className="mb-1.5 block text-xs sm:text-sm font-bold text-foreground">
+          <label className="mb-1 block text-xs sm:text-sm font-bold text-foreground">
             Domisili Wilayah Operasional
           </label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
             {/* Province Selector */}
             <div>
               <div className="relative">
@@ -359,7 +359,7 @@ export function StepIdentity({ data, onUpdate, onNext, onPrev }: StepIdentityPro
                   ))}
                 </select>
               </div>
-              <p className="text-[10px] text-muted-foreground mt-1 ml-1">Provinsi</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5 ml-1">Provinsi</p>
             </div>
 
             {/* City / Regency Selector */}
@@ -379,18 +379,18 @@ export function StepIdentity({ data, onUpdate, onNext, onPrev }: StepIdentityPro
                   ))}
                 </select>
               </div>
-              <p className="text-[10px] text-muted-foreground mt-1 ml-1">Kota / Kabupaten</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5 ml-1">Kota / Kabupaten</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Navigation Footer */}
-      <div className="flex items-center justify-end gap-3 pt-3 border-t border-border/40">
+      <div className="flex items-center justify-between sm:justify-end gap-2.5 sm:gap-3 pt-3 border-t border-border/40 mt-3 shrink-0">
         <button
           type="button"
           onClick={onPrev}
-          className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors"
+          className="h-10 sm:h-11 flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl border border-border bg-card px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           <span>Kembali</span>
@@ -399,7 +399,7 @@ export function StepIdentity({ data, onUpdate, onNext, onPrev }: StepIdentityPro
         <button
           type="button"
           onClick={onNext}
-          className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-5 py-2 text-xs font-semibold text-white shadow-md shadow-primary/25 hover:bg-primary-600 transition-all active:scale-[0.98]"
+          className="h-10 sm:h-11 flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary px-5 py-2 text-xs font-semibold text-white shadow-md shadow-primary/25 hover:bg-primary-600 transition-all active:scale-[0.98]"
         >
           <span>Lanjutkan</span>
           <ArrowRight className="h-3.5 w-3.5" />

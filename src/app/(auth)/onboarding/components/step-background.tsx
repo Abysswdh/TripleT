@@ -24,9 +24,9 @@ export function StepBackground({
   const isFreelancer = data.role === "freelancer";
 
   return (
-    <div className="flex h-full flex-col justify-between">
+    <div className="flex flex-1 flex-col justify-between min-h-0">
       {/* Form Content: Compact & Unscrollable */}
-      <div className="my-auto space-y-3.5 sm:space-y-4">
+      <div className="space-y-3 sm:space-y-4 py-1">
         {isFreelancer ? (
           <>
             {/* Status / Background */}
@@ -53,7 +53,7 @@ export function StepBackground({
                         : "border-border/70 bg-card hover:border-border hover:bg-muted/40"
                     }`}
                   >
-                    <p className="text-xs font-bold text-foreground">{bg.label}</p>
+                    <p className="text-xs font-bold text-foreground leading-tight">{bg.label}</p>
                     <p className="text-[10px] text-muted-foreground mt-0.5">{bg.desc}</p>
                   </button>
                 ))}
@@ -65,7 +65,7 @@ export function StepBackground({
               <label className="mb-1.5 block text-xs sm:text-sm font-bold text-foreground">
                 Tingkat Pengalaman Komersial
               </label>
-              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                 {(
                   [
                     {
@@ -117,7 +117,7 @@ export function StepBackground({
               <label className="mb-2 block text-xs sm:text-sm font-bold text-foreground">
                 Tipe Usaha / Skala Organisasi
               </label>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
                 {(
                   [
                     { type: "umkm", label: "UMKM / Bisnis Lokal", desc: "Kedai, Toko, Retail & F&B" },
@@ -130,14 +130,14 @@ export function StepBackground({
                     key={item.type}
                     type="button"
                     onClick={() => onUpdate({ hiringType: item.type as ClientHiringType })}
-                    className={`rounded-2xl border p-3.5 text-left transition-all ${
+                    className={`rounded-2xl border p-2.5 sm:p-3.5 text-left transition-all ${
                       data.hiringType === item.type
                         ? "border-primary bg-primary/5 ring-2 ring-primary shadow-xs"
                         : "border-border/70 bg-card hover:border-border hover:bg-muted/40"
                     }`}
                   >
                     <p className="text-xs sm:text-sm font-bold text-foreground">{item.label}</p>
-                    <p className="text-[11px] text-muted-foreground mt-1 leading-tight">{item.desc}</p>
+                    <p className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 sm:mt-1 leading-tight">{item.desc}</p>
                   </button>
                 ))}
               </div>
@@ -145,21 +145,21 @@ export function StepBackground({
 
             {/* Business / Company Name */}
             <div>
-              <label htmlFor="businessName" className="mb-2 block text-xs sm:text-sm font-bold text-foreground">
+              <label htmlFor="businessName" className="mb-1.5 block text-xs sm:text-sm font-bold text-foreground">
                 Nama Usaha / Brand / Perusahaan
               </label>
               <div className="relative">
-                <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Briefcase className="absolute left-3.5 sm:left-4 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
                 <input
                   id="businessName"
                   type="text"
                   value={data.businessName || ""}
                   onChange={(e) => onUpdate({ businessName: e.target.value })}
                   placeholder="Contoh: Kopi Seduh Kenari, PT Inovasi Solusi..."
-                  className="h-12 w-full rounded-2xl border border-border bg-card pl-12 pr-4 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-xs"
+                  className="h-11 sm:h-12 w-full rounded-2xl border border-border bg-card pl-10 sm:pl-12 pr-4 text-xs sm:text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-xs"
                 />
               </div>
-              <p className="text-xs text-muted-foreground mt-1.5 ml-1">
+              <p className="text-[11px] text-muted-foreground mt-1 sm:mt-1.5 ml-1">
                 Nama usaha ini akan tertera pada postingan proyek yang Anda buka.
               </p>
             </div>
@@ -168,11 +168,11 @@ export function StepBackground({
       </div>
 
       {/* Navigation Footer */}
-      <div className="flex items-center justify-end gap-3 pt-4 border-t border-border/40">
+      <div className="flex items-center justify-between sm:justify-end gap-2.5 sm:gap-3 pt-3 sm:pt-4 border-t border-border/40 shrink-0">
         <button
           type="button"
           onClick={onPrev}
-          className="inline-flex items-center gap-2 rounded-2xl border border-border bg-card px-5 py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors"
+          className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-2xl border border-border bg-card px-4 sm:px-5 py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
           <span>Kembali</span>
@@ -181,7 +181,7 @@ export function StepBackground({
         <button
           type="button"
           onClick={onNext}
-          className="inline-flex items-center gap-2 rounded-2xl bg-primary px-6 py-2.5 text-xs font-semibold text-white shadow-lg shadow-primary/25 hover:bg-primary-600 transition-all active:scale-[0.98]"
+          className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-5 sm:px-6 py-2.5 text-xs font-semibold text-white shadow-lg shadow-primary/25 hover:bg-primary-600 transition-all active:scale-[0.98]"
         >
           <span>Lanjutkan</span>
           <ArrowRight className="h-4 w-4" />

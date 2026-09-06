@@ -13,16 +13,16 @@ export function StepWelcome({ data, onFinish }: StepWelcomeProps) {
   const displayName = data.fullName || (isFreelancer ? "Talenta Muda Doable!" : (data.businessName || "Klien Doable!"));
 
   return (
-    <div className="text-center flex h-full flex-col justify-between py-1">
-      <div className="my-auto space-y-3.5 sm:space-y-4 animate-fade-in">
+    <div className="text-center flex flex-1 flex-col justify-between min-h-0 py-1">
+      <div className="space-y-3 sm:space-y-4 animate-fade-in py-1">
         {/* Success Celebration Icon */}
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-white shadow-lg shadow-primary/30">
-          <CheckCircle2 className="h-7 w-7 stroke-[2.5]" />
+        <div className="mx-auto flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl bg-primary text-white shadow-lg shadow-primary/30">
+          <CheckCircle2 className="h-6 w-6 sm:h-7 sm:w-7 stroke-[2.5]" />
         </div>
 
         {/* Header */}
         <div>
-          <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-foreground">
+          <h2 className="text-lg sm:text-2xl font-extrabold tracking-tight text-foreground">
             Selamat Datang, <span className="text-primary">{displayName}</span>!
           </h2>
           {data.username && (
@@ -30,7 +30,7 @@ export function StepWelcome({ data, onFinish }: StepWelcomeProps) {
               @{data.username.toLowerCase()}
             </p>
           )}
-          <p className="mt-1.5 text-xs text-muted-foreground max-w-md mx-auto leading-relaxed">
+          <p className="mt-1 sm:mt-1.5 text-xs text-muted-foreground max-w-md mx-auto leading-relaxed">
             {isFreelancer
               ? "Akun talenta Anda telah selesai disiapkan. Mulai jelajahi quest proyek, kerjakan tantangan, dan bangun portofolio terpercaya."
               : "Akun klien Anda telah selesai disiapkan. Mulai posting kebutuhan proyek dan temukan talenta muda terverifikasi."}
@@ -38,7 +38,7 @@ export function StepWelcome({ data, onFinish }: StepWelcomeProps) {
         </div>
 
         {/* Summary Card */}
-        <div className="mx-auto max-w-md rounded-2xl border border-border/80 bg-card p-3.5 sm:p-4 text-left space-y-2 shadow-sm text-xs sm:text-sm">
+        <div className="mx-auto max-w-md rounded-2xl border border-border/80 bg-card p-3 sm:p-4 text-left space-y-2 shadow-sm text-xs sm:text-sm">
           <div className="flex items-center justify-between border-b border-border/40 pb-2">
             <span className="text-muted-foreground font-medium text-xs">Peran Akun:</span>
             <span className="font-bold text-foreground text-xs inline-flex items-center gap-1.5">
@@ -59,7 +59,7 @@ export function StepWelcome({ data, onFinish }: StepWelcomeProps) {
             <>
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground font-medium">Skill Unggulan:</span>
-                <span className="font-bold text-foreground truncate max-w-[220px]">
+                <span className="font-bold text-foreground truncate max-w-[160px] sm:max-w-[220px]">
                   {data.skills.slice(0, 3).join(", ") || "General"}
                 </span>
               </div>
@@ -80,13 +80,13 @@ export function StepWelcome({ data, onFinish }: StepWelcomeProps) {
             <>
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground font-medium">Nama Usaha / Brand:</span>
-                <span className="font-bold text-foreground truncate max-w-[220px]">
+                <span className="font-bold text-foreground truncate max-w-[160px] sm:max-w-[220px]">
                   {data.businessName || "Bisnis Mandiri"}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground font-medium">Kategori Kebutuhan:</span>
-                <span className="font-bold text-foreground truncate max-w-[220px]">
+                <span className="font-bold text-foreground truncate max-w-[160px] sm:max-w-[220px]">
                   {data.projectCategories[0] || "Semua Kategori"}
                 </span>
               </div>
@@ -96,15 +96,15 @@ export function StepWelcome({ data, onFinish }: StepWelcomeProps) {
       </div>
 
       {/* Action Button */}
-      <div className="pt-4">
+      <div className="pt-3 sm:pt-4 shrink-0">
         <button
           type="button"
           onClick={onFinish}
-          className="inline-flex h-12 w-full max-w-md mx-auto items-center justify-center gap-2 rounded-2xl bg-primary text-sm font-bold text-white shadow-lg shadow-primary/25 transition-all hover:bg-primary-600 hover:shadow-xl active:scale-[0.98]"
+          className="inline-flex h-11 sm:h-12 w-full max-w-md mx-auto items-center justify-center gap-2 rounded-2xl bg-primary text-xs sm:text-sm font-bold text-white shadow-lg shadow-primary/25 transition-all hover:bg-primary-600 hover:shadow-xl active:scale-[0.98]"
         >
-          <LayoutDashboard className="h-5 w-5" />
-          <span>{isFreelancer ? "Mulai Karir & Masuk Dashboard Freelancer" : "Masuk ke Dashboard Klien"}</span>
-          <ArrowRight className="h-5 w-5" />
+          <LayoutDashboard className="h-4 w-4 sm:h-5 sm:w-5" />
+          <span>{isFreelancer ? "Mulai Karir & Masuk Dashboard" : "Masuk ke Dashboard Klien"}</span>
+          <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
         </button>
       </div>
     </div>

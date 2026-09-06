@@ -176,7 +176,7 @@ function OnboardingContent() {
     : CLIENT_STEP_INFO[step] || CLIENT_STEP_INFO[1];
 
   return (
-    <div className="w-full max-w-[1040px] mx-auto h-full max-h-[100dvh] sm:max-h-[640px] flex flex-col justify-center overflow-hidden py-0 sm:py-2">
+    <div className="w-full max-w-[1040px] mx-auto min-h-[100dvh] sm:min-h-0 sm:h-full sm:max-h-[640px] flex flex-col justify-start sm:justify-center py-0 sm:py-2">
       {/* Dev Mode Fast Step-Switcher Toolbar (Only shown when not logged in with an actual user) */}
       {isDev && !user && (
         <div className="mb-2 mx-2 sm:mx-0 flex flex-wrap items-center justify-between gap-1.5 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs text-amber-900 dark:text-amber-200 animate-in fade-in duration-200 shrink-0">
@@ -216,10 +216,10 @@ function OnboardingContent() {
         </div>
       )}
 
-      {/* Split-Card: Clean unscrollable container */}
-      <div className="overflow-hidden h-full max-h-[100dvh] sm:max-h-[580px] sm:h-[580px] rounded-none sm:rounded-3xl border-0 sm:border border-slate-200/90 bg-white shadow-2xl shadow-slate-300/40 flex flex-col lg:flex-row">
+      {/* Split-Card: Responsive & Scrollable container */}
+      <div className="overflow-hidden min-h-[100dvh] sm:min-h-0 sm:h-[600px] sm:max-h-[90vh] rounded-none sm:rounded-3xl border-0 sm:border border-slate-200/90 bg-white shadow-2xl shadow-slate-300/40 flex flex-col lg:flex-row flex-1 sm:flex-initial">
         {/* Left Side: React Bits Silk Canvas Banner */}
-        <div className="relative w-full lg:w-[360px] lg:min-w-[360px] h-[130px] sm:h-[150px] lg:h-full overflow-hidden bg-[#0C0838] flex flex-col justify-between p-5 sm:p-6 lg:p-7 text-white select-none shrink-0">
+        <div className="relative w-full lg:w-[360px] lg:min-w-[360px] h-auto lg:h-full overflow-hidden bg-[#0C0838] flex flex-col justify-between p-4 sm:p-6 lg:p-7 text-white select-none shrink-0">
           {/* Animated WebGL Silk Background */}
           <div className="absolute inset-0 z-0">
             <Silk
@@ -243,31 +243,31 @@ function OnboardingContent() {
                 alt="Doable! Logo"
                 height={26}
                 width={26}
-                className="h-6.5 w-6.5 object-contain brightness-0 invert"
+                className="h-6 w-6 sm:h-6.5 sm:w-6.5 object-contain brightness-0 invert"
               />
               <span className="text-lg font-heading font-extrabold tracking-tight text-white">
                 Doable!
               </span>
             </Link>
 
-            <span className="rounded-full bg-white/10 backdrop-blur-md px-3 py-1 text-xs font-bold text-white/90 border border-white/15 flex items-center gap-1.5 shadow-xs select-none">
-              <Sparkles className="h-3.5 w-3.5 text-blue-300" />
+            <span className="rounded-full bg-white/10 backdrop-blur-md px-2.5 sm:px-3 py-0.5 sm:py-1 text-[11px] sm:text-xs font-bold text-white/90 border border-white/15 flex items-center gap-1.5 shadow-xs select-none">
+              <Sparkles className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-blue-300" />
               <span>{isFreelancer ? "Onboarding Freelancer" : "Onboarding Klien"}</span>
             </span>
           </div>
 
           {/* Dynamic Step Title (Updates seamlessly with each step) */}
-          <div className="relative z-20 my-auto py-1">
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-heading font-extrabold tracking-tight text-white drop-shadow-md">
+          <div className="relative z-20 my-1.5 sm:my-auto py-1">
+            <h1 className="text-lg sm:text-2xl lg:text-3xl font-heading font-extrabold tracking-tight text-white drop-shadow-md leading-tight">
               {currentInfo.title}
             </h1>
-            <p className="mt-1.5 text-xs sm:text-sm text-white/80 leading-relaxed font-light hidden sm:block">
+            <p className="mt-1 sm:mt-1.5 text-xs sm:text-sm text-white/80 leading-relaxed font-light hidden sm:block">
               {currentInfo.desc}
             </p>
           </div>
 
           {/* Sole Bottom Step Progress Indicator */}
-          <div className="relative z-20 flex items-center justify-between text-xs text-white/85 pt-2.5 border-t border-white/15">
+          <div className="relative z-20 flex items-center justify-between text-xs text-white/85 pt-2 sm:pt-2.5 border-t border-white/15">
             <span className="font-medium text-[11px]">
               {`Langkah ${step} dari 5`}
             </span>
@@ -288,12 +288,12 @@ function OnboardingContent() {
           </div>
         </div>
 
-        {/* Right Side: Clean Unscrollable Interactive Step Wizard Content */}
-        <div className="relative flex-1 bg-white p-5 sm:p-6 lg:p-8 h-full flex flex-col justify-between overflow-hidden">
+        {/* Right Side: Responsive Scrollable Step Wizard Content */}
+        <div className="relative flex-1 bg-white p-4 sm:p-6 lg:p-8 flex flex-col justify-between overflow-y-auto min-h-0">
           {/* Animated Step Container */}
           <div
             key={step}
-            className="h-full flex flex-col justify-between animate-in fade-in-50 slide-in-from-right-4 duration-300 ease-out"
+            className="flex-1 flex flex-col justify-between animate-in fade-in-50 slide-in-from-right-4 duration-300 ease-out min-h-0"
           >
             {step === 1 && (
               <StepIdentity
