@@ -230,10 +230,6 @@ function FreelancerExploreQuestsContent() {
                       </span>
                     )}
                   </div>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-bold text-emerald-600">
-                    <Sparkles className="h-3 w-3" />
-                    {quest.matchScore}% Match
-                  </span>
                 </div>
 
                 <div>

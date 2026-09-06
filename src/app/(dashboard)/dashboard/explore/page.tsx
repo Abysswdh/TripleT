@@ -4,7 +4,6 @@ import { useState } from "react";
 import {
   Compass,
   Search,
-  Sparkles,
   ArrowUpRight,
   CheckCircle2,
   X,
@@ -211,10 +210,6 @@ export default function ExploreQuestsPage() {
               <div className="flex items-start justify-between gap-2">
                 <span className="rounded-md bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
                   {quest.category}
-                </span>
-                <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-2 py-0.5 text-[11px] font-bold text-emerald-600">
-                  <Sparkles className="h-3 w-3" />
-                  {quest.matchScore}% Match
                 </span>
               </div>
 
