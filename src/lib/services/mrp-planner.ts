@@ -360,7 +360,7 @@ export async function computeMRPPlan(params: {
     }
   }
 
-  // 6. Apply Stored Completed Statuses
+  // 6. Apply Stored Completed Statuses (Only Project Milestones/Tasks and Skill Quizzes go into Plan Anda)
   const storedCompletedIds = new Set(getStoredCompletedTaskIds());
   const applyCompletion = (t: ScheduledTaskItem): ScheduledTaskItem => ({
     ...t,
@@ -369,7 +369,6 @@ export async function computeMRPPlan(params: {
 
   const allAvailableTasks = [
     ...rawProjectTasks.map(applyCompletion),
-    ...profileTasks.map(applyCompletion),
     ...quizTasks.map(applyCompletion),
   ];
 

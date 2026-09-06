@@ -34,6 +34,7 @@ import { getFreelancerEarnings, type EarningsSummary } from "@/lib/services/earn
 import { getFreelancerProposals, type FreelancerProposalItem } from "@/lib/services/proposals";
 import { formatRelativeTime } from "@/lib/utils";
 import { UnifiedSmartCalendarPlanner } from "@/components/dashboard/unified-calendar-planner";
+import { AIProfileSuggestions } from "@/components/dashboard/ai-profile-suggestions";
 import { AlertTriangle } from "lucide-react";
 
 interface QuestOpportunity {
@@ -1093,6 +1094,9 @@ export function FreelancerDashboard() {
               handleOpenSubmit(target as any);
             }}
           />
+
+          {/* 2. AI Profile & Career Suggestions Box */}
+          <AIProfileSuggestions userProfile={user} />
 
           {/* 3. Level & Career Progression Road */}
           <div className="rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/5 via-card to-card p-5 sm:p-6 shadow-sm space-y-4">
