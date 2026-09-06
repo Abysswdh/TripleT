@@ -854,18 +854,58 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
         </div>
       </div>
 
-      {/* Alert / Notification banners */}
-      {saveSuccess && (
-        <div className="flex items-center gap-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 p-4 text-emerald-700 dark:text-emerald-300 text-sm font-medium animate-in fade-in slide-in-from-top-2">
-          <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-          <span>{saveMessage}</span>
-        </div>
-      )}
+      {/* Floating Top Notification Popup (Always visible when scrolled) */}
+      {(saveSuccess || errorMessage) && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] w-full max-w-md px-4 pointer-events-auto transition-all animate-in fade-in slide-in-from-top-4 duration-300">
+          {saveSuccess && (
+            <div className="flex items-center justify-between gap-3.5 rounded-2xl bg-card/95 backdrop-blur-xl border border-emerald-500/40 p-4 text-foreground shadow-2xl shadow-emerald-500/20 ring-1 ring-emerald-500/30">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="h-9 w-9 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-500 flex items-center justify-center shrink-0">
+                  <CheckCircle2 className="h-5 w-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold text-foreground">
+                    {t("common.saved", "Berhasil Disimpan!")}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
+                    {saveMessage || t("settings.savedSuccess", "Pengaturan berhasil diperbarui.")}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSaveSuccess(false)}
+                className="h-7 w-7 rounded-lg hover:bg-muted/80 text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors shrink-0 cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          )}
 
-      {errorMessage && (
-        <div className="flex items-center gap-3 rounded-2xl bg-destructive/10 border border-destructive/30 p-4 text-destructive text-sm font-medium animate-in fade-in slide-in-from-top-2">
-          <AlertTriangle className="h-5 w-5 shrink-0" />
-          <span>{errorMessage}</span>
+          {errorMessage && (
+            <div className="flex items-center justify-between gap-3.5 rounded-2xl bg-card/95 backdrop-blur-xl border border-destructive/40 p-4 text-foreground shadow-2xl shadow-destructive/20 ring-1 ring-destructive/30">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="h-9 w-9 rounded-xl bg-destructive/20 border border-destructive/30 text-destructive flex items-center justify-center shrink-0">
+                  <AlertTriangle className="h-5 w-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold text-destructive">
+                    {t("common.error", "Gagal Menyimpan")}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
+                    {errorMessage}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setErrorMessage("")}
+                className="h-7 w-7 rounded-lg hover:bg-muted/80 text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors shrink-0 cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -876,10 +916,10 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
           <div className="bg-card border border-border/70 rounded-2xl p-3 shadow-sm space-y-1">
             <button
               onClick={() => setActiveTab("profile")}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === "profile"
-                  ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
-                  : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+                  ? "bg-gradient-to-r from-blue-600 via-primary to-indigo-600 text-white shadow-md shadow-primary/25 border border-white/10"
+                  : "text-muted-foreground hover:bg-muted/80 hover:text-foreground hover:translate-x-0.5"
               }`}
             >
               <div className="flex items-center gap-2.5">
@@ -891,10 +931,10 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
 
             <button
               onClick={() => setActiveTab("work")}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === "work"
-                  ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
-                  : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+                  ? "bg-gradient-to-r from-blue-600 via-primary to-indigo-600 text-white shadow-md shadow-primary/25 border border-white/10"
+                  : "text-muted-foreground hover:bg-muted/80 hover:text-foreground hover:translate-x-0.5"
               }`}
             >
               <div className="flex items-center gap-2.5">
@@ -914,10 +954,10 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
 
             <button
               onClick={() => setActiveTab("security")}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === "security"
-                  ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
-                  : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+                  ? "bg-gradient-to-r from-blue-600 via-primary to-indigo-600 text-white shadow-md shadow-primary/25 border border-white/10"
+                  : "text-muted-foreground hover:bg-muted/80 hover:text-foreground hover:translate-x-0.5"
               }`}
             >
               <div className="flex items-center gap-2.5">
@@ -929,10 +969,10 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
 
             <button
               onClick={() => setActiveTab("notifications")}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === "notifications"
-                  ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
-                  : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+                  ? "bg-gradient-to-r from-blue-600 via-primary to-indigo-600 text-white shadow-md shadow-primary/25 border border-white/10"
+                  : "text-muted-foreground hover:bg-muted/80 hover:text-foreground hover:translate-x-0.5"
               }`}
             >
               <div className="flex items-center gap-2.5">
@@ -944,10 +984,10 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
 
             <button
               onClick={() => setActiveTab("billing")}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === "billing"
-                  ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
-                  : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+                  ? "bg-gradient-to-r from-blue-600 via-primary to-indigo-600 text-white shadow-md shadow-primary/25 border border-white/10"
+                  : "text-muted-foreground hover:bg-muted/80 hover:text-foreground hover:translate-x-0.5"
               }`}
             >
               <div className="flex items-center gap-2.5">
@@ -963,10 +1003,10 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
 
             <button
               onClick={() => setActiveTab("preferences")}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === "preferences"
-                  ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
-                  : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+                  ? "bg-gradient-to-r from-blue-600 via-primary to-indigo-600 text-white shadow-md shadow-primary/25 border border-white/10"
+                  : "text-muted-foreground hover:bg-muted/80 hover:text-foreground hover:translate-x-0.5"
               }`}
             >
               <div className="flex items-center gap-2.5">
@@ -1050,7 +1090,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                       <button
                         type="button"
                         onClick={handleResetBanner}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-black/50 hover:bg-destructive/80 backdrop-blur-md rounded-xl transition-all shadow-sm"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-rose-600/85 hover:bg-rose-600 backdrop-blur-md rounded-xl transition-all shadow-md shadow-rose-500/20 border border-white/20 cursor-pointer active:scale-95"
                         title={t("settings.profile.resetBanner", "Reset Banner ke Default")}
                       >
                         <X className="h-3.5 w-3.5" />
@@ -1060,7 +1100,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                     <button
                       type="button"
                       onClick={() => bannerFileInputRef.current?.click()}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-white bg-black/60 hover:bg-black/85 backdrop-blur-md rounded-xl transition-all shadow-sm border border-white/20 hover:border-white/40"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-blue-600 via-primary to-indigo-600 hover:brightness-110 backdrop-blur-md rounded-xl transition-all shadow-md shadow-primary/25 border border-white/20 cursor-pointer active:scale-95"
                     >
                       <Camera className="h-3.5 w-3.5" />
                       <span>{t("settings.profile.changeBanner", "Ubah Banner")}</span>
@@ -1113,7 +1153,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                           <button
                             type="button"
                             onClick={handleResetAvatar}
-                            className="px-2 py-0.5 text-[11px] text-destructive hover:bg-destructive/10 rounded-lg transition-colors font-medium"
+                            className="px-2.5 py-1 text-[11px] text-rose-600 dark:text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-lg transition-colors font-semibold cursor-pointer"
                           >
                             {t("settings.profile.reset", "Reset Foto")}
                           </button>
@@ -1126,7 +1166,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                         <button
                           type="button"
                           onClick={() => fileInputRef.current?.click()}
-                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-primary/30 bg-primary/10 px-3.5 py-1.5 text-xs font-bold text-primary hover:bg-primary/20 transition-all cursor-pointer shadow-xs active:scale-95"
                         >
                           <Camera className="h-3.5 w-3.5" />
                           <span>{t("settings.profile.uploadPhoto", "Ubah / Unggah Foto")}</span>
@@ -1303,7 +1343,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                   type="button"
                   onClick={handleSaveSettings}
                   disabled={isSaving}
-                  className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/90 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 via-primary to-indigo-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/35 hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer border border-white/10"
                 >
                   <Save className="h-4 w-4" />
                   <span>{isSaving ? t("common.saving", "Menyimpan...") : t("settings.profile.saveBtn", "Simpan Detail Profil")}</span>
@@ -1645,7 +1685,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                       />
                       <button
                         type="submit"
-                        className="rounded-xl bg-muted px-3.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted/80 shrink-0"
+                        className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-1.5 text-xs font-bold text-white shadow-sm shadow-primary/25 hover:brightness-110 active:scale-95 transition-all shrink-0 cursor-pointer border border-white/10"
                       >
                         {t("settings.work.add", "Tambah")}
                       </button>
@@ -1894,7 +1934,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                   type="button"
                   onClick={handleSaveSettings}
                   disabled={isSaving}
-                  className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/90 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 via-primary to-indigo-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/35 hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer border border-white/10"
                 >
                   <Save className="h-4 w-4" />
                   <span>
@@ -1965,11 +2005,14 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                 <button
                   type="submit"
                   disabled={isSaving || !newPassword}
-                  className="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors disabled:opacity-50"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 via-primary to-indigo-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/35 hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer border border-white/10"
                 >
-                  {isSaving 
-                    ? t("common.saving", "Memperbarui...") 
-                    : t("settings.security.updatePasswordBtn", "Perbarui Kata Sandi")}
+                  <Lock className="h-3.5 w-3.5" />
+                  <span>
+                    {isSaving 
+                      ? t("common.saving", "Memperbarui...") 
+                      : t("settings.security.updatePasswordBtn", "Perbarui Kata Sandi")}
+                  </span>
                 </button>
               </form>
 
@@ -2208,7 +2251,7 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                   type="button"
                   onClick={handleSaveSettings}
                   disabled={isSaving}
-                  className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/90 transition-all disabled:opacity-50"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 via-primary to-indigo-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/35 hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer border border-white/10"
                 >
                   <Save className="h-4 w-4" />
                   <span>
@@ -2248,8 +2291,13 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                       </h3>
                       <p className="text-xs text-muted-foreground mt-0.5">{t("settings.billing.instantPayoutDesc", "Siap ditarik langsung ke rekening bank terverifikasi Anda.")}</p>
                     </div>
-                    <button className="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/90 transition-all shrink-0">
-                      {t("settings.billing.withdrawBtn", "Tarik Pendapatan")}
+                    <button
+                      type="button"
+                      onClick={() => window.location.href = "/freelancer/earnings"}
+                      className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-600 via-primary to-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/35 hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer border border-white/10 shrink-0"
+                    >
+                      <Banknote className="h-3.5 w-3.5" />
+                      <span>{t("settings.billing.withdrawBtn", "Tarik Pendapatan")}</span>
                     </button>
                   </div>
 
@@ -2335,9 +2383,8 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                     onChange={(e) => {
                       const next = e.target.value as Locale;
                       setLanguage(next);
-                      setLocale(next);
                     }}
-                    className="h-10 w-full rounded-xl border border-border bg-background px-3.5 text-xs text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    className="h-10 w-full rounded-xl border border-border bg-background px-3.5 text-xs text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
                   >
                     <option value="id">{t("settings.preferences.languageId", "Bahasa Indonesia (Default)")}</option>
                     <option value="en">{t("settings.preferences.languageEn", "English (US)")}</option>
@@ -2359,9 +2406,8 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
                     onChange={(e) => {
                       const next = e.target.value as Currency;
                       setCurrency(next);
-                      setGlobalCurrency(next);
                     }}
-                    className="h-10 w-full rounded-xl border border-border bg-background px-3.5 text-xs text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    className="h-10 w-full rounded-xl border border-border bg-background px-3.5 text-xs text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
                   >
                     <option value="IDR">{t("settings.preferences.currencyIdr", "IDR (Rp - Rupiah)")}</option>
                     <option value="USD">{t("settings.preferences.currencyUsd", "USD ($ - US Dollar)")}</option>
@@ -2375,12 +2421,20 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
               </div>
 
               {/* Action Bar */}
-              <div className="pt-4 border-t border-border/50 flex items-center justify-end gap-3">
+              <div className="pt-4 border-t border-border/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div>
+                  {(language !== locale || currency !== globalCurrency) && (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400">
+                      <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                      Ada perubahan yang belum disimpan. Klik tombol untuk menyimpan.
+                    </span>
+                  )}
+                </div>
                 <button
                   type="button"
                   onClick={handleSaveSettings}
                   disabled={isSaving}
-                  className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/90 transition-all disabled:opacity-50"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 via-primary to-indigo-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/35 hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer border border-white/10"
                 >
                   <Save className="h-4 w-4" />
                   <span>
