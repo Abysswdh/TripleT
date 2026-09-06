@@ -916,104 +916,152 @@ export function SettingsView({ initialTab = "profile", defaultRole }: SettingsVi
           <div className="bg-card border border-border/70 rounded-2xl p-3 shadow-sm space-y-1">
             <button
               onClick={() => setActiveTab("profile")}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              className={`w-full group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition-all cursor-pointer ${
                 activeTab === "profile"
-                  ? "bg-gradient-to-r from-blue-600 via-primary to-indigo-600 text-white shadow-md shadow-primary/25 border border-white/10"
-                  : "text-muted-foreground hover:bg-muted/80 hover:text-foreground hover:translate-x-0.5"
+                  ? "bg-primary/10 dark:bg-primary/20 text-primary dark:text-blue-300 font-bold border border-primary/25 dark:border-primary/30 shadow-xs"
+                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground font-medium border border-transparent hover:translate-x-0.5"
               }`}
             >
-              <div className="flex items-center gap-2.5">
-                <User className="h-4 w-4" />
-                <span>{t("settings.tabs.profile", "Profil & Identitas")}</span>
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className={`p-1.5 rounded-lg transition-colors shrink-0 ${
+                  activeTab === "profile"
+                    ? "bg-primary/15 text-primary dark:bg-primary/30 dark:text-blue-300"
+                    : "bg-muted/50 text-muted-foreground group-hover:text-foreground"
+                }`}>
+                  <User className="h-4 w-4" />
+                </div>
+                <span className="truncate">{t("settings.tabs.profile", "Profil & Identitas")}</span>
               </div>
-              <ChevronRight className="h-3.5 w-3.5 opacity-60" />
+              <ChevronRight className={`h-3.5 w-3.5 shrink-0 transition-transform ${
+                activeTab === "profile" ? "text-primary dark:text-blue-300 translate-x-0.5" : "opacity-35"
+              }`} />
             </button>
 
             <button
               onClick={() => setActiveTab("work")}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              className={`w-full group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition-all cursor-pointer ${
                 activeTab === "work"
-                  ? "bg-gradient-to-r from-blue-600 via-primary to-indigo-600 text-white shadow-md shadow-primary/25 border border-white/10"
-                  : "text-muted-foreground hover:bg-muted/80 hover:text-foreground hover:translate-x-0.5"
+                  ? "bg-primary/10 dark:bg-primary/20 text-primary dark:text-blue-300 font-bold border border-primary/25 dark:border-primary/30 shadow-xs"
+                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground font-medium border border-transparent hover:translate-x-0.5"
               }`}
             >
-              <div className="flex items-center gap-2.5">
-                {currentRole === "customer" ? (
-                  <Building2 className="h-4 w-4" />
-                ) : (
-                  <Briefcase className="h-4 w-4" />
-                )}
-                <span>
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className={`p-1.5 rounded-lg transition-colors shrink-0 ${
+                  activeTab === "work"
+                    ? "bg-primary/15 text-primary dark:bg-primary/30 dark:text-blue-300"
+                    : "bg-muted/50 text-muted-foreground group-hover:text-foreground"
+                }`}>
+                  {currentRole === "customer" ? (
+                    <Building2 className="h-4 w-4" />
+                  ) : (
+                    <Briefcase className="h-4 w-4" />
+                  )}
+                </div>
+                <span className="truncate">
                   {currentRole === "customer" 
                     ? t("settings.tabs.workClient", "Perusahaan & Perekrutan") 
                     : t("settings.tabs.workFreelancer", "Keahlian & Tarif")}
                 </span>
               </div>
-              <ChevronRight className="h-3.5 w-3.5 opacity-60" />
+              <ChevronRight className={`h-3.5 w-3.5 shrink-0 transition-transform ${
+                activeTab === "work" ? "text-primary dark:text-blue-300 translate-x-0.5" : "opacity-35"
+              }`} />
             </button>
 
             <button
               onClick={() => setActiveTab("security")}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              className={`w-full group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition-all cursor-pointer ${
                 activeTab === "security"
-                  ? "bg-gradient-to-r from-blue-600 via-primary to-indigo-600 text-white shadow-md shadow-primary/25 border border-white/10"
-                  : "text-muted-foreground hover:bg-muted/80 hover:text-foreground hover:translate-x-0.5"
+                  ? "bg-primary/10 dark:bg-primary/20 text-primary dark:text-blue-300 font-bold border border-primary/25 dark:border-primary/30 shadow-xs"
+                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground font-medium border border-transparent hover:translate-x-0.5"
               }`}
             >
-              <div className="flex items-center gap-2.5">
-                <Shield className="h-4 w-4" />
-                <span>{t("settings.tabs.security", "Keamanan & Masuk")}</span>
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className={`p-1.5 rounded-lg transition-colors shrink-0 ${
+                  activeTab === "security"
+                    ? "bg-primary/15 text-primary dark:bg-primary/30 dark:text-blue-300"
+                    : "bg-muted/50 text-muted-foreground group-hover:text-foreground"
+                }`}>
+                  <Shield className="h-4 w-4" />
+                </div>
+                <span className="truncate">{t("settings.tabs.security", "Keamanan & Masuk")}</span>
               </div>
-              <ChevronRight className="h-3.5 w-3.5 opacity-60" />
+              <ChevronRight className={`h-3.5 w-3.5 shrink-0 transition-transform ${
+                activeTab === "security" ? "text-primary dark:text-blue-300 translate-x-0.5" : "opacity-35"
+              }`} />
             </button>
 
             <button
               onClick={() => setActiveTab("notifications")}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              className={`w-full group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition-all cursor-pointer ${
                 activeTab === "notifications"
-                  ? "bg-gradient-to-r from-blue-600 via-primary to-indigo-600 text-white shadow-md shadow-primary/25 border border-white/10"
-                  : "text-muted-foreground hover:bg-muted/80 hover:text-foreground hover:translate-x-0.5"
+                  ? "bg-primary/10 dark:bg-primary/20 text-primary dark:text-blue-300 font-bold border border-primary/25 dark:border-primary/30 shadow-xs"
+                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground font-medium border border-transparent hover:translate-x-0.5"
               }`}
             >
-              <div className="flex items-center gap-2.5">
-                <Bell className="h-4 w-4" />
-                <span>{t("settings.tabs.notifications", "Notifikasi")}</span>
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className={`p-1.5 rounded-lg transition-colors shrink-0 ${
+                  activeTab === "notifications"
+                    ? "bg-primary/15 text-primary dark:bg-primary/30 dark:text-blue-300"
+                    : "bg-muted/50 text-muted-foreground group-hover:text-foreground"
+                }`}>
+                  <Bell className="h-4 w-4" />
+                </div>
+                <span className="truncate">{t("settings.tabs.notifications", "Notifikasi")}</span>
               </div>
-              <ChevronRight className="h-3.5 w-3.5 opacity-60" />
+              <ChevronRight className={`h-3.5 w-3.5 shrink-0 transition-transform ${
+                activeTab === "notifications" ? "text-primary dark:text-blue-300 translate-x-0.5" : "opacity-35"
+              }`} />
             </button>
 
             <button
               onClick={() => setActiveTab("billing")}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              className={`w-full group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition-all cursor-pointer ${
                 activeTab === "billing"
-                  ? "bg-gradient-to-r from-blue-600 via-primary to-indigo-600 text-white shadow-md shadow-primary/25 border border-white/10"
-                  : "text-muted-foreground hover:bg-muted/80 hover:text-foreground hover:translate-x-0.5"
+                  ? "bg-primary/10 dark:bg-primary/20 text-primary dark:text-blue-300 font-bold border border-primary/25 dark:border-primary/30 shadow-xs"
+                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground font-medium border border-transparent hover:translate-x-0.5"
               }`}
             >
-              <div className="flex items-center gap-2.5">
-                <CreditCard className="h-4 w-4" />
-                <span>
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className={`p-1.5 rounded-lg transition-colors shrink-0 ${
+                  activeTab === "billing"
+                    ? "bg-primary/15 text-primary dark:bg-primary/30 dark:text-blue-300"
+                    : "bg-muted/50 text-muted-foreground group-hover:text-foreground"
+                }`}>
+                  <CreditCard className="h-4 w-4" />
+                </div>
+                <span className="truncate">
                   {currentRole === "customer" 
                     ? t("settings.tabs.billingClient", "Metode Pembayaran") 
                     : t("settings.tabs.billingFreelancer", "Penarikan & Rekening")}
                 </span>
               </div>
-              <ChevronRight className="h-3.5 w-3.5 opacity-60" />
+              <ChevronRight className={`h-3.5 w-3.5 shrink-0 transition-transform ${
+                activeTab === "billing" ? "text-primary dark:text-blue-300 translate-x-0.5" : "opacity-35"
+              }`} />
             </button>
 
             <button
               onClick={() => setActiveTab("preferences")}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              className={`w-full group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition-all cursor-pointer ${
                 activeTab === "preferences"
-                  ? "bg-gradient-to-r from-blue-600 via-primary to-indigo-600 text-white shadow-md shadow-primary/25 border border-white/10"
-                  : "text-muted-foreground hover:bg-muted/80 hover:text-foreground hover:translate-x-0.5"
+                  ? "bg-primary/10 dark:bg-primary/20 text-primary dark:text-blue-300 font-bold border border-primary/25 dark:border-primary/30 shadow-xs"
+                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground font-medium border border-transparent hover:translate-x-0.5"
               }`}
             >
-              <div className="flex items-center gap-2.5">
-                <Globe className="h-4 w-4" />
-                <span>{t("settings.tabs.preferences", "Bahasa & Tampilan")}</span>
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className={`p-1.5 rounded-lg transition-colors shrink-0 ${
+                  activeTab === "preferences"
+                    ? "bg-primary/15 text-primary dark:bg-primary/30 dark:text-blue-300"
+                    : "bg-muted/50 text-muted-foreground group-hover:text-foreground"
+                }`}>
+                  <Globe className="h-4 w-4" />
+                </div>
+                <span className="truncate">{t("settings.tabs.preferences", "Bahasa & Tampilan")}</span>
               </div>
-              <ChevronRight className="h-3.5 w-3.5 opacity-60" />
+              <ChevronRight className={`h-3.5 w-3.5 shrink-0 transition-transform ${
+                activeTab === "preferences" ? "text-primary dark:text-blue-300 translate-x-0.5" : "opacity-35"
+              }`} />
             </button>
           </div>
         </div>
