@@ -1914,47 +1914,121 @@ export default function LandingPage() {
       {/* ========================================================================= */}
       {/* 9. FOOTER */}
       {/* ========================================================================= */}
-      <footer className="border-t border-slate-200 bg-slate-50 py-12 px-6 lg:px-12 text-slate-700">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
-          {/* Left Brand & Mission Copy */}
-          <div className="max-w-lg space-y-3">
-            <Image
-              src={logoWithBothText}
-              alt="Doable! - All About Freelancing"
-              height={64}
-              width={Math.round(64 * (1557 / 557))}
-              style={{ height: "64px", width: "auto" }}
-              className="object-contain block select-none"
-            />
-            <p className="text-xs text-slate-500 leading-relaxed font-normal">
-              &copy; {new Date().getFullYear()} Doable! Indonesia. Platform kerja lepas terintegrasi yang menghubungkan talenta terverifikasi dan bisnis melalui kolaborasi cerdas, proteksi kontrak, dan peluang tanpa batas.
-            </p>
-            {/* SDG Alignment Endorsement */}
-            <div className="flex items-center gap-2.5 pt-1">
+      <footer className="border-t border-slate-200 bg-slate-50 py-12 lg:py-16 px-6 lg:px-12 text-slate-700">
+        <div className="max-w-7xl mx-auto space-y-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-10">
+            {/* Left Brand & Mission Copy (Span 5) */}
+            <div className="lg:col-span-5 space-y-4">
               <Image
-                src="/images/sdg/sdg_wheel.svg"
-                alt="UN Sustainable Development Goals"
-                width={22}
-                height={22}
-                className="h-5 w-5 object-contain shrink-0"
+                src={logoWithBothText}
+                alt="Doable! - All About Freelancing"
+                height={64}
+                width={Math.round(64 * (1557 / 557))}
+                style={{ height: "64px", width: "auto" }}
+                className="object-contain block select-none"
               />
-              <span className="text-xs font-semibold text-slate-500">
-                Mendukung Agenda UN Sustainable Development Goals (SDG 8 &amp; SDG 9)
-              </span>
+              <p className="text-xs sm:text-sm text-slate-500 leading-relaxed font-normal max-w-sm">
+                Platform kerja lepas terintegrasi yang menghubungkan talenta terverifikasi dan bisnis melalui kolaborasi cerdas, proteksi kontrak, dan peluang tanpa batas.
+              </p>
+              {/* SDG Alignment Endorsement */}
+              <div className="flex items-center gap-2.5 pt-1">
+                <Image
+                  src="/images/sdg/sdg_wheel.svg"
+                  alt="UN Sustainable Development Goals"
+                  width={22}
+                  height={22}
+                  className="h-5 w-5 object-contain shrink-0"
+                />
+                <span className="text-xs font-semibold text-slate-500">
+                  Mendukung Agenda UN Sustainable Development Goals (SDG 8 &amp; SDG 9)
+                </span>
+              </div>
+            </div>
+
+            {/* Column 2: Untuk Talenta (Span 2) */}
+            <div className="lg:col-span-2 space-y-3">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 font-heading">
+                Untuk Talenta
+              </h4>
+              <ul className="space-y-2 text-xs font-medium text-slate-600">
+                <li>
+                  <Link href="/freelancer/explore" className="hover:text-blue-600 transition-colors">
+                    Jelajahi Quest Proyek
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/freelancer/skills" className="hover:text-blue-600 transition-colors">
+                    Jalur Karir &amp; Kuis
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/freelancer/calendar" className="hover:text-blue-600 transition-colors">
+                    Kalender &amp; Workload
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/freelancer/earnings" className="hover:text-blue-600 transition-colors">
+                    Saldo &amp; Rekber
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Column 3: Untuk Klien & Bisnis (Span 2) */}
+            <div className="lg:col-span-2 space-y-3">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 font-heading">
+                Untuk Klien &amp; Bisnis
+              </h4>
+              <ul className="space-y-2 text-xs font-medium text-slate-600">
+                <li>
+                  <Link href="/client/projects" className="hover:text-blue-600 transition-colors">
+                    Pasang Proyek Baru
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/client/talent" className="hover:text-blue-600 transition-colors">
+                    Cari Talenta Terverifikasi
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/client/dashboard" className="hover:text-blue-600 transition-colors">
+                    Manajemen Kontrak
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/client/market" className="hover:text-blue-600 transition-colors">
+                    Pasar Talenta Digital
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Column 4: Navigasi & Bantuan (Span 3) */}
+            <div className="lg:col-span-3 space-y-3">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 font-heading">
+                Navigasi &amp; Bantuan
+              </h4>
+              <ul className="space-y-2 text-xs font-medium text-slate-600">
+                {navLinks.map((link) => (
+                  <li key={link.id}>
+                    <a href={link.href} className="hover:text-blue-600 transition-colors">
+                      {link.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
 
-          {/* Right Navigation & Legal Links */}
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-semibold text-slate-600">
-            {navLinks.map((link) => (
-              <a
-                key={link.id}
-                href={link.href}
-                className="hover:text-blue-600 transition-colors"
-              >
-                {link.label}
-              </a>
-            ))}
+          {/* Bottom Bar */}
+          <div className="pt-8 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+            <p>
+              &copy; {new Date().getFullYear()} <strong>Doable! Indonesia</strong>. Seluruh hak cipta dilindungi.
+            </p>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 font-medium border border-emerald-200 shadow-2xs text-[11px]">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Sistem Rekber &amp; Platform Beroperasi Normal</span>
+            </div>
           </div>
         </div>
       </footer>
