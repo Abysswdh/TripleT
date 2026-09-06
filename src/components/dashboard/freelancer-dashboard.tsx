@@ -22,6 +22,8 @@ import {
   Sparkles,
   BookOpen,
   Check,
+  Flame,
+  Wallet,
 } from "lucide-react";
 import Link from "next/link";
 import Grainient from "@/components/ui/Grainient";
@@ -119,6 +121,7 @@ export function FreelancerDashboard() {
   // Quest Feed State
   const [quests, setQuests] = useState<QuestOpportunity[]>(mockQuests);
   const [selectedCategory, setSelectedCategory] = useState("Semua");
+  const [activeFeedTab, setActiveFeedTab] = useState<"all" | "work" | "explore" | "skills">("all");
 
   // Fetch live quests from Supabase
   useEffect(() => {
@@ -516,7 +519,7 @@ export function FreelancerDashboard() {
   return (
     <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8 animate-fade-in font-sans">
       {/* 0. Clean Minimalist Hero Greeting */}
-      <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8 md:p-10 text-white shadow-xl border border-white/10 min-h-[160px] flex items-center">
+      <div className="relative overflow-hidden rounded-3xl p-6 sm:p-7 md:p-8 text-white shadow-xl border border-white/10 flex items-center">
         <div className="absolute inset-0 z-0 pointer-events-none">
           <Grainient
             color1="#10B981"
@@ -545,14 +548,73 @@ export function FreelancerDashboard() {
         </div>
         <div className="absolute inset-0 z-[1] bg-black/45 backdrop-blur-[1px] pointer-events-none" />
 
-        <div className="relative z-20 flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
-          <div className="space-y-2 max-w-2xl">
+        <div className="relative z-20 flex flex-col lg:flex-row lg:items-center justify-between gap-6 w-full">
+          <div className="space-y-2 max-w-xl">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 px-2.5 py-0.5 text-[11px] font-medium text-slate-200">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>Dashboard Talenta Terverifikasi</span>
+            </div>
             <h1 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-normal tracking-tight leading-normal text-white drop-shadow-sm">
               Selamat datang kembali, {freelancerName}!
             </h1>
-            <p className="text-xs md:text-sm text-slate-200 leading-relaxed font-normal">
+            <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-normal">
               Pantau alur pekerjaan aktifmu, selesaikan misi harian untuk menjaga konsistensi streak, dan bangun portofolio profesionalmu.
             </p>
+          </div>
+
+          {/* Quick Metrics Cluster on Hero Right (Frosted Glass Cards) */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3 shrink-0">
+            {/* Stat 1: Streak */}
+            <div className="flex items-center gap-3 rounded-2xl bg-white/10 hover:bg-white/15 backdrop-blur-md border border-white/15 p-3 text-white transition-all shadow-sm">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/25 text-amber-400 border border-amber-400/30 shrink-0">
+                <Flame className="h-4 w-4 fill-amber-400" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-sm sm:text-base font-bold text-white leading-tight">
+                  {streakDays} Hari
+                </div>
+                <div className="text-[10px] text-slate-300 font-medium truncate">
+                  Streak Aktif
+                </div>
+              </div>
+            </div>
+
+            {/* Stat 2: Active Work / Proposals */}
+            <Link
+              href="/freelancer/my-work"
+              className="group flex items-center gap-3 rounded-2xl bg-white/10 hover:bg-white/15 backdrop-blur-md border border-white/15 p-3 text-white transition-all shadow-sm hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500/25 text-blue-400 border border-blue-400/30 shrink-0 group-hover:bg-blue-500/35 transition-colors">
+                <Briefcase className="h-4 w-4" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-sm sm:text-base font-bold text-white leading-tight group-hover:text-blue-200 transition-colors">
+                  {timelineItems.length > 0 ? `${timelineItems.length} Kontrak` : "0 Kontrak"}
+                </div>
+                <div className="text-[10px] text-slate-300 font-medium truncate">
+                  {submittedProposals.length > 0 ? `${submittedProposals.length} Proposal` : "Pekerjaan Aktif"}
+                </div>
+              </div>
+            </Link>
+
+            {/* Stat 3: Available Balance */}
+            <Link
+              href="/freelancer/earnings"
+              className="col-span-2 sm:col-span-1 group flex items-center gap-3 rounded-2xl bg-white/10 hover:bg-white/15 backdrop-blur-md border border-white/15 p-3 text-white transition-all shadow-sm hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/25 text-emerald-400 border border-emerald-400/30 shrink-0 group-hover:bg-emerald-500/35 transition-colors">
+                <Wallet className="h-4 w-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-xs sm:text-sm font-bold text-white leading-tight truncate group-hover:text-emerald-200 transition-colors">
+                  {formatMoney(earnings?.availableBalance ?? 0, "IDR")}
+                </div>
+                <div className="text-[10px] text-slate-300 font-medium flex items-center justify-between gap-1">
+                  <span>Saldo Rekber</span>
+                  <ArrowUpRight className="h-2.5 w-2.5 opacity-70 group-hover:opacity-100 transition-opacity shrink-0" />
+                </div>
+              </div>
+            </Link>
           </div>
         </div>
       </div>
@@ -562,16 +624,85 @@ export function FreelancerDashboard() {
         {/* ========================================================================= */}
         {/* LEFT COLUMN: SCROLLABLE FEED (Pekerjaan Saya, Proyek, Keahlian, Pendapatan)*/}
         {/* ========================================================================= */}
-        <div className="lg:col-span-7 space-y-8 order-2 lg:order-1">
+        <div className="lg:col-span-7 space-y-6 order-2 lg:order-1">
+          {/* Feed Filter Tabs (Prevents vertical clutter & allows focused view) */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pb-1">
+            <div className="inline-flex items-center gap-1 p-1 rounded-2xl bg-muted/50 border border-border/60">
+              <button
+                type="button"
+                onClick={() => setActiveFeedTab("all")}
+                className={`px-3 sm:px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  activeFeedTab === "all"
+                    ? "bg-card text-foreground shadow-xs border border-border/80"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Semua
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveFeedTab("work")}
+                className={`inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  activeFeedTab === "work"
+                    ? "bg-card text-foreground shadow-xs border border-border/80"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <span>Pekerjaan Saya</span>
+                {(timelineItems.length > 0 || submittedProposals.length > 0) && (
+                  <span className="rounded-full bg-primary/10 text-primary text-[10px] px-1.5 py-0.2 font-extrabold">
+                    {timelineItems.length > 0 ? timelineItems.length : submittedProposals.length}
+                  </span>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveFeedTab("explore")}
+                className={`inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  activeFeedTab === "explore"
+                    ? "bg-card text-foreground shadow-xs border border-border/80"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <span>Cari Proyek</span>
+                <span className="rounded-full bg-muted text-muted-foreground text-[10px] px-1.5 py-0.2 font-bold">
+                  {filteredQuests.length}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveFeedTab("skills")}
+                className={`px-3 sm:px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  activeFeedTab === "skills"
+                    ? "bg-card text-foreground shadow-xs border border-border/80"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Keahlian & Saldo
+              </button>
+            </div>
+
+            {activeFeedTab !== "all" && (
+              <button
+                type="button"
+                onClick={() => setActiveFeedTab("all")}
+                className="text-[11px] font-medium text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+              >
+                Tampilkan Semua ↓
+              </button>
+            )}
+          </div>
+
           {/* 1. PEKERJAAN SAYA (Paling Atas) */}
-          <section className="space-y-4">
-            <div className="flex items-center justify-between border-b border-border/60 pb-3">
-              <div className="flex items-center gap-2">
-                <Briefcase className="h-4 w-4 text-primary" />
-                <h2 className="text-lg font-bold tracking-tight text-foreground font-heading">
-                  Pekerjaan Saya ({timelineItems.length > 0 ? timelineItems.length : submittedProposals.length > 0 ? `${submittedProposals.length} Proposal` : 0})
-                </h2>
-              </div>
+          {(activeFeedTab === "all" || activeFeedTab === "work") && (
+            <section className="space-y-4">
+              <div className="flex items-center justify-between border-b border-border/60 pb-3">
+                <div className="flex items-center gap-2">
+                  <Briefcase className="h-4 w-4 text-primary" />
+                  <h2 className="text-lg font-bold tracking-tight text-foreground font-heading">
+                    Pekerjaan Saya ({timelineItems.length > 0 ? timelineItems.length : submittedProposals.length > 0 ? `${submittedProposals.length} Proposal` : 0})
+                  </h2>
+                </div>
               <Link
                 href="/freelancer/my-work"
                 className="text-xs font-bold text-primary hover:underline inline-flex items-center gap-1"
@@ -754,8 +885,10 @@ export function FreelancerDashboard() {
                 }))}
             </div>
           </section>
+        )}
 
-          {/* 2. PROYEK LAIN YANG SELARAS DENGAN KAMU (Scroll Section 2) */}
+        {/* 2. PROYEK LAIN YANG SELARAS DENGAN KAMU (Scroll Section 2) */}
+        {(activeFeedTab === "all" || activeFeedTab === "explore") && (
           <section className="space-y-4 pt-2">
             <div className="flex items-center justify-between border-b border-border/60 pb-3">
               <div className="flex items-center gap-2">
@@ -887,10 +1020,13 @@ export function FreelancerDashboard() {
                 )))}
             </div>
           </section>
+        )}
 
-          {/* 3. RINGKASAN PROGRESS KEAHLIAN & VERIFIKASI (Scroll Section 3) */}
-          <section className="space-y-4 pt-2">
-            <div className="flex items-center justify-between border-b border-border/60 pb-3">
+        {/* 3. RINGKASAN PROGRESS KEAHLIAN & VERIFIKASI (Scroll Section 3) & 4. PENDAPATAN */}
+        {(activeFeedTab === "all" || activeFeedTab === "skills") && (
+          <>
+            <section className="space-y-4 pt-2">
+              <div className="flex items-center justify-between border-b border-border/60 pb-3">
               <div className="flex items-center gap-2">
                 <Award className="h-4 w-4 text-primary" />
                 <h2 className="text-lg font-bold tracking-tight text-foreground font-heading">
@@ -1090,13 +1226,15 @@ export function FreelancerDashboard() {
                 </div>
               </div>
             </Link>
-          </section>
+            </section>
+          </>
+        )}
         </div>
 
         {/* ========================================================================= */}
         {/* RIGHT COLUMN: STICKY GUIDE (Plan Anda, Rekomendasi AI, Jalur Karir Talenta)*/}
         {/* ========================================================================= */}
-        <div className="lg:col-span-5 space-y-6 order-1 lg:order-2 lg:sticky lg:top-20 lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto pr-1">
+        <div className="lg:col-span-5 space-y-5 order-1 lg:order-2 lg:sticky lg:top-20">
           {/* 1. Unified Smart Calendar & MRP Workload Planner (Tugas Hari Ini + Streak + Kalender Harian) */}
           <UnifiedSmartCalendarPlanner
             streakDays={streakDays}
@@ -1113,7 +1251,7 @@ export function FreelancerDashboard() {
           <AIProfileSuggestions userProfile={user} />
 
           {/* 3. Level & Career Progression Road */}
-          <div className="rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/5 via-card to-card p-5 sm:p-6 shadow-sm space-y-4">
+          <div className="rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/5 via-card to-card p-4 sm:p-5 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Award className="h-4 w-4 text-primary" />
@@ -1129,9 +1267,9 @@ export function FreelancerDashboard() {
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-xs font-semibold">
                 <span className="text-foreground">Level {currentLevel} {currentLevel === 0 ? "Starter" : currentLevel === 1 ? "Creator" : "Verified Pro"}</span>
-                <span className="text-muted-foreground">Level {currentLevel + 1} {currentLevel === 0 ? "Creator" : "Verified Pro"}</span>
+                <span className="text-muted-foreground text-[11px]">Level {currentLevel + 1}</span>
               </div>
-              <div className="h-2.5 w-full rounded-full bg-muted overflow-hidden">
+              <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
                 <div
                   className="h-full bg-gradient-to-r from-primary to-indigo-600 rounded-full transition-all duration-500"
                   style={{ width: `${xpPercentage}%` }}
@@ -1139,10 +1277,10 @@ export function FreelancerDashboard() {
               </div>
 
               {/* 3-Pillar XP Accumulation Breakdown Pills */}
-              <div className="grid grid-cols-3 gap-1.5 pt-1.5 text-[10px]">
+              <div className="grid grid-cols-3 gap-1.5 pt-1 text-[10px]">
                 <div className="rounded-lg bg-blue-500/10 border border-blue-500/20 px-2 py-1 text-center">
                   <span className="text-blue-600 block font-bold leading-none">{xpBreakdown.workXP.toLocaleString("id-ID")} XP</span>
-                  <span className="text-[9px] text-muted-foreground mt-0.5 block">💼 Pekerjaan</span>
+                  <span className="text-[9px] text-muted-foreground mt-0.5 block">💼 Kerja</span>
                 </div>
                 <div className="rounded-lg bg-violet-500/10 border border-violet-500/20 px-2 py-1 text-center">
                   <span className="text-violet-600 block font-bold leading-none">{xpBreakdown.quizXP.toLocaleString("id-ID")} XP</span>
@@ -1155,15 +1293,15 @@ export function FreelancerDashboard() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-[11px] text-muted-foreground leading-relaxed flex-1">
-                Tinggal <strong className="text-foreground">{Math.max(0, nextLevelXP - currentXP).toLocaleString("id-ID")} XP lagi</strong> untuk membuka <strong>Level {currentLevel + 1}</strong> dan meningkatkan prioritas rekomendasi di pencarian klien UMKM.
+            <div className="flex items-center justify-between gap-3 pt-0.5">
+              <p className="text-[11px] text-muted-foreground leading-tight flex-1">
+                Tinggal <strong className="text-foreground">{Math.max(0, nextLevelXP - currentXP).toLocaleString("id-ID")} XP lagi</strong> menuju Level {currentLevel + 1}.
               </p>
               <Link
                 href="/freelancer/skills"
-                className="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-2 text-[11px] font-bold text-white shadow-md shadow-primary/20 hover:bg-primary/90 transition-all hover:scale-105 active:scale-95"
+                className="shrink-0 inline-flex items-center gap-1 rounded-xl bg-primary px-3 py-1.5 text-[11px] font-bold text-white shadow-xs hover:bg-primary/90 transition-all hover:scale-105 active:scale-95"
               >
-                <Zap className="h-3.5 w-3.5" />
+                <Zap className="h-3 w-3" />
                 Earn XP
               </Link>
             </div>
