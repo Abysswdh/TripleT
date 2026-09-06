@@ -1930,19 +1930,6 @@ export default function LandingPage() {
               <p className="text-xs sm:text-sm text-slate-500 leading-relaxed font-normal max-w-sm">
                 Platform kerja lepas terintegrasi yang menghubungkan talenta terverifikasi dan bisnis melalui kolaborasi cerdas, proteksi kontrak, dan peluang tanpa batas.
               </p>
-              {/* SDG Alignment Endorsement */}
-              <div className="flex items-center gap-2.5 pt-1">
-                <Image
-                  src="/images/sdg/sdg_wheel.svg"
-                  alt="UN Sustainable Development Goals"
-                  width={22}
-                  height={22}
-                  className="h-5 w-5 object-contain shrink-0"
-                />
-                <span className="text-xs font-semibold text-slate-500">
-                  Mendukung Agenda UN Sustainable Development Goals (SDG 8 &amp; SDG 9)
-                </span>
-              </div>
             </div>
 
             {/* Column 2: Untuk Talenta (Span 2) */}
@@ -2025,10 +2012,6 @@ export default function LandingPage() {
             <p>
               &copy; {new Date().getFullYear()} <strong>Doable! Indonesia</strong>. Seluruh hak cipta dilindungi.
             </p>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 font-medium border border-emerald-200 shadow-2xs text-[11px]">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Sistem Rekber &amp; Platform Beroperasi Normal</span>
-            </div>
           </div>
         </div>
       </footer>

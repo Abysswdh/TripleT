@@ -2,12 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { BrandLogo } from "@/components/branding/BrandLogo";
 import { Container } from "@/components/layout/Container";
 import { useTranslation } from "@/context/language-context";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
-import { ShieldCheck, Mail, Lock, FileText } from "lucide-react";
+import { Mail, Lock, FileText } from "lucide-react";
 
 export function Footer() {
   const { t, locale } = useTranslation();
@@ -32,31 +31,6 @@ export function Footer() {
                   "Platform kerja lepas terintegrasi yang menghubungkan talenta terverifikasi dan bisnis melalui kolaborasi cerdas, proteksi kontrak, dan peluang tanpa batas."
                 )}
               </p>
-
-              {/* Trust & Safe Escrow + SDG Badges */}
-              <div className="pt-1 flex flex-col gap-2 max-w-sm">
-                <div className="inline-flex items-center gap-2 rounded-xl bg-primary/5 border border-primary/15 px-3 py-2 text-xs font-semibold text-foreground">
-                  <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
-                  <span>
-                    {isId ? "100% Rekber Aman & Terlindungi" : "100% Safe Escrow Protection"}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-muted/50 border border-border/60 text-[11px] text-muted-foreground">
-                  <Image
-                    src="/images/sdg/sdg_wheel.svg"
-                    alt="UN Sustainable Development Goals"
-                    width={18}
-                    height={18}
-                    className="h-4 w-4 object-contain shrink-0"
-                  />
-                  <span>
-                    {isId
-                      ? "Mendukung Agenda UN Sustainable Development Goals (SDG 8 & 9)"
-                      : "Supporting UN Sustainable Development Goals (SDG 8 & 9)"}
-                  </span>
-                </div>
-              </div>
             </div>
 
             {/* Column 2: Untuk Talenta (Span 2) */}
@@ -169,18 +143,12 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Bottom Bar: Copyright, System Status, & Quick Links */}
+          {/* Bottom Bar: Copyright & Quick Links */}
           <div className="pt-8 border-t border-border/40 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
             <p className="text-muted-foreground">
               &copy; {new Date().getFullYear()} <strong>Doable! Indonesia</strong>.{" "}
               {isId ? "Seluruh hak cipta dilindungi." : "All rights reserved."}
             </p>
-
-            {/* Operational System Indicator */}
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-medium border border-emerald-500/20 shadow-2xs text-[11px]">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>{isId ? "Sistem Rekber & Platform Beroperasi Normal" : "All Systems & Escrow Operational"}</span>
-            </div>
 
             <div className="flex items-center gap-4 text-[11px] font-semibold text-muted-foreground">
               <button
